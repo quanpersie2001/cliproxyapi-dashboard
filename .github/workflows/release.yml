@@ -1,0 +1,217 @@
+name: Release
+
+on:
+  # Manual trigger only — no automatic releases on push
+  workflow_dispatch:
+    inputs:
+      action:
+        description: "What to do"
+        required: true
+        type: choice
+        options:
+          - create-release
+          - build-existing-tag
+        default: create-release
+      tag_name:
+        description: "Existing tag to build (only for 'build-existing-tag', e.g. dashboard-v0.1.50)"
+        required: false
+
+permissions:
+  contents: write
+  pull-requests: write
+  packages: write
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}/dashboard
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+
+jobs:
+  # Run Release Please to create/update a release PR, then merge and tag.
+  # Only runs when action is 'create-release'.
+  release-please:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.action == 'create-release' }}
+    outputs:
+      release_created: ${{ steps.resolve.outputs.release_created }}
+      tag_name: ${{ steps.resolve.outputs.tag_name }}
+      version: ${{ steps.resolve.outputs.version }}
+    steps:
+      - uses: googleapis/release-please-action@v4
+        id: release
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      # Release-Please outputs use component prefix (dashboard--) for multi-package repos.
+      # Support both prefixed and non-prefixed keys for robustness.
+      - name: Resolve release outputs
+        id: resolve
+        env:
+          RP_RELEASE_CREATED: ${{ steps.release.outputs['dashboard--release_created'] || steps.release.outputs.release_created }}
+          RP_TAG_NAME: ${{ steps.release.outputs['dashboard--tag_name'] || steps.release.outputs.tag_name }}
+          RP_VERSION: ${{ steps.release.outputs['dashboard--version'] || steps.release.outputs.version }}
+        run: |
+          echo "release_created=${RP_RELEASE_CREATED}" >> "$GITHUB_OUTPUT"
+          echo "tag_name=${RP_TAG_NAME}" >> "$GITHUB_OUTPUT"
+          echo "version=${RP_VERSION}" >> "$GITHUB_OUTPUT"
+
+          if [ "${RP_RELEASE_CREATED}" = "true" ]; then
+            echo "✅ Release created: ${RP_TAG_NAME} (${RP_VERSION})"
+          else
+            echo "ℹ️ No release created — Release Please PR opened/updated. Merge the PR, then run this workflow again."
+          fi
+
+  # Build each platform natively in parallel — no QEMU emulation needed.
+  # amd64 on self-hosted (Hetzner), arm64 on GitHub's native ARM runner.
+  build:
+    strategy:
+      fail-fast: true
+      matrix:
+        include:
+          - platform: linux/amd64
+            runner: self-hosted
+            suffix: amd64
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+            suffix: arm64
+    runs-on: ${{ matrix.runner }}
+    needs: release-please
+    if: >-
+      always() &&
+      (needs.release-please.outputs.release_created == 'true' ||
+       (github.event.inputs.action == 'build-existing-tag' && github.event.inputs.tag_name != ''))
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Resolve version
+        id: version
+        run: |
+          if [ "${{ github.event.inputs.action }}" = "build-existing-tag" ]; then
+            TAG="${{ github.event.inputs.tag_name }}"
+          else
+            TAG="${{ needs.release-please.outputs.tag_name }}"
+          fi
+          VERSION=$(echo "$TAG" | sed 's/^.*v//')
+          echo "tag_name=${TAG}" >> "$GITHUB_OUTPUT"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build and push by digest
+        id: build
+        uses: docker/build-push-action@v7
+        with:
+          context: ./dashboard
+          file: ./dashboard/Dockerfile
+          platforms: ${{ matrix.platform }}
+          build-args: |
+            DASHBOARD_VERSION=${{ steps.version.outputs.tag_name }}
+          outputs: type=image,name=${{ env.IMAGE }},push-by-digest=true,name-canonical=true,push=true
+
+      - name: Export digest
+        run: |
+          rm -rf /tmp/digests
+          mkdir -p /tmp/digests
+          digest="${{ steps.build.outputs.digest }}"
+          touch "/tmp/digests/${digest#sha256:}"
+
+      - name: Upload digest
+        uses: actions/upload-artifact@v7
+        with:
+          name: digest-${{ matrix.suffix }}
+          path: /tmp/digests/*
+          if-no-files-found: error
+          retention-days: 1
+
+  # Merge per-platform images into a single multi-arch manifest.
+  merge:
+    runs-on: ubuntu-latest
+    needs: [release-please, build]
+    if: ${{ always() && !cancelled() && needs.build.result == 'success' }}
+    steps:
+      - name: Resolve version
+        id: version
+        run: |
+          if [ "${{ github.event.inputs.action }}" = "build-existing-tag" ]; then
+            TAG="${{ github.event.inputs.tag_name }}"
+          else
+            TAG="${{ needs.release-please.outputs.tag_name }}"
+          fi
+          VERSION=$(echo "$TAG" | sed 's/^.*v//')
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          echo "tag_name=${TAG}" >> "$GITHUB_OUTPUT"
+
+      - name: Download digests
+        uses: actions/download-artifact@v8
+        with:
+          path: /tmp/digests
+          pattern: digest-*
+          merge-multiple: true
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create and push manifest
+        working-directory: /tmp/digests
+        run: |
+          TAGS="-t ${{ env.IMAGE }}:${{ steps.version.outputs.version }}"
+          TAGS="$TAGS -t ${{ env.IMAGE }}:latest"
+          TAGS="$TAGS -t ${{ env.IMAGE }}:sha-${GITHUB_SHA::7}"
+
+          SOURCES=""
+          for digest in *; do
+            SOURCES="$SOURCES ${{ env.IMAGE }}@sha256:$digest"
+          done
+
+          echo "📦 Creating multi-arch manifest..."
+          echo "   Tags: ${{ steps.version.outputs.version }}, latest, sha-${GITHUB_SHA::7}"
+          echo "   Sources: $SOURCES"
+
+          docker buildx imagetools create $TAGS $SOURCES
+
+  # Update version.json so dashboards can check for updates without GitHub API rate limits.
+  update-version-json:
+    runs-on: ubuntu-latest
+    needs: [release-please, merge]
+    if: ${{ needs.release-please.outputs.release_created == 'true' && needs.merge.result == 'success' }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+
+      - name: Update version.json
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
+          VERSION: ${{ needs.release-please.outputs.version }}
+        run: |
+          RELEASE_URL="https://github.com/${{ github.repository }}/releases/tag/${TAG_NAME}"
+          RELEASE_NOTES=$(gh release view "${TAG_NAME}" --json body -q .body 2>/dev/null | head -c 2000 || echo "")
+
+          jq -n \
+            --arg version "${VERSION}" \
+            --arg tag "${TAG_NAME}" \
+            --arg url "${RELEASE_URL}" \
+            --arg notes "${RELEASE_NOTES}" \
+            '{version: $version, tag: $tag, releaseUrl: $url, releaseNotes: $notes}' \
+            > version.json
+
+      - name: Commit version.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add version.json
+          git diff --staged --quiet && echo "No changes to commit" && exit 0
+          git commit -m "chore: update version.json to ${{ needs.release-please.outputs.version }}"
+          git push

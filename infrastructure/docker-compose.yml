@@ -1,0 +1,184 @@
+# CLIProxyAPI + Dashboard Docker Compose Stack
+# Network Architecture:
+# - frontend: Public network for dashboard/CLIProxyAPI outbound traffic
+# - backend: Internal network (CLIProxyAPI <-> Postgres, Dashboard <-> Postgres)
+
+services:
+  # Postgres Database
+  postgres:
+    image: postgres:16-alpine
+    container_name: cliproxyapi-postgres
+    restart: unless-stopped
+    # Resource limits (calibrated from real usage: ~29MiB actual)
+    cpus: 0.5
+    mem_limit: 256m
+    mem_reservation: 64m
+    networks:
+      - backend
+    environment:
+      POSTGRES_DB: cliproxyapi
+      POSTGRES_USER: cliproxyapi
+      # NOTE: Only used on first run (volume creation). Changing this later won't update the DB password.
+      # To reset: docker compose down -v (destroys all data)
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      TZ: ${TZ}
+    env_file:
+      - ./.env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cliproxyapi -d cliproxyapi"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # CLIProxyAPI Service
+  cliproxyapi:
+    image: eceasy/cli-proxy-api-plus:latest
+    container_name: cliproxyapi
+    restart: unless-stopped
+    # Resource limits (calibrated from real usage: ~25MiB actual)
+    cpus: 1.0
+    mem_limit: 256m
+    mem_reservation: 64m
+    networks:
+      - frontend
+      - backend
+    environment:
+      MANAGEMENT_PASSWORD: ${MANAGEMENT_API_KEY}
+      DEPLOY: production
+      TZ: ${TZ}
+    env_file:
+      - ./.env
+    ports:
+      # Main API port (bound locally; dashboard uses the internal Docker network)
+      - "127.0.0.1:8317:8317"
+      
+      # OAuth callback ports (must be accessible for OAuth flows)
+      - "8085:8085"    # Primary OAuth callback
+      - "1455:1455"    # Alternate OAuth callback
+      - "54545:54545"  # Alternate OAuth callback
+      - "51121:51121"  # Alternate OAuth callback
+      - "11451:11451"  # Alternate OAuth callback
+    volumes:
+      - ./config/config.yaml:/CLIProxyAPI/config.yaml
+      - cliproxyapi_auths:/root/.cli-proxy-api
+      - cliproxyapi_logs:/CLIProxyAPI/logs
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "-O", "/dev/null", "http://localhost:8317/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
+
+  # Docker Socket Proxy — restricts dashboard Docker access to safe operations only
+  docker-proxy:
+    image: tecnativa/docker-socket-proxy:latest
+    container_name: cliproxyapi-docker-proxy
+    restart: unless-stopped
+    # Resource limits (calibrated from real usage: ~23MiB actual)
+    cpus: 0.25
+    mem_limit: 128m
+    mem_reservation: 32m
+    networks:
+      - backend
+    environment:
+      # Allow container/image management + pull/restart/create operations
+      CONTAINERS: 1
+      IMAGES: 1
+      POST: 1
+      # Allow network inspection + connect (required for container recreation after updates)
+      NETWORKS: 1
+      # Block dangerous operations
+      VOLUMES: 0
+      EXEC: 0
+      SERVICES: 0
+      SWARM: 0
+      NODES: 0
+      BUILD: 0
+      COMMIT: 0
+      CONFIGS: 0
+      SECRETS: 0
+      PLUGINS: 0
+      SYSTEM: 0
+      TASKS: 0
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:2375/_ping || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  # Dashboard Service
+  dashboard:
+    image: ghcr.io/itsmylife44/cliproxyapi-dashboard/dashboard:latest
+    container_name: cliproxyapi-dashboard
+    restart: unless-stopped
+    # Resource limits (calibrated from real usage: ~98MiB actual, spiky CPU)
+    cpus: 1.0
+    mem_limit: 512m
+    mem_reservation: 128m
+    networks:
+      - frontend
+      - backend
+    environment:
+      DATABASE_URL: postgresql://cliproxyapi:${POSTGRES_PASSWORD}@postgres:5432/cliproxyapi
+      CLIPROXYAPI_MANAGEMENT_URL: http://cliproxyapi:8317/v0/management
+      MANAGEMENT_API_KEY: ${MANAGEMENT_API_KEY}
+      COLLECTOR_API_KEY: ${COLLECTOR_API_KEY:-}
+      JWT_SECRET: ${JWT_SECRET}
+      NODE_ENV: production
+      DASHBOARD_URL: ${DASHBOARD_URL:-http://localhost:3000}
+      API_URL: ${API_URL:-http://localhost:8317}
+      DOCKER_HOST: tcp://docker-proxy:2375
+      GITHUB_REPO: ${GITHUB_REPO:-itsmylife44/cliproxyapi-dashboard}
+    env_file:
+      - ./.env
+    volumes:
+      - ${INSTALL_DIR:-.}/infrastructure:/opt/cliproxyapi/infrastructure:ro
+    ports:
+      - "127.0.0.1:3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      cliproxyapi:
+        condition: service_healthy
+      docker-proxy:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/api/health').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 10s
+      retries: 3
+      start_period: 40s  # Allow time for DB init + Next.js startup
+
+# Named Volumes
+volumes:
+  # Database persistence
+  postgres_data:
+    driver: local
+  
+  # CLIProxyAPI persistence
+  cliproxyapi_auths:
+    driver: local
+  cliproxyapi_logs:
+    driver: local
+
+# Network Definitions
+networks:
+  # Public-facing network (dashboard <-> CLIProxyAPI outbound access)
+  frontend:
+    driver: bridge
+    name: cliproxyapi_frontend
+  
+  # Internal backend network (Services <-> Database)
+  backend:
+    driver: bridge
+    name: cliproxyapi_backend
+    internal: true  # No external internet access
