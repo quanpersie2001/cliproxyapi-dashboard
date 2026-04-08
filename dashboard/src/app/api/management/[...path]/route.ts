@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { env } from "@/lib/env";
 import { logger } from "@/lib/logger";
 import { fetchWithRetry } from "@/lib/fetch-utils";
+import { ManagementRoutingStrategySchema } from "@/lib/validation/schemas";
 
 const BACKEND_API_URL = env.CLIPROXYAPI_MANAGEMENT_URL;
 const MANAGEMENT_API_KEY = env.MANAGEMENT_API_KEY;
@@ -291,7 +292,29 @@ async function proxyRequest(
             { status: 413 }
           );
         }
-        body = rawBody;
+        if (method === "PUT" && normalizedPath === "routing/strategy") {
+          let parsedBody: unknown;
+          try {
+            parsedBody = JSON.parse(rawBody);
+          } catch {
+            return NextResponse.json(
+              { error: "Invalid JSON body" },
+              { status: 400 }
+            );
+          }
+
+          const parsed = ManagementRoutingStrategySchema.safeParse(parsedBody);
+          if (!parsed.success) {
+            return NextResponse.json(
+              { error: parsed.error.issues[0]?.message ?? "Invalid routing strategy" },
+              { status: 400 }
+            );
+          }
+
+          body = JSON.stringify(parsed.data);
+        } else {
+          body = rawBody;
+        }
       }
     }
 

@@ -3,6 +3,7 @@ import {
   PASSWORD_MIN_LENGTH,
   PASSWORD_MAX_LENGTH,
 } from "@/lib/auth/validation";
+import { ROUTING_STRATEGIES } from "@/lib/routing-strategy";
 
 export const ContainerActionSchema = z.object({
   action: z.enum(["start", "stop", "restart"], {
@@ -111,6 +112,12 @@ export const ImportOAuthCredentialSchema = z.object({
   provider: z.string().min(1, "Provider is required"),
   fileName: z.string().min(1, "File name is required").max(500),
   fileContent: z.string().min(2, "File content is required").max(1024 * 1024, "File content too large (max 1MB)"),
+});
+
+export const ManagementRoutingStrategySchema = z.object({
+  value: z.enum(ROUTING_STRATEGIES, {
+    message: `Invalid routing strategy. Allowed: ${ROUTING_STRATEGIES.join(", ")}`,
+  }),
 });
 
 export type ImportOAuthCredentialInput = z.infer<typeof ImportOAuthCredentialSchema>;

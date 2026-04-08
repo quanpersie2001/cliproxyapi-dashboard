@@ -8,6 +8,12 @@ import { Input } from "@/components/ui/input";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
+import {
+  DEFAULT_ROUTING_STRATEGY,
+  isRoutingStrategy,
+  ROUTING_STRATEGIES,
+  type RoutingStrategy,
+} from "@/lib/routing-strategy";
 
 type ProxyConfig = {
   "proxy-url": string;
@@ -26,7 +32,7 @@ type ProxyConfig = {
     "switch-preview-model": boolean;
   };
   routing: {
-    strategy: string;
+    strategy: RoutingStrategy;
   };
 };
 
@@ -49,7 +55,7 @@ const DEFAULT_CONFIG: ProxyConfig = {
     "switch-preview-model": true,
   },
   routing: {
-    strategy: "round-robin",
+    strategy: DEFAULT_ROUTING_STRATEGY,
   },
 };
 
@@ -89,6 +95,10 @@ function readString(value: unknown, fallback: string): string {
   return typeof value === "string" ? value : fallback;
 }
 
+function readRoutingStrategy(value: unknown, fallback: RoutingStrategy): RoutingStrategy {
+  return isRoutingStrategy(value) ? value : fallback;
+}
+
 function toConfig(data: Record<string, unknown>): ProxyConfig {
   const quotaExceeded = (data["quota-exceeded"] as Record<string, unknown> | undefined) ?? {};
   const routing = (data.routing as Record<string, unknown> | undefined) ?? {};
@@ -110,7 +120,7 @@ function toConfig(data: Record<string, unknown>): ProxyConfig {
       "switch-preview-model": readBoolean(quotaExceeded["switch-preview-model"], DEFAULT_CONFIG["quota-exceeded"]["switch-preview-model"]),
     },
     routing: {
-      strategy: readString(routing.strategy, DEFAULT_CONFIG.routing.strategy),
+      strategy: readRoutingStrategy(routing.strategy, DEFAULT_CONFIG.routing.strategy),
     },
   };
 }
@@ -230,7 +240,7 @@ export default function ProxyConfigPage() {
     });
   };
 
-  const updateRoutingStrategy = (strategy: string) => {
+  const updateRoutingStrategy = (strategy: RoutingStrategy) => {
     if (!config) return;
     setConfig({
       ...config,
@@ -499,11 +509,19 @@ export default function ProxyConfigPage() {
         >
           <select
             value={config.routing.strategy}
-            onChange={(event) => updateRoutingStrategy(event.target.value)}
+            onChange={(event) => {
+              const nextStrategy = event.target.value;
+              if (isRoutingStrategy(nextStrategy)) {
+                updateRoutingStrategy(nextStrategy);
+              }
+            }}
             className="w-full rounded-sm border border-[#e5e5e5] bg-[#f5f5f5] px-3 py-2 text-sm text-black focus:border-blue-400/50 focus:outline-none focus:ring-1 focus:ring-blue-400/30"
           >
-            <option value="round-robin">Round Robin</option>
-            <option value="fill-first">Fill First</option>
+            {ROUTING_STRATEGIES.map((strategy) => (
+              <option key={strategy} value={strategy}>
+                {strategy === "round-robin" ? "Round Robin" : "Fill First"}
+              </option>
+            ))}
           </select>
         </FieldRow>
         <FieldRow
