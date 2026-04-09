@@ -5,6 +5,7 @@ import { execFile } from "child_process";
 import { promisify } from "util";
 import { logger } from "@/lib/logger";
 import { updateCheckCache, CACHE_TTL } from "@/lib/cache";
+import { getProxyContainerName } from "@/lib/proxy-runtime";
 
 const execFileAsync = promisify(execFile);
 
@@ -49,11 +50,13 @@ async function getDockerHubTags(): Promise<DockerHubTag[]> {
   return tags;
 }
 
-async function getCurrentImageDigest(): Promise<{ version: string; digest: string; fullDigest: string }> {
+async function getCurrentImageDigest(
+  containerName: string,
+): Promise<{ version: string; digest: string; fullDigest: string }> {
   try {
     const { stdout } = await execFileAsync("docker", [
       "inspect",
-      "cliproxyapi",
+      containerName,
       "--format",
       "{{.Config.Image}} {{.Image}}",
     ]);
@@ -129,9 +132,10 @@ export async function GET() {
   }
 
   try {
+    const containerName = getProxyContainerName();
     const [tags, current, buildInProgress] = await Promise.all([
       getDockerHubTags(),
-      getCurrentImageDigest(),
+      getCurrentImageDigest(containerName),
       checkGitHubBuildStatus(),
     ]);
 

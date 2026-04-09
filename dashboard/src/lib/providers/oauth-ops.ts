@@ -126,7 +126,6 @@ export async function importOAuthCredential(
 
     if (!uploadRes.ok) {
       const errorText = await uploadRes.text().catch(() => "");
-      await uploadRes.body?.cancel();
       logger.warn(
         { provider, status: uploadRes.status, errorText },
         "importOAuthCredential: upload failed"
@@ -567,7 +566,6 @@ export async function toggleOAuthAccountByIdOrName(
 
     if (!postRes.ok) {
       const errorBody = await postRes.text().catch(() => "");
-      await postRes.body?.cancel();
       return { ok: false, error: `Failed to toggle OAuth account: HTTP ${postRes.status}${errorBody ? ` - ${errorBody}` : ""}` };
     }
 

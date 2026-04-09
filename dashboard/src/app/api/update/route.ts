@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs";
 import { NextRequest } from "next/server";
 import { verifySession } from "@/lib/auth/session";
 import { validateOrigin } from "@/lib/auth/origin";
@@ -7,11 +8,14 @@ import { promisify } from "util";
 import { Errors, apiSuccess } from "@/lib/errors";
 import { UpdateProxySchema } from "@/lib/validation/schemas";
 import { logger } from "@/lib/logger";
+import {
+  getProxyContainerName,
+  PROXY_COMPOSE_SERVICE_NAME,
+  resolveProxyComposeFile,
+} from "@/lib/proxy-runtime";
 
 const execFileAsync = promisify(execFile);
 
-const CONTAINER_NAME = "cliproxyapi";
-const COMPOSE_FILE = "/opt/cliproxyapi/infrastructure/docker-compose.yml";
 const IMAGE_NAME = "eceasy/cli-proxy-api-plus";
 
 interface PortBinding {
@@ -34,8 +38,8 @@ function getCommandErrorText(error: unknown): string {
   return String(error);
 }
 
-async function getContainerConfig(): Promise<ContainerConfig> {
-  const { stdout } = await execFileAsync("docker", ["inspect", CONTAINER_NAME]);
+async function getContainerConfig(containerName: string): Promise<ContainerConfig> {
+  const { stdout } = await execFileAsync("docker", ["inspect", containerName]);
   const inspect = JSON.parse(stdout)[0];
   const config = inspect.Config;
   const hostConfig = inspect.HostConfig;
@@ -62,9 +66,13 @@ async function getContainerConfig(): Promise<ContainerConfig> {
   };
 }
 
-function buildRunArgs(cfg: ContainerConfig, imageTag: string): string[] {
+function buildRunArgs(
+  cfg: ContainerConfig,
+  imageTag: string,
+  containerName: string,
+): string[] {
   const args = [
-    "run", "-d", "--name", CONTAINER_NAME,
+    "run", "-d", "--name", containerName,
     "--restart", cfg.restartPolicy || "unless-stopped",
   ];
 
@@ -85,9 +93,9 @@ function buildRunArgs(cfg: ContainerConfig, imageTag: string): string[] {
   return args;
 }
 
-async function removeContainerIfExists() {
+async function removeContainerIfExists(containerName: string) {
   try {
-    await execFileAsync("docker", ["rm", "-f", CONTAINER_NAME]);
+    await execFileAsync("docker", ["rm", "-f", containerName]);
   } catch (error) {
     const errorText = getCommandErrorText(error);
     if (!errorText.includes("No such container")) {
@@ -96,13 +104,17 @@ async function removeContainerIfExists() {
   }
 }
 
-async function recreateWithDockerRun(config: ContainerConfig, imageTag: string) {
-  await removeContainerIfExists();
-  await execFileAsync("docker", buildRunArgs(config, imageTag));
+async function recreateWithDockerRun(
+  config: ContainerConfig,
+  imageTag: string,
+  containerName: string,
+) {
+  await removeContainerIfExists(containerName);
+  await execFileAsync("docker", buildRunArgs(config, imageTag, containerName));
 }
 
-async function runCompose(args: string[]) {
-  return execFileAsync("docker", ["compose", "-f", COMPOSE_FILE, ...args]);
+async function runCompose(composeFile: string, args: string[]) {
+  return execFileAsync("docker", ["compose", "-f", composeFile, ...args]);
 }
 
 async function isComposeAvailable() {
@@ -146,6 +158,8 @@ export async function POST(request: NextRequest) {
 
   let configSnapshot: ContainerConfig | null = null;
   let composeAvailable = false;
+  let composeFile: string | null = null;
+  let containerName: string | null = null;
 
   try {
     const body = await request.json();
@@ -157,9 +171,11 @@ export async function POST(request: NextRequest) {
 
     const { version } = result.data;
 
+    containerName = getProxyContainerName();
     const imageTag = `${IMAGE_NAME}:${version}`;
-    configSnapshot = await getContainerConfig();
-    composeAvailable = await isComposeAvailable();
+    configSnapshot = await getContainerConfig(containerName);
+    composeFile = resolveProxyComposeFile(process.env, process.cwd(), existsSync);
+    composeAvailable = composeFile !== null && await isComposeAvailable();
 
     const pullResult = await execFileAsync("docker", ["pull", imageTag]);
     logger.info({ stdout: pullResult.stdout }, "Pull result");
@@ -169,20 +185,24 @@ export async function POST(request: NextRequest) {
       logger.info({ version }, "Tagged selected version as latest for compose rollout");
     }
 
-    if (composeAvailable) {
-      await runCompose(["up", "-d", "--no-deps", "--force-recreate", CONTAINER_NAME]);
+    if (composeAvailable && composeFile) {
+      await runCompose(composeFile, ["up", "-d", "--no-deps", "--force-recreate", PROXY_COMPOSE_SERVICE_NAME]);
     } else {
-      await recreateWithDockerRun(configSnapshot, imageTag);
+      await recreateWithDockerRun(configSnapshot, imageTag, containerName);
     }
 
     return apiSuccess({ message: `Updated to ${version}`, version });
   } catch (error) {
     try {
-      if (composeAvailable) {
-        await runCompose(["up", "-d", "--no-deps", CONTAINER_NAME]);
+      if (composeAvailable && composeFile) {
+        await runCompose(composeFile, ["up", "-d", "--no-deps", PROXY_COMPOSE_SERVICE_NAME]);
         logger.info("Recovery: compose ensured proxy service is up");
-      } else if (configSnapshot) {
-        await recreateWithDockerRun(configSnapshot, `${IMAGE_NAME}:latest`);
+      } else if (configSnapshot && containerName) {
+        await recreateWithDockerRun(
+          configSnapshot,
+          `${IMAGE_NAME}:latest`,
+          containerName,
+        );
         logger.info("Recovery: recreated proxy container with latest image");
       }
     } catch (restartError) {
