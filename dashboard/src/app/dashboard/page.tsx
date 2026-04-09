@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { Badge } from "@/components/ui/badge";
 import { verifySession } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
 
@@ -14,15 +15,15 @@ function StatCard({ label, value, detail, href }: StatCardProps) {
   return (
     <Link
       href={href}
-      className="rounded-lg border border-[#e5e5e5] bg-white p-4 transition-colors hover:border-[#cfcfcf] hover:bg-[#fcfcfc]"
+      className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-base)] p-4 transition-colors hover:border-[var(--surface-border-strong)] hover:bg-[var(--surface-hover)]"
     >
-      <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#777169]">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">
         {label}
       </div>
-      <div className="mt-2 text-2xl font-semibold tracking-tight text-black">
+      <div className="mt-2 text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
         {value}
       </div>
-      <div className="mt-1 text-sm text-[#777169]">{detail}</div>
+      <div className="mt-1 text-sm text-[var(--text-muted)]">{detail}</div>
     </Link>
   );
 }
@@ -64,25 +65,25 @@ export default async function DashboardOverviewPage() {
   ]);
 
   const proxyStatusLabel = managementHealthy ? "Proxy healthy" : "Proxy degraded";
-  const proxyStatusTone = managementHealthy
-    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-    : "bg-amber-50 text-amber-700 border-amber-200";
 
   return (
     <div className="space-y-6">
-      <section className="rounded-lg border border-[#e5e5e5] bg-white p-4">
+      <section className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-base)] p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-xl font-semibold tracking-tight text-black">
+            <h1 className="text-xl font-semibold tracking-tight text-[var(--text-primary)]">
               Proxy Control Plane
             </h1>
-            <p className="mt-1 text-sm text-[#777169]">
+            <p className="mt-1 text-sm text-[var(--text-muted)]">
               Manage API keys, upstream providers, runtime settings, and usage for the proxy only.
             </p>
           </div>
-          <div className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${proxyStatusTone}`}>
+          <Badge
+            tone={managementHealthy ? "success" : "warning"}
+            className="px-3 py-1.5 text-xs font-semibold"
+          >
             {proxyStatusLabel}
-          </div>
+          </Badge>
         </div>
       </section>
 
@@ -119,31 +120,31 @@ export default async function DashboardOverviewPage() {
         />
       </section>
 
-      <section className="rounded-lg border border-[#e5e5e5] bg-white p-4">
-        <h2 className="text-sm font-semibold text-black">Quick Actions</h2>
+      <section className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-base)] p-4">
+        <h2 className="text-sm font-semibold text-[var(--text-primary)]">Quick Actions</h2>
         <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          <Link className="rounded-md border border-[#e5e5e5] px-3 py-2 text-sm text-black transition-colors hover:bg-[#f5f5f5]" href="/dashboard/providers">
+          <Link className="rounded-md border border-[var(--surface-border)] px-3 py-2 text-sm text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-muted)]" href="/dashboard/providers">
             Connect or manage providers
           </Link>
-          <Link className="rounded-md border border-[#e5e5e5] px-3 py-2 text-sm text-black transition-colors hover:bg-[#f5f5f5]" href="/dashboard/api-keys">
+          <Link className="rounded-md border border-[var(--surface-border)] px-3 py-2 text-sm text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-muted)]" href="/dashboard/api-keys">
             Create dashboard API keys
           </Link>
-          <Link className="rounded-md border border-[#e5e5e5] px-3 py-2 text-sm text-black transition-colors hover:bg-[#f5f5f5]" href="/dashboard/config">
+          <Link className="rounded-md border border-[var(--surface-border)] px-3 py-2 text-sm text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-muted)]" href="/dashboard/config">
             Tune proxy runtime settings
           </Link>
-          <Link className="rounded-md border border-[#e5e5e5] px-3 py-2 text-sm text-black transition-colors hover:bg-[#f5f5f5]" href="/dashboard/usage">
+          <Link className="rounded-md border border-[var(--surface-border)] px-3 py-2 text-sm text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-muted)]" href="/dashboard/usage">
             Review usage history
           </Link>
-          <Link className="rounded-md border border-[#e5e5e5] px-3 py-2 text-sm text-black transition-colors hover:bg-[#f5f5f5]" href="/dashboard/quota">
+          <Link className="rounded-md border border-[var(--surface-border)] px-3 py-2 text-sm text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-muted)]" href="/dashboard/quota">
             Check provider quota
           </Link>
-          <Link className="rounded-md border border-[#e5e5e5] px-3 py-2 text-sm text-black transition-colors hover:bg-[#f5f5f5]" href="/dashboard/settings">
+          <Link className="rounded-md border border-[var(--surface-border)] px-3 py-2 text-sm text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-muted)]" href="/dashboard/settings">
             System settings
           </Link>
         </div>
       </section>
 
-      <section className="rounded-lg border border-[#e5e5e5] bg-[#fcfcfc] p-4 text-sm text-[#4e4e4e]">
+      <section className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-muted)] p-4 text-sm text-[var(--text-secondary)]">
         The dashboard UI now focuses on proxy management, provider connections, usage, quota, and system settings.
       </section>
     </div>

@@ -36,10 +36,10 @@ export function UpdateNotification() {
           <ModalHeader>
             <ModalTitle>
               <span className="flex items-center gap-3">
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#f5f5f5] border border-[#e5e5e5]">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-[var(--surface-muted)] border border-[var(--surface-border)]">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5 text-[#4e4e4e]"
+                    className="h-5 w-5 text-[var(--text-secondary)]"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"
@@ -61,29 +61,29 @@ export function UpdateNotification() {
 
           <ModalContent>
             <div className="space-y-4">
-              <p className="text-[#4e4e4e] text-sm leading-relaxed">
+              <p className="text-[var(--text-secondary)] text-sm leading-relaxed">
                 A new version of the Dashboard is available. Would you like to update now?
               </p>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-xl bg-[#f5f5f5] border border-[#e5e5e5] p-3">
-                  <p className="text-[11px] uppercase tracking-wider text-[#999] mb-1">Current</p>
-                  <p className="text-black font-mono text-sm font-medium">
+                <div className="rounded-xl bg-[var(--surface-muted)] border border-[var(--surface-border)] p-3">
+                  <p className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] mb-1">Current</p>
+                  <p className="text-[var(--text-primary)] font-mono text-sm font-medium">
                     {updateInfo.currentVersion || "unknown"}
                   </p>
                 </div>
-                <div className="rounded-xl bg-[#f5f5f5] border border-[#e5e5e5] p-3">
-                  <p className="text-[11px] uppercase tracking-wider text-[#4e4e4e]/60 mb-1">Latest</p>
-                  <p className="text-black font-mono text-sm font-medium">
+                <div className="rounded-xl bg-[var(--surface-muted)] border border-[var(--surface-border)] p-3">
+                  <p className="text-[11px] uppercase tracking-wider text-[var(--text-secondary)]/60 mb-1">Latest</p>
+                  <p className="text-[var(--text-primary)] font-mono text-sm font-medium">
                     {updateInfo.latestVersion || "latest"}
                   </p>
                 </div>
               </div>
 
               {updateInfo.releaseNotes && (
-                <div className="rounded-xl bg-[#f5f5f5] border border-[#e5e5e5] p-3">
-                  <p className="text-[11px] uppercase tracking-wider text-[#999] mb-2">What&apos;s New</p>
-                  <div className="prose prose-xs max-w-none max-h-40 overflow-y-auto scrollbar-thin text-[#777169] text-xs leading-relaxed [&_h1]:text-sm [&_h1]:font-semibold [&_h1]:text-[#4e4e4e] [&_h2]:text-xs [&_h2]:font-semibold [&_h2]:text-[#4e4e4e] [&_h3]:text-xs [&_h3]:font-semibold [&_h3]:text-[#4e4e4e] [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:my-0.5 [&_code]:bg-[#f0f0f0] [&_code]:px-1 [&_code]:rounded [&_a]:text-blue-600 [&_a]:underline [&_p]:my-1">
+                <div className="rounded-xl bg-[var(--surface-muted)] border border-[var(--surface-border)] p-3">
+                  <p className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] mb-2">What&apos;s New</p>
+                  <div className="prose prose-xs max-w-none max-h-40 overflow-y-auto scrollbar-thin text-[var(--text-muted)] text-xs leading-relaxed [&_h1]:text-sm [&_h1]:font-semibold [&_h1]:text-[var(--text-secondary)] [&_h2]:text-xs [&_h2]:font-semibold [&_h2]:text-[var(--text-secondary)] [&_h3]:text-xs [&_h3]:font-semibold [&_h3]:text-[var(--text-secondary)] [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:my-0.5 [&_code]:bg-[var(--surface-hover)] [&_code]:px-1 [&_code]:rounded [&_a]:text-blue-600 [&_a]:underline [&_p]:my-1">
                     <Markdown>{updateInfo.releaseNotes}</Markdown>
                   </div>
                 </div>
@@ -96,10 +96,10 @@ export function UpdateNotification() {
               )}
 
               {isUpdating && (
-                <div className="rounded-lg bg-[#f5f5f5] border border-[#e5e5e5] p-3">
+                <div className="rounded-lg bg-[var(--surface-muted)] border border-[var(--surface-border)] p-3">
                   <div className="flex items-center gap-3">
                     <svg
-                      className="h-4 w-4 animate-spin text-[#4e4e4e]"
+                      className="h-4 w-4 animate-spin text-[var(--text-secondary)]"
                       xmlns="http://www.w3.org/2000/svg"
                       fill="none"
                       viewBox="0 0 24 24"
@@ -120,7 +120,7 @@ export function UpdateNotification() {
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
                       />
                     </svg>
-                    <p className="text-black text-sm">
+                    <p className="text-[var(--text-primary)] text-sm">
                       Updating to {targetVersion}... This may take a moment.
                     </p>
                   </div>

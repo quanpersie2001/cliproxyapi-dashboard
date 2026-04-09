@@ -95,16 +95,16 @@ export function ChartContainer({
   className?: string;
 }) {
   return (
-    <div className={`w-full min-w-0 rounded-md border border-[#e5e5e5] bg-white p-4 ${className}`}>
+    <div className={`w-full min-w-0 rounded-md border border-[var(--surface-border)] bg-[var(--surface-base)] p-4 ${className}`}>
       {(title || subtitle) && (
         <div className="mb-3">
           {title && (
-            <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-[#777169]">
+            <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
               {title}
             </h3>
           )}
           {subtitle && (
-            <p className="mt-0.5 text-[10px] text-[#777169]">{subtitle}</p>
+            <p className="mt-0.5 text-[10px] text-[var(--text-muted)]">{subtitle}</p>
           )}
         </div>
       )}
@@ -115,8 +115,8 @@ export function ChartContainer({
 
 export function ChartEmpty({ message = "No data available" }: { message?: string }) {
   return (
-    <div className="flex h-48 items-center justify-center rounded-md border border-[#e5e5e5] bg-[#f5f5f5]">
-      <p className="text-xs text-[#777169]">{message}</p>
+    <div className="flex h-48 items-center justify-center rounded-md border border-[var(--surface-border)] bg-[var(--surface-muted)]">
+      <p className="text-xs text-[var(--text-muted)]">{message}</p>
     </div>
   );
 }

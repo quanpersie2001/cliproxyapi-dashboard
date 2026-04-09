@@ -1,5 +1,6 @@
 "use client";
 
+import { getBadgeToneStyle } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ProviderRow } from "@/components/providers/provider-row";
 import type { CustomProvider, ProviderGroup } from "@/components/providers/custom-provider-section";
@@ -40,9 +41,9 @@ export function GroupList({
         return (
           <div
             key={group.id}
-            className={`rounded-sm border border-[#e5e5e5] bg-white overflow-hidden transition-opacity duration-200 ${!group.isActive ? 'opacity-60 grayscale-[30%]' : ''}`}
+            className={`rounded-sm border border-[var(--surface-border)] bg-[var(--surface-base)] overflow-hidden transition-opacity duration-200 ${!group.isActive ? 'opacity-60 grayscale-[30%]' : ''}`}
           >
-            <div className="flex items-center justify-between border-b border-[#e5e5e5] bg-white/60 px-3 py-2">
+            <div className="flex items-center justify-between border-b border-[var(--surface-border)] bg-[var(--surface-base)]/60 px-3 py-2">
               <div className="flex items-center gap-2 cursor-pointer select-none" onClick={() => onToggleCollapse(group.id)}>
                 {group.color && (
                   <span
@@ -51,10 +52,10 @@ export function GroupList({
                     aria-hidden="true"
                   />
                 )}
-                <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[#4e4e4e]">
+                <span className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-secondary)]">
                   {group.name}
                 </span>
-                <span className="text-xs text-[#777169] bg-[#f5f5f5] px-1.5 py-0.5 rounded-md">
+                <span className="text-xs text-[var(--text-muted)] bg-[var(--surface-muted)] px-1.5 py-0.5 rounded-md">
                   {group.providers.length}
                 </span>
               </div>
@@ -63,7 +64,8 @@ export function GroupList({
                 <button
                   type="button"
                   onClick={() => onToggleGroupActive(group.id, group.isActive)}
-                  className={`text-[10px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded-sm transition-colors ${group.isActive ? 'bg-emerald-50 text-emerald-600 hover:bg-emerald-100' : 'bg-[#e5e5e5] text-[#777169] hover:bg-[#e5e5e5]'}`}
+                  className="rounded-sm border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider transition-opacity hover:opacity-80"
+                  style={getBadgeToneStyle(group.isActive ? "success" : "neutral")}
                 >
                   {group.isActive ? "Active" : "Disabled"}
                 </button>
@@ -73,7 +75,7 @@ export function GroupList({
                     type="button"
                     onClick={() => onMoveGroupUp(group.id, groupIndex)}
                     disabled={groupIndex === 0}
-                    className="text-[#777169] hover:text-black disabled:opacity-30 p-1"
+                    className="text-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:opacity-30 p-1"
                     title="Move Group Up"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 15-6-6-6 6"/></svg>
@@ -82,14 +84,14 @@ export function GroupList({
                     type="button"
                     onClick={() => onMoveGroupDown(group.id, groupIndex)}
                     disabled={groupIndex === groups.length - 1}
-                    className="text-[#777169] hover:text-black disabled:opacity-30 p-1"
+                    className="text-[var(--text-muted)] hover:text-[var(--text-primary)] disabled:opacity-30 p-1"
                     title="Move Group Down"
                   >
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                   </button>
                 </div>
 
-                <div className="flex items-center gap-1 border-l border-[#e5e5e5] pl-3">
+                <div className="flex items-center gap-1 border-l border-[var(--surface-border)] pl-3">
                   <Button variant="ghost" onClick={() => onEditGroup(group)} className="px-2 py-1 text-[10px] h-auto">
                     Edit
                   </Button>
@@ -99,7 +101,7 @@ export function GroupList({
                   <button
                     type="button"
                     onClick={() => onToggleCollapse(group.id)}
-                    className="p-1 ml-1 text-[#777169] hover:text-black transition-transform"
+                    className="p-1 ml-1 text-[var(--text-muted)] hover:text-[var(--text-primary)] transition-transform"
                     style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0)' }}
                   >
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m6 9 6 6 6-6"/></svg>
@@ -112,12 +114,12 @@ export function GroupList({
               <div className="overflow-x-auto">
                 <div className="min-w-[600px]">
                   {group.providers.length === 0 ? (
-                    <div className="px-3 py-6 text-center text-xs text-[#777169] italic">
+                    <div className="px-3 py-6 text-center text-xs text-[var(--text-muted)] italic">
                       No providers in this group
                     </div>
                   ) : (
                     <>
-                      <div className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_80px_80px_120px] border-b border-[#e5e5e5] bg-white px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[#777169]">
+                      <div className="grid grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)_80px_80px_120px] border-b border-[var(--surface-border)] bg-[var(--surface-base)] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
                         <span>Name</span>
                         <span>Endpoint</span>
                         <span>Models</span>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from "react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -140,7 +141,7 @@ export function DeployDashboard() {
       case "completed": return "text-green-600";
       case "error":
       case "failed": return "text-red-500";
-      default: return "text-[#4e4e4e]";
+      default: return "text-[var(--text-secondary)]";
     }
   };
 
@@ -148,24 +149,24 @@ export function DeployDashboard() {
     return (
       <div className="space-y-3">
         <div>
-          <h2 className="text-sm font-semibold text-black">Dashboard Deployment</h2>
-          <p className="text-xs text-[#777169]">Pull and restart the latest published dashboard image</p>
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">Dashboard Deployment</h2>
+          <p className="text-xs text-[var(--text-muted)]">Pull and restart the latest published dashboard image</p>
         </div>
 
         <div className="space-y-4">
           <div className="rounded-sm border border-amber-200 bg-amber-50 p-3">
             <div className="text-sm font-medium text-amber-700">Webhook Not Configured</div>
-            <p className="mt-1 text-xs text-[#777169]">
+            <p className="mt-1 text-xs text-[var(--text-muted)]">
               The deployment webhook is not set up. To enable dashboard deployments from the UI,
               you need to configure the webhook server on your host machine.
             </p>
           </div>
 
-          <div className="space-y-3 text-sm text-[#4e4e4e]">
-            <div className="font-medium text-black">Setup Instructions:</div>
-            <ol className="list-decimal list-inside space-y-2 text-[#777169]">
-              <li>Run <code className="rounded-sm bg-[#f5f5f5] px-1">sudo ./install.sh</code> and enable the webhook option, or follow <code className="rounded-sm bg-[#f5f5f5] px-1">infrastructure/WEBHOOK_SETUP.md</code></li>
-              <li>Make sure <code className="rounded-sm bg-[#f5f5f5] px-1">WEBHOOK_HOST</code> and <code className="rounded-sm bg-[#f5f5f5] px-1">DEPLOY_SECRET</code> are set in <code className="rounded-sm bg-[#f5f5f5] px-1">infrastructure/.env</code></li>
+          <div className="space-y-3 text-sm text-[var(--text-secondary)]">
+            <div className="font-medium text-[var(--text-primary)]">Setup Instructions:</div>
+            <ol className="list-decimal list-inside space-y-2 text-[var(--text-muted)]">
+              <li>Run <code className="rounded-sm bg-[var(--surface-muted)] px-1">sudo ./install.sh</code> and enable the webhook option, or follow <code className="rounded-sm bg-[var(--surface-muted)] px-1">infrastructure/WEBHOOK_SETUP.md</code></li>
+              <li>Make sure <code className="rounded-sm bg-[var(--surface-muted)] px-1">WEBHOOK_HOST</code> and <code className="rounded-sm bg-[var(--surface-muted)] px-1">DEPLOY_SECRET</code> are set in <code className="rounded-sm bg-[var(--surface-muted)] px-1">infrastructure/.env</code></li>
               <li>Reload the webhook service after updating the config</li>
             </ol>
           </div>
@@ -178,24 +179,24 @@ export function DeployDashboard() {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-sm font-semibold text-black">Dashboard Deployment</h2>
-          <p className="text-xs text-[#777169]">Pull and restart the latest published dashboard image</p>
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">Dashboard Deployment</h2>
+          <p className="text-xs text-[var(--text-muted)]">Pull and restart the latest published dashboard image</p>
         </div>
         <div className="flex items-center gap-2">
           {status.status === "running" && (
-            <span className="rounded-sm border border-blue-200 bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-600 animate-pulse">
+            <Badge tone="info" className="rounded-sm animate-pulse">
               Deploying...
-            </span>
+            </Badge>
           )}
           {(status.status === "success" || status.status === "completed") && (
-            <span className="rounded-sm border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+            <Badge tone="success" className="rounded-sm">
               Success
-            </span>
+            </Badge>
           )}
           {(status.status === "error" || status.status === "failed") && (
-            <span className="rounded-sm border border-rose-200 bg-rose-50 px-2 py-0.5 text-xs font-medium text-rose-600">
+            <Badge tone="danger" className="rounded-sm">
               Failed
-            </span>
+            </Badge>
           )}
         </div>
       </div>
@@ -217,7 +218,7 @@ export function DeployDashboard() {
       </div>
 
       {status.status !== "idle" && (
-        <div className="space-y-3 border-t border-[#e5e5e5] pt-3">
+        <div className="space-y-3 border-t border-[var(--surface-border)] pt-3">
           <div className="flex items-center gap-2">
             <span className={`text-sm font-medium ${getStatusColor(status.status)}`}>
               {status.status === "running" && (
@@ -228,7 +229,7 @@ export function DeployDashboard() {
           </div>
 
           {status.message && (
-            <div className="text-xs text-[#777169]">{status.message}</div>
+            <div className="text-xs text-[var(--text-muted)]">{status.message}</div>
           )}
 
           {status.error && (
@@ -238,7 +239,7 @@ export function DeployDashboard() {
           )}
 
           {status.completedAt && (
-            <div className="text-xs text-[#777169]">
+            <div className="text-xs text-[var(--text-muted)]">
               Completed: {new Date(status.completedAt).toLocaleString()}
             </div>
           )}

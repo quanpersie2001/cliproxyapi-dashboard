@@ -67,10 +67,10 @@ export default function SetupPage() {
               <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
             </svg>
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight text-black">
+          <h1 className="text-2xl font-semibold tracking-tight text-[var(--text-primary)]">
             CLIProxyAPI
           </h1>
-          <p className="mt-1 text-sm text-[#777169]">First-time setup</p>
+          <p className="mt-1 text-sm text-[var(--text-muted)]">First-time setup</p>
         </div>
 
          <div className="glass-card rounded-2xl p-6">
@@ -80,7 +80,7 @@ export default function SetupPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="username" className="mb-2 block text-xs font-medium text-[#4e4e4e] uppercase tracking-wider">
+              <label htmlFor="username" className="mb-2 block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
                 Username
               </label>
               <Input
@@ -95,7 +95,7 @@ export default function SetupPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="mb-2 block text-xs font-medium text-[#4e4e4e] uppercase tracking-wider">
+              <label htmlFor="password" className="mb-2 block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
                 Password
               </label>
               <Input
@@ -110,7 +110,7 @@ export default function SetupPage() {
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="mb-2 block text-xs font-medium text-[#4e4e4e] uppercase tracking-wider">
+              <label htmlFor="confirmPassword" className="mb-2 block text-xs font-medium text-[var(--text-secondary)] uppercase tracking-wider">
                 Confirm Password
               </label>
               <Input
@@ -135,7 +135,7 @@ export default function SetupPage() {
           </form>
         </div>
 
-        <p className="mt-6 text-center text-xs text-[#777169]">
+        <p className="mt-6 text-center text-xs text-[var(--text-muted)]">
           CLIProxyAPI Management Dashboard
         </p>
       </div>

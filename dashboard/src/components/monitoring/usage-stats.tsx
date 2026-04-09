@@ -46,32 +46,32 @@ export function UsageStats({ usage }: UsageStatsProps) {
     : [];
 
   return (
-    <section className="rounded-md border border-[#e5e5e5] bg-white p-4">
-      <h2 className="mb-3 text-sm font-semibold text-black">Usage Statistics</h2>
+    <section className="rounded-md border border-[var(--surface-border)] bg-[var(--surface-base)] p-4">
+      <h2 className="mb-3 text-sm font-semibold text-[var(--text-primary)]">Usage Statistics</h2>
          {usage ? (
            <div className="space-y-4">
             <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-2">
-              <div className="rounded-md border border-[#e5e5e5] bg-white px-2.5 py-2">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#777169]">Total Requests</p>
-                <p className="mt-0.5 text-xs font-semibold text-black">
+              <div className="rounded-md border border-[var(--surface-border)] bg-[var(--surface-base)] px-2.5 py-2">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">Total Requests</p>
+                <p className="mt-0.5 text-xs font-semibold text-[var(--text-primary)]">
                   {(usage.usage?.total_requests ?? 0).toLocaleString()}
                 </p>
               </div>
-              <div className="rounded-md border border-[#e5e5e5] bg-white px-2.5 py-2">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#777169]">Success</p>
+              <div className="rounded-md border border-[var(--surface-border)] bg-[var(--surface-base)] px-2.5 py-2">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">Success</p>
                 <p className="mt-0.5 text-xs font-semibold text-emerald-700">
                   {(usage.usage?.success_count ?? 0).toLocaleString()}
                 </p>
               </div>
-              <div className="rounded-md border border-[#e5e5e5] bg-white px-2.5 py-2">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#777169]">Failed</p>
+              <div className="rounded-md border border-[var(--surface-border)] bg-[var(--surface-base)] px-2.5 py-2">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">Failed</p>
                 <p className="mt-0.5 text-xs font-semibold text-rose-600">
                   {(usage.usage?.failure_count ?? 0).toLocaleString()}
                 </p>
               </div>
-              <div className="rounded-md border border-[#e5e5e5] bg-white px-2.5 py-2">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[#777169]">Total Tokens</p>
-                <p className="mt-0.5 text-xs font-semibold text-black">
+              <div className="rounded-md border border-[var(--surface-border)] bg-[var(--surface-base)] px-2.5 py-2">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">Total Tokens</p>
+                <p className="mt-0.5 text-xs font-semibold text-[var(--text-primary)]">
                 {(usage.usage?.total_tokens ?? 0).toLocaleString()}
                 </p>
               </div>
@@ -139,7 +139,7 @@ export function UsageStats({ usage }: UsageStatsProps) {
             ) : null}
           </div>
         ) : (
-          <div className="text-sm text-[#777169]">Loading usage statistics...</div>
+          <div className="text-sm text-[var(--text-muted)]">Loading usage statistics...</div>
         )}
     </section>
   );
