@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import { type ReactNode, useEffect, useId, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { getStateActionStyle, getStateIconToneStyle } from "@/components/ui/state-styles";
 
 interface ConfirmDialogProps {
   isOpen: boolean;
@@ -102,12 +103,8 @@ export function ConfirmDialog({
       >
         <div className="flex items-center justify-center mb-4">
           <div
-            className={cn(
-              "w-12 h-12 rounded-full flex items-center justify-center",
-              variant === "danger" && "bg-red-50 text-red-500",
-              variant === "warning" && "bg-amber-50 text-amber-600",
-              variant === "info" && "bg-blue-50 text-blue-500"
-            )}
+            className="flex h-12 w-12 items-center justify-center rounded-full border"
+            style={getStateIconToneStyle(variant)}
           >
             {variant === "danger" && (
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
@@ -150,11 +147,9 @@ export function ConfirmDialog({
             onClick={handleConfirm}
             className={cn(
               "flex-1 px-4 py-2.5 rounded-lg font-medium text-sm transition-[background-color,color,box-shadow] duration-200",
-              "focus:outline-none focus-visible:ring-2",
-              variant === "danger" && "bg-red-500 hover:bg-red-600 text-white focus-visible:ring-red-500/50",
-              variant === "warning" && "bg-yellow-500 hover:bg-yellow-600 text-white focus-visible:ring-yellow-500/50",
-              variant === "info" && "bg-blue-500 hover:bg-blue-600 text-white focus-visible:ring-blue-500/50"
+              "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--surface-border-strong)] hover:brightness-110"
             )}
+            style={getStateActionStyle(variant)}
           >
             {confirmLabel}
           </button>

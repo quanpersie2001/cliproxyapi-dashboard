@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import Link from "next/link";
 import type { Notification, NotificationType } from "@/hooks/use-header-notifications";
+import { getStateToneStyle } from "@/components/ui/state-styles";
 
 interface NotificationBellProps {
   notifications: Notification[];
@@ -31,10 +32,10 @@ function BellIcon({ hasNotifications }: { hasNotifications: boolean }) {
   );
 }
 
-const TYPE_STYLES: Record<NotificationType, { dot: string; border: string; bg: string }> = {
-  critical: { dot: "bg-red-500", border: "border-red-500/30", bg: "bg-red-500/5" },
-  warning: { dot: "bg-amber-500", border: "border-amber-200", bg: "bg-amber-500/5" },
-  info: { dot: "bg-blue-500", border: "border-blue-200", bg: "bg-blue-500/5" },
+const TYPE_STYLES: Record<NotificationType, { container: ReturnType<typeof getStateToneStyle>; dotColor: string }> = {
+  critical: { container: getStateToneStyle("danger"), dotColor: "var(--state-danger-accent)" },
+  warning: { container: getStateToneStyle("warning"), dotColor: "var(--state-warning-accent)" },
+  info: { container: getStateToneStyle("info"), dotColor: "var(--state-info-accent)" },
 };
 
 function NotificationItem({ notification, onNavigate, onDismiss }: { notification: Notification; onNavigate: () => void; onDismiss: (id: string) => void }) {
@@ -44,8 +45,8 @@ function NotificationItem({ notification, onNavigate, onDismiss }: { notificatio
     onNavigate();
   };
   const content = (
-    <div className={`flex items-start gap-2.5 rounded-md border ${style.border} ${style.bg} px-3 py-2.5 transition-colors hover:brightness-125`}>
-      <div className={`mt-1.5 h-2 w-2 flex-shrink-0 rounded-full ${style.dot}`} />
+    <div className="flex items-start gap-2.5 rounded-md border px-3 py-2.5 transition-colors hover:brightness-125" style={style.container}>
+      <div className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full" style={{ backgroundColor: style.dotColor }} />
       <div className="min-w-0 flex-1">
         <p className="text-xs font-medium text-[var(--text-primary)]">{notification.title}</p>
         <p className="mt-0.5 text-[11px] leading-relaxed text-[var(--text-muted)]">{notification.message}</p>
@@ -178,7 +179,7 @@ export function NotificationBell({ notifications, criticalCount, totalCount, onD
 
   const handleClose = useCallback(() => setOpen(false), []);
 
-  const badgeColor = criticalCount > 0 ? "bg-red-500" : "bg-amber-500";
+  const badgeColor = criticalCount > 0 ? "var(--state-danger-accent)" : "var(--state-warning-accent)";
 
   return (
     <>
@@ -194,7 +195,10 @@ export function NotificationBell({ notifications, criticalCount, totalCount, onD
       >
         <BellIcon hasNotifications={totalCount > 0} />
         {totalCount > 0 && (
-          <span className={`absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full ${badgeColor} px-1 text-[10px] font-bold text-white shadow-sm`}>
+          <span
+            className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full px-1 text-[10px] font-bold text-white shadow-sm"
+            style={{ backgroundColor: badgeColor }}
+          >
             {totalCount > 9 ? "9+" : totalCount}
           </span>
         )}

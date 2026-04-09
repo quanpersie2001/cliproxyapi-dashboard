@@ -175,6 +175,7 @@ model UsageRecord {
   authIndex       String
   apiKeyId        String?
   userId          String?
+  endpoint        String?
   model           String
   source          String
   timestamp       DateTime
@@ -195,6 +196,7 @@ model UsageRecord {
   @@index([authIndex])
   @@index([timestamp])
   @@index([model])
+  @@index([endpoint])
   @@index([source])
   @@index([userId, timestamp])
   @@index([authIndex, timestamp])

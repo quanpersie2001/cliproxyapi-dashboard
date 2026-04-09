@@ -72,20 +72,22 @@ export function UsageRequestEvents({ events, isAdmin, truncated }: UsageRequestE
 
   if (safeEvents.length === 0) {
     return (
-      <section className="rounded-md border border-[var(--surface-border)] bg-[var(--surface-base)] p-6 text-center">
-        <h2 className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">Request Event Details</h2>
+      <section className="dashboard-panel-surface p-6 text-center">
+        <h2 className="dashboard-kicker">Request event details</h2>
         <p className="mt-3 text-sm text-[var(--text-muted)]">No request events found in the selected period</p>
       </section>
     );
   }
 
   return (
-    <section className="overflow-hidden rounded-lg border border-[var(--surface-border)] bg-[var(--surface-base)]">
-      <div className="flex flex-col gap-2 border-b border-[var(--surface-border)] bg-[color:color-mix(in_srgb,var(--surface-muted)_85%,transparent)] px-3 py-3 sm:flex-row sm:items-end sm:justify-between">
+    <section className="dashboard-table-surface">
+      <div className="dashboard-table-header flex flex-col gap-2 border-b border-[var(--surface-border)] px-4 py-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h2 className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">Request Event Details</h2>
-          <p className="mt-1 text-xs text-[var(--text-muted)]">
-            Showing the most recent {safeEvents.length} requests in the selected window.
+          <h2 className="dashboard-kicker">Request event details</h2>
+          <p className="mt-2 text-xs leading-5 text-[var(--text-muted)]">
+            {safeEvents.length >= 200
+              ? "Showing the most recent 200 requests in the selected window."
+              : `Showing all ${safeEvents.length.toLocaleString()} requests in the selected window.`}
             {truncated ? " Larger result sets were truncated on the server." : ""}
           </p>
         </div>
@@ -97,7 +99,7 @@ export function UsageRequestEvents({ events, isAdmin, truncated }: UsageRequestE
       <div className="max-h-[clamp(320px,62vh,760px)] overflow-auto">
         <table className="w-full min-w-[880px] text-sm">
           <thead>
-            <tr className="sticky top-0 z-10 border-b border-[var(--surface-border)] bg-[var(--surface-base)]">
+            <tr className="dashboard-table-header sticky top-0 z-10 border-b border-[var(--surface-border)]">
               <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">Time</th>
               <th className="px-3 py-2 text-left text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">Key</th>
               {isAdmin ? (
@@ -155,7 +157,7 @@ export function UsageRequestEvents({ events, isAdmin, truncated }: UsageRequestE
       </div>
 
       {totalPages > 1 ? (
-        <div className="flex items-center justify-between border-t border-[var(--surface-border)] px-3 py-2">
+        <div className="dashboard-table-header flex items-center justify-between border-t border-[var(--surface-border)] px-3 py-2">
           <Button
             variant="ghost"
             onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}

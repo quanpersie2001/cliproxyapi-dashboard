@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
+import { getStateAccentBorderStyle, getStateToneStyle } from "@/components/ui/state-styles";
 import { extractApiError } from "@/lib/utils";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 
@@ -154,8 +155,11 @@ export function DeployDashboard() {
         </div>
 
         <div className="space-y-4">
-          <div className="rounded-sm border border-amber-200 bg-amber-50 p-3">
-            <div className="text-sm font-medium text-amber-700">Webhook Not Configured</div>
+          <div
+            className="rounded-sm border border-l-4 p-3"
+            style={{ ...getStateToneStyle("warning"), ...getStateAccentBorderStyle("warning") }}
+          >
+            <div className="text-sm font-medium text-[var(--text-primary)]">Webhook Not Configured</div>
             <p className="mt-1 text-xs text-[var(--text-muted)]">
               The deployment webhook is not set up. To enable dashboard deployments from the UI,
               you need to configure the webhook server on your host machine.

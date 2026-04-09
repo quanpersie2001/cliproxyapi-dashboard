@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Modal, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@/components/ui/modal";
+import { getStateAccentBorderStyle, getStateToneStyle } from "@/components/ui/state-styles";
 
 interface OAuthImportFormProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ export function OAuthImportForm({
   isOpen,
   providerName,
   jsonContent,
+  fileName,
   status,
   errorMessage,
   onClose,
@@ -39,7 +41,10 @@ export function OAuthImportForm({
       </ModalHeader>
       <ModalContent>
         <div className="space-y-4">
-          <div className="rounded-xl border-l-4 border-blue-300 bg-blue-50 p-4 text-sm">
+          <div
+            className="rounded-xl border border-l-4 p-4 text-sm"
+            style={{ ...getStateToneStyle("info"), ...getStateAccentBorderStyle("info") }}
+          >
             <div className="font-medium text-[var(--text-primary)]">Import a local OAuth credential</div>
             <p className="mt-2 text-[var(--text-secondary)]">
               Upload a JSON credential file or paste the raw JSON content below.
@@ -54,9 +59,21 @@ export function OAuthImportForm({
               type="file"
               accept=".json,application/json"
               onChange={onFileSelect}
-              className="block w-full text-xs text-[var(--text-muted)] file:mr-3 file:rounded-md file:border-0 file:bg-[#e5e5e5] file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-[var(--text-primary)] hover:file:bg-[#e5e5e5] file:cursor-pointer file:transition-colors"
+              className="sr-only"
               disabled={status === "uploading"}
             />
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+              <Button
+                variant="secondary"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={status === "uploading"}
+              >
+                Choose JSON
+              </Button>
+              <span className={`truncate text-xs ${fileName ? "text-[var(--text-secondary)]" : "text-[var(--text-muted)]"}`}>
+                {fileName || "No file selected"}
+              </span>
+            </div>
           </div>
 
           <div className="relative">
@@ -76,19 +93,28 @@ export function OAuthImportForm({
           </div>
 
           {status === "error" && errorMessage && (
-            <div className="rounded-xl border-l-4 border-red-300 bg-red-50 p-3 text-xs text-red-700">
+            <div
+              className="rounded-xl border border-l-4 p-3 text-xs"
+              style={{ ...getStateToneStyle("danger"), ...getStateAccentBorderStyle("danger") }}
+            >
               {errorMessage}
             </div>
           )}
 
           {status === "success" && (
-            <div className="rounded-xl border-l-4 border-green-300 bg-green-50 p-3 text-xs text-green-700">
+            <div
+              className="rounded-xl border border-l-4 p-3 text-xs"
+              style={{ ...getStateToneStyle("success"), ...getStateAccentBorderStyle("success") }}
+            >
               Credential imported successfully.
             </div>
           )}
 
           {jsonContent.trim() && status !== "error" && status !== "success" && (
-            <div className="rounded-xl border-l-4 border-green-300 bg-green-50 p-2 text-xs text-[var(--text-secondary)]">
+            <div
+              className="rounded-xl border border-l-4 p-2 text-xs"
+              style={{ ...getStateToneStyle("success"), ...getStateAccentBorderStyle("success") }}
+            >
               JSON content loaded ({jsonContent.length.toLocaleString()} characters). Ready to import.
             </div>
           )}

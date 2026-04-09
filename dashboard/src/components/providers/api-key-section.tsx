@@ -8,6 +8,7 @@ import { Modal, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@/com
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
+import { getStateAccentBorderStyle, getStateToneStyle } from "@/components/ui/state-styles";
 
 type ShowToast = ReturnType<typeof useToast>["showToast"];
 
@@ -302,7 +303,7 @@ export function ApiKeySection({
           <div className="space-y-4">
             <div>
               <label htmlFor="api-key" className="mb-2 block text-sm font-semibold text-[var(--text-primary)]">
-                API Key <span className="text-red-600">*</span>
+                API Key <span style={{ color: "var(--state-danger-accent)" }}>*</span>
               </label>
               <Input
                 type="password"
@@ -316,7 +317,10 @@ export function ApiKeySection({
               <p className="mt-1.5 text-xs text-[var(--text-muted)]">Your API key will be stored securely and associated with your account</p>
             </div>
             {currentUser && (
-              <div className="rounded-sm border-l-4 border-blue-300 bg-blue-50 p-3 text-sm">
+              <div
+                className="rounded-sm border border-l-4 p-3 text-sm"
+                style={{ ...getStateToneStyle("info"), ...getStateAccentBorderStyle("info") }}
+              >
                 <p className="text-[var(--text-primary)]">
                   <strong>Usage:</strong> You have contributed {currentUser ? configs[PROVIDER_IDS.CLAUDE].keys.filter((k) => k.isOwn).length + configs[PROVIDER_IDS.GEMINI].keys.filter((k) => k.isOwn).length + configs[PROVIDER_IDS.CODEX].keys.filter((k) => k.isOwn).length + configs[PROVIDER_IDS.OPENAI].keys.filter((k) => k.isOwn).length : 0} / {maxKeysPerUser} keys total
                 </p>

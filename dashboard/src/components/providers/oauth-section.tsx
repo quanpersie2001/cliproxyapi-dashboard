@@ -12,6 +12,7 @@ import type { CurrentUserLike } from "@/components/providers/api-key-section";
 import { OAuthCredentialList, type OAuthAccountWithOwnership } from "@/components/providers/oauth-credential-list";
 import { OAuthImportForm } from "@/components/providers/oauth-import-form";
 import { OAuthActions } from "@/components/providers/oauth-actions";
+import { getStateAccentBorderStyle, getStateToneStyle } from "@/components/ui/state-styles";
 
 type ShowToast = ReturnType<typeof useToast>["showToast"];
 
@@ -836,17 +837,22 @@ export function OAuthSection({
         </ModalHeader>
         <ModalContent>
           {oauthModalStatus === MODAL_STATUS.LOADING && (
-            <div className="rounded-xl border-l-4 border-[var(--surface-border-strong)] bg-[var(--surface-muted)] p-4 text-sm text-[var(--text-secondary)]">
+            <div
+              className="rounded-xl border border-l-4 p-4 text-sm"
+              style={{ ...getStateToneStyle("info"), ...getStateAccentBorderStyle("info") }}
+            >
               Fetching authorization link...
             </div>
           )}
 
           {authLaunchUrl && (oauthModalStatus === MODAL_STATUS.WAITING || oauthModalStatus === MODAL_STATUS.POLLING || oauthModalStatus === MODAL_STATUS.ERROR) && (
-            <div className={`rounded-xl border-l-4 p-4 text-sm ${
-              incognitoBrowserEnabled
-                ? "border-amber-300 bg-amber-50 text-amber-900"
-                : "border-[var(--surface-border)] bg-[var(--surface-muted)] text-[var(--text-secondary)]"
-            }`}>
+            <div
+              className="rounded-xl border border-l-4 p-4 text-sm"
+              style={{
+                ...getStateToneStyle(incognitoBrowserEnabled ? "warning" : "info"),
+                ...getStateAccentBorderStyle(incognitoBrowserEnabled ? "warning" : "info"),
+              }}
+            >
               <div className="font-medium text-[var(--text-primary)]">
                 {incognitoBrowserEnabled ? "Open This URL In A Private Window" : "Authorization URL"}
               </div>
@@ -899,7 +905,10 @@ export function OAuthSection({
             oauthModalStatus === MODAL_STATUS.ERROR) &&
             selectedOAuthProviderRequiresCallback && (
             <div className="space-y-4">
-              <div className="rounded-xl border-l-4 border-[var(--surface-border-strong)] bg-[var(--surface-hover)] p-4 text-sm">
+              <div
+                className="rounded-xl border border-l-4 p-4 text-sm"
+                style={{ ...getStateToneStyle("info"), ...getStateAccentBorderStyle("info") }}
+              >
                 <div className="font-medium text-[var(--text-primary)]">
                   Step-by-step
                 </div>
@@ -934,13 +943,23 @@ export function OAuthSection({
                   className="font-mono"
                 />
                 <div
-                  className={`mt-2 rounded-xl border-l-4 p-2 text-xs ${
-                    callbackValidation === CALLBACK_VALIDATION.VALID
-                      ? "border-green-300 bg-green-50 text-green-700"
-                      : callbackValidation === CALLBACK_VALIDATION.INVALID
-                        ? "border-red-300 bg-red-50 text-red-700"
-                        : "border-[var(--surface-border-strong)] bg-[var(--surface-muted)] text-[var(--text-secondary)]"
-                  }`}
+                  className="mt-2 rounded-xl border border-l-4 p-2 text-xs"
+                  style={{
+                    ...getStateToneStyle(
+                      callbackValidation === CALLBACK_VALIDATION.VALID
+                        ? "success"
+                        : callbackValidation === CALLBACK_VALIDATION.INVALID
+                          ? "danger"
+                          : "info"
+                    ),
+                    ...getStateAccentBorderStyle(
+                      callbackValidation === CALLBACK_VALIDATION.VALID
+                        ? "success"
+                        : callbackValidation === CALLBACK_VALIDATION.INVALID
+                          ? "danger"
+                          : "info"
+                    ),
+                  }}
                 >
                   {callbackMessage}
                 </div>
@@ -952,7 +971,10 @@ export function OAuthSection({
             oauthModalStatus === MODAL_STATUS.POLLING ||
             oauthModalStatus === MODAL_STATUS.ERROR) &&
             !selectedOAuthProviderRequiresCallback && (
-            <div className="rounded-xl border-l-4 border-[var(--surface-border-strong)] bg-[var(--surface-hover)] p-4 text-sm">
+            <div
+              className="rounded-xl border border-l-4 p-4 text-sm"
+              style={{ ...getStateToneStyle("info"), ...getStateAccentBorderStyle("info") }}
+            >
               <div className="font-medium text-[var(--text-primary)]">
                 Device Authorization
               </div>
@@ -969,7 +991,13 @@ export function OAuthSection({
                   </div>
                   <p className="text-xs text-[var(--text-muted)]">
                     Enter this code at{" "}
-                    <a href={deviceCodeInfo.verificationUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                    <a
+                      href={deviceCodeInfo.verificationUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline"
+                      style={{ color: "var(--state-info-accent)" }}
+                    >
                       {deviceCodeInfo.verificationUrl}
                     </a>
                   </p>
@@ -979,7 +1007,10 @@ export function OAuthSection({
           )}
 
           {oauthModalStatus === MODAL_STATUS.POLLING && (
-            <div className="mt-4 rounded-xl border-l-4 border-blue-300 bg-blue-50 p-4 text-sm text-blue-700">
+            <div
+              className="mt-4 rounded-xl border border-l-4 p-4 text-sm"
+              style={{ ...getStateToneStyle("info"), ...getStateAccentBorderStyle("info") }}
+            >
               {selectedOAuthProviderRequiresCallback
                 ? "Callback submitted. Waiting for CLIProxyAPI to finish token exchange..."
                 : "Waiting for CLIProxyAPI to finish OAuth authorization..."}
@@ -987,13 +1018,19 @@ export function OAuthSection({
           )}
 
           {oauthModalStatus === MODAL_STATUS.SUCCESS && (
-            <div className="rounded-xl border-l-4 border-green-300 bg-green-50 p-4 text-sm text-green-700">
+            <div
+              className="rounded-xl border border-l-4 p-4 text-sm"
+              style={{ ...getStateToneStyle("success"), ...getStateAccentBorderStyle("success") }}
+            >
               OAuth account connected successfully.
             </div>
           )}
 
           {oauthModalStatus === MODAL_STATUS.ERROR && oauthErrorMessage && (
-            <div className="rounded-xl border-l-4 border-red-300 bg-red-50 p-4 text-sm text-red-700">
+            <div
+              className="rounded-xl border border-l-4 p-4 text-sm"
+              style={{ ...getStateToneStyle("danger"), ...getStateAccentBorderStyle("danger") }}
+            >
               {oauthErrorMessage}
             </div>
           )}

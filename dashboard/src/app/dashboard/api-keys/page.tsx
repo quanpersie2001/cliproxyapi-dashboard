@@ -7,6 +7,7 @@ import { useToast } from "@/components/ui/toast";
 import { Input } from "@/components/ui/input";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
+import { getStateToneStyle } from "@/components/ui/state-styles";
 
 interface ApiKey {
   id: string;
@@ -291,8 +292,8 @@ export default function ApiKeysPage() {
                 </button>
               </div>
             </div>
-            <div className="rounded-sm border border-amber-200 bg-amber-50 p-3 text-sm">
-              <span className="text-amber-700">This key will only be shown once. Store it securely.</span>
+            <div className="rounded-sm border p-3 text-sm" style={getStateToneStyle("warning")}>
+              <span>This key will only be shown once. Store it securely.</span>
             </div>
           </div>
         </ModalContent>

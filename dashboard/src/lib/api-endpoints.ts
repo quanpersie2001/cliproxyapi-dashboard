@@ -28,6 +28,7 @@ export const API_ENDPOINTS = {
   },
   USAGE: {
     COLLECT: "/api/usage/collect",
+    HISTORY: "/api/usage/history",
   },
   USER: {
     API_KEYS: "/api/user/api-keys",

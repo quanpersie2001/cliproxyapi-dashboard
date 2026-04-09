@@ -106,7 +106,7 @@ export function OAuthCredentialList({
       {loading ? (
         <div className="flex items-center justify-center rounded-md border border-[var(--surface-border)] bg-[var(--surface-base)] p-8">
           <div className="flex flex-col items-center gap-3">
-            <div className="size-8 animate-spin rounded-full border-4 border-[#ddd] border-t-blue-500"></div>
+            <div className="size-8 animate-spin rounded-full border-4 border-[var(--surface-border)] border-t-[var(--state-info-accent)]"></div>
             <p className="text-sm text-[var(--text-muted)]">Loading accounts...</p>
           </div>
         </div>
@@ -115,7 +115,7 @@ export function OAuthCredentialList({
           No OAuth accounts connected yet. Connect your first account below.
         </div>
       ) : (
-        <div className="divide-y divide-[#e5e5e5] rounded-md border border-[var(--surface-border)] bg-[var(--surface-base)]">
+        <div className="divide-y divide-[var(--surface-border)] rounded-md border border-[var(--surface-border)] bg-[var(--surface-base)]">
           {accounts.map((account) => (
             <div key={account.id} className="group p-3">
               <div className="flex items-start justify-between gap-3">

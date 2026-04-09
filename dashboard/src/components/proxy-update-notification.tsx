@@ -5,6 +5,7 @@ import { Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter } from "@/com
 import { Button } from "@/components/ui/button";
 import { useProxyUpdateCheck } from "@/hooks/use-proxy-update-check";
 import { UpdateOverlay } from "@/components/update-overlay";
+import { getStateToneStyle } from "@/components/ui/state-styles";
 
 export function ProxyUpdateNotification() {
   const {
@@ -116,8 +117,8 @@ export function ProxyUpdateNotification() {
               )}
 
               {updateError && (
-                <div className="rounded-lg bg-red-50 border border-red-200 p-3">
-                  <p className="text-red-600 text-sm">{updateError}</p>
+                <div className="rounded-lg border p-3" style={getStateToneStyle("danger")}>
+                  <p className="text-sm">{updateError}</p>
                 </div>
               )}
 

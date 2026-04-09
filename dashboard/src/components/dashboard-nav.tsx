@@ -26,6 +26,16 @@ function IconActivity({ className }: { className?: string }) {
   );
 }
 
+function IconBarChart({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
+      <line x1="12" y1="20" x2="12" y2="10" />
+      <line x1="18" y1="20" x2="18" y2="4" />
+      <line x1="6" y1="20" x2="6" y2="14" />
+    </svg>
+  );
+}
+
 function IconBox({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
@@ -61,16 +71,6 @@ function IconLayers({ className }: { className?: string }) {
       <polygon points="12 2 2 7 12 12 22 7 12 2" />
       <polyline points="2 17 12 22 22 17" />
       <polyline points="2 12 12 17 22 12" />
-    </svg>
-  );
-}
-
-function IconBarChart({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" aria-hidden="true">
-      <line x1="12" y1="20" x2="12" y2="10" />
-      <line x1="18" y1="20" x2="18" y2="4" />
-      <line x1="6" y1="20" x2="6" y2="16" />
     </svg>
   );
 }
@@ -181,10 +181,10 @@ export function DashboardNav() {
         aria-modal={isOpen ? "true" : undefined}
         aria-label="Navigation"
         className={cn(
-          "w-56 glass-nav p-4 flex flex-col lg:transition-[width] lg:duration-200",
+          "w-56 glass-nav flex flex-col overflow-y-auto p-4 lg:h-screen lg:self-start lg:transition-[width] lg:duration-200",
           isCollapsed ? "lg:w-[4.5rem]" : "lg:w-56",
           "lg:block",
-          "fixed lg:static inset-y-0 left-0 z-50",
+          "fixed inset-y-0 left-0 z-50 lg:sticky lg:top-0",
           "transform transition-transform duration-300 ease-in-out",
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}

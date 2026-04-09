@@ -108,7 +108,7 @@ export function ProviderGroupModal({ isOpen, onClose, group, onSuccess }: Provid
           <div className="space-y-6">
             <div>
               <label htmlFor="groupName" className="mb-2 block text-sm font-semibold text-[var(--text-primary)]">
-                Group Name <span className="text-red-600">*</span>
+                Group Name <span style={{ color: "var(--state-danger-accent)" }}>*</span>
               </label>
               <Input
                 id="groupName"

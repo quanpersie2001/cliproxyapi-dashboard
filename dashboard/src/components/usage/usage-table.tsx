@@ -29,22 +29,38 @@ interface UsageTableProps {
 
 export function UsageTable({ keys, isAdmin }: UsageTableProps) {
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
+  const sortedKeys = Object.entries(keys).sort(([, left], [, right]) => {
+    if (right.totalRequests !== left.totalRequests) {
+      return right.totalRequests - left.totalRequests;
+    }
 
-  if (Object.keys(keys).length === 0) {
+    if (right.totalTokens !== left.totalTokens) {
+      return right.totalTokens - left.totalTokens;
+    }
+
+    return left.keyName.localeCompare(right.keyName);
+  });
+
+  if (sortedKeys.length === 0) {
     return (
-      <section className="rounded-md border border-[var(--surface-border)] bg-[var(--surface-base)] p-6 text-center">
+      <section className="dashboard-panel-surface p-6 text-center">
         <p className="text-sm text-[var(--text-muted)]">No usage data yet</p>
       </section>
     );
   }
 
   return (
-    <section className="space-y-2">
-      <h2 className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">Usage by API Key</h2>
+    <section className="dashboard-panel-surface space-y-4 p-4">
+      <div>
+        <div className="dashboard-kicker">Usage by API key</div>
+        <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+          Expand a credential row to inspect its per-model request and token distribution.
+        </p>
+      </div>
       <div className="overflow-x-auto">
-        <div className="min-w-[600px] rounded-md border border-[var(--surface-border)] bg-[var(--surface-base)]">
+        <div className="dashboard-table-surface min-w-[600px]">
           <table className="w-full text-sm">
-          <thead className="sticky top-0 z-10 border-b border-[var(--surface-border)] bg-[var(--surface-base)]">
+          <thead className="dashboard-table-header sticky top-0 z-10 border-b border-[var(--surface-border)]">
             <tr>
               <th className="p-2 text-left text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)] w-8"></th>
               <th className="p-2 text-left text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">Key Name</th>
@@ -58,9 +74,20 @@ export function UsageTable({ keys, isAdmin }: UsageTableProps) {
             </tr>
           </thead>
           <tbody>
-            {Object.entries(keys).map(([authIndex, keyUsage]) => {
+            {sortedKeys.map(([authIndex, keyUsage]) => {
               const isExpanded = expandedKeys.has(authIndex);
               const hasModels = Object.keys(keyUsage.models).length > 0;
+              const sortedModels = Object.entries(keyUsage.models).sort(([, left], [, right]) => {
+                if (right.totalRequests !== left.totalRequests) {
+                  return right.totalRequests - left.totalRequests;
+                }
+
+                if (right.totalTokens !== left.totalTokens) {
+                  return right.totalTokens - left.totalTokens;
+                }
+
+                return 0;
+              });
 
               return (
                 <React.Fragment key={authIndex}>
@@ -128,7 +155,7 @@ export function UsageTable({ keys, isAdmin }: UsageTableProps) {
                               </tr>
                             </thead>
                             <tbody>
-                              {Object.entries(keyUsage.models).map(([modelName, modelData]) => (
+                              {sortedModels.map(([modelName, modelData]) => (
                                 <tr key={modelName} className="border-b border-[var(--surface-border)]/40 last:border-0">
                                   <td className="p-2 text-left font-mono text-[11px] text-[var(--text-secondary)]">{modelName}</td>
                                   <td className="p-2 text-right text-[var(--text-muted)]">{modelData.totalRequests.toLocaleString()}</td>

@@ -51,6 +51,7 @@ interface UsageChartsProps {
   latencySeries?: LatencyPoint[];
   latencySummary?: LatencySummary;
   totals: Totals;
+  showTrafficCharts?: boolean;
 }
 
 function formatLatencyTick(timestamp: string): string {
@@ -74,14 +75,21 @@ function formatLatencyValue(value: number): string {
   return `${Math.round(value).toLocaleString()} ms`;
 }
 
-export function UsageCharts({ dailyBreakdown, modelBreakdown, latencySeries, latencySummary, totals }: UsageChartsProps) {
+export function UsageCharts({
+  dailyBreakdown,
+  modelBreakdown,
+  latencySeries,
+  latencySummary,
+  totals,
+  showTrafficCharts = true,
+}: UsageChartsProps) {
   const uid = useId();
   const gradInputId = `${uid}-gradInput`;
   const gradOutputId = `${uid}-gradOutput`;
   const gradLatencyId = `${uid}-gradLatency`;
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
-      {dailyBreakdown && dailyBreakdown.length > 0 ? (
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+      {showTrafficCharts && dailyBreakdown && dailyBreakdown.length > 0 ? (
         <ChartContainer title="Daily Requests">
           <ResponsiveContainer width="100%" height={220} minWidth={0} minHeight={0} initialDimension={{ width: 320, height: 200 }}>
             <LineChart data={dailyBreakdown} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
@@ -99,7 +107,7 @@ export function UsageCharts({ dailyBreakdown, modelBreakdown, latencySeries, lat
         </ChartContainer>
       ) : null}
 
-      {dailyBreakdown && dailyBreakdown.length > 0 ? (
+      {showTrafficCharts && dailyBreakdown && dailyBreakdown.length > 0 ? (
         <ChartContainer title="Token Usage">
           <ResponsiveContainer width="100%" height={220} minWidth={0} minHeight={0} initialDimension={{ width: 320, height: 200 }}>
             <AreaChart data={dailyBreakdown} margin={{ top: 4, right: 8, left: -16, bottom: 0 }}>
@@ -253,11 +261,11 @@ export function UsageCharts({ dailyBreakdown, modelBreakdown, latencySeries, lat
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-3 pt-2">
-                <div className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-center">
+                <div className="dashboard-card-surface px-3 py-2 text-center">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">Success Rate</p>
                   <p className="mt-0.5 text-lg font-bold text-emerald-600">{successPct.toFixed(1)}%</p>
                 </div>
-                <div className="rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-center">
+                <div className="dashboard-card-surface px-3 py-2 text-center">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">Failure Rate</p>
                   <p className="mt-0.5 text-lg font-bold text-rose-600">{failPct.toFixed(1)}%</p>
                 </div>

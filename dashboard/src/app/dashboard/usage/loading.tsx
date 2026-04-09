@@ -1,65 +1,56 @@
 export default function UsageLoading() {
   return (
-    <div className="space-y-4">
-      {/* Header */}
-      <section className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-base)] p-4">
-        <div className="flex items-center justify-between">
+    <div className="space-y-6" role="status" aria-busy="true" aria-label="Loading usage analytics">
+      <section className="dashboard-hero-surface p-4">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div className="space-y-2">
-            <div className="h-7 w-40 animate-pulse rounded-md bg-[var(--surface-muted)]" />
-            <div className="flex items-center gap-2">
-              <div className="size-2 animate-pulse rounded-full bg-[var(--surface-muted)]" />
-              <div className="h-3 w-32 animate-pulse rounded bg-[var(--surface-muted)]" />
-            </div>
+            <div className="h-3 w-48 animate-pulse rounded bg-[var(--surface-muted)]" />
+            <div className="h-8 w-56 animate-pulse rounded-md bg-[var(--surface-muted)]" />
+            <div className="h-4 w-96 animate-pulse rounded bg-[var(--surface-muted)]" />
           </div>
-          <div className="h-8 w-20 animate-pulse rounded-md bg-[var(--surface-muted)]" />
+          <div className="flex flex-wrap gap-2">
+            {Array.from({ length: 4 }).map((_, idx) => (
+              <div key={`pill-${idx}`} className="h-9 w-20 animate-pulse rounded-full bg-[var(--surface-muted)]" />
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* Time Period filter */}
-      <section className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-base)] p-4">
-        <div className="mb-3 h-3 w-24 animate-pulse rounded bg-[var(--surface-muted)]" />
-        <div className="flex flex-wrap gap-2">
-          {Array.from({ length: 4 }).map((_, idx) => (
-            <div key={`filter-${idx}`} className="h-8 w-20 animate-pulse rounded-md bg-[var(--surface-muted)]" />
-          ))}
-        </div>
-        <div className="mt-3 flex flex-wrap items-end gap-2">
-          {Array.from({ length: 2 }).map((_, idx) => (
-            <div key={`date-${idx}`} className="space-y-1">
-              <div className="h-2.5 w-8 animate-pulse rounded bg-[var(--surface-muted)]" />
-              <div className="h-8 w-36 animate-pulse rounded-md bg-[var(--surface-muted)]" />
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+        {Array.from({ length: 6 }).map((_, idx) => (
+          <div key={`stat-${idx}`} className="dashboard-stat-surface p-4">
+            <div className="h-3 w-20 animate-pulse rounded bg-[var(--surface-muted)]" />
+            <div className="mt-4 h-8 w-24 animate-pulse rounded bg-[var(--surface-muted)]" />
+            <div className="mt-3 h-4 w-full animate-pulse rounded bg-[var(--surface-muted)]" />
+          </div>
+        ))}
+      </section>
+
+      <section className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+        {Array.from({ length: 2 }).map((_, idx) => (
+          <div key={`panel-${idx}`} className="dashboard-panel-surface p-4">
+            <div className="space-y-2">
+              <div className="h-3 w-24 animate-pulse rounded bg-[var(--surface-muted)]" />
+              <div className="h-4 w-56 animate-pulse rounded bg-[var(--surface-muted)]" />
             </div>
-          ))}
-          <div className="h-8 w-16 animate-pulse rounded-md bg-[var(--surface-muted)]" />
-        </div>
+            <div className="mt-4 h-40 animate-pulse rounded-md bg-[var(--surface-muted)]" />
+          </div>
+        ))}
       </section>
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-[repeat(auto-fit,minmax(150px,1fr))] gap-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
         {Array.from({ length: 4 }).map((_, idx) => (
-          <div key={`stat-${idx}`} className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-base)] px-2.5 py-2">
-            <div className="h-2.5 w-24 animate-pulse rounded bg-[var(--surface-muted)]" />
-            <div className="mt-1.5 h-4 w-16 animate-pulse rounded bg-[var(--surface-muted)]" />
+          <div key={`chart-${idx}`} className="dashboard-card-surface p-4">
+            <div className="h-3 w-24 animate-pulse rounded bg-[var(--surface-muted)]" />
+            <div className="mt-4 h-[260px] animate-pulse rounded-md bg-[var(--surface-muted)]" />
           </div>
         ))}
       </div>
 
-      {/* Charts 2x2 */}
-      <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-        {Array.from({ length: 4 }).map((_, idx) => (
-          <div key={`chart-${idx}`} className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-base)] p-4">
-            <div className="mb-3 h-4 w-32 animate-pulse rounded bg-[var(--surface-muted)]" />
-            <div className="h-[220px] animate-pulse rounded-md bg-[var(--surface-muted)]" />
-          </div>
-        ))}
-      </div>
-
-      {/* Usage by API Key table */}
-      <section className="space-y-2">
+      <section className="dashboard-panel-surface p-4">
         <div className="h-3 w-32 animate-pulse rounded bg-[var(--surface-muted)]" />
-        <div className="overflow-hidden rounded-lg border border-[var(--surface-border)] bg-[var(--surface-base)]">
-          {/* Table header */}
-          <div className="flex items-center gap-4 border-b border-[var(--surface-border)] bg-[var(--surface-base)]/60 px-3 py-2">
+        <div className="mt-4 overflow-hidden rounded-md border border-[var(--surface-border)]">
+          <div className="dashboard-table-header flex items-center gap-4 border-b border-[var(--surface-border)] px-3 py-2">
             <div className="h-2.5 w-8 animate-pulse rounded bg-[var(--surface-muted)]" />
             <div className="h-2.5 w-24 animate-pulse rounded bg-[var(--surface-muted)]" />
             <div className="ml-auto flex gap-6">
@@ -68,7 +59,6 @@ export default function UsageLoading() {
               ))}
             </div>
           </div>
-          {/* Table rows */}
           {Array.from({ length: 6 }).map((_, idx) => (
             <div key={`row-${idx}`} className="flex items-center gap-4 border-b border-[var(--surface-border)] px-3 py-2 last:border-b-0">
               <div className="h-3 w-4 animate-pulse rounded bg-[var(--surface-muted)]" />

@@ -42,11 +42,14 @@ export function BasicFields({
   onPrefixChange,
   onProxyUrlChange,
 }: BasicFieldsProps) {
+  const requiredStyle = { color: "var(--state-danger-accent)" };
+  const errorStyle = { color: "var(--state-danger-text)" };
+
   return (
     <>
       <div>
         <label htmlFor="name" className="mb-2 block text-sm font-semibold text-[var(--text-primary)]">
-          Name <span className="text-red-600">*</span>
+          Name <span style={requiredStyle}>*</span>
         </label>
         <Input
           type="text"
@@ -57,12 +60,12 @@ export function BasicFields({
           required
           disabled={saving}
         />
-        {errors.name && <p className="mt-1.5 text-xs text-red-600">{errors.name}</p>}
+        {errors.name && <p className="mt-1.5 text-xs" style={errorStyle}>{errors.name}</p>}
       </div>
 
       <div>
         <label htmlFor="providerId" className="mb-2 block text-sm font-semibold text-[var(--text-primary)]">
-          Provider ID <span className="text-red-600">*</span>
+          Provider ID <span style={requiredStyle}>*</span>
         </label>
         <Input
           type="text"
@@ -74,13 +77,13 @@ export function BasicFields({
           disabled={saving || isEdit}
           className={isEdit ? "opacity-60 cursor-not-allowed" : ""}
         />
-        {errors.providerId && <p className="mt-1.5 text-xs text-red-600">{errors.providerId}</p>}
+        {errors.providerId && <p className="mt-1.5 text-xs" style={errorStyle}>{errors.providerId}</p>}
         {!errors.providerId && <p className="mt-1.5 text-xs text-[var(--text-muted)]">Lowercase alphanumeric with hyphens. {isEdit ? "Cannot be changed." : "Auto-generated from name."}</p>}
       </div>
 
       <div>
         <label htmlFor="baseUrl" className="mb-2 block text-sm font-semibold text-[var(--text-primary)]">
-          Base URL <span className="text-red-600">*</span>
+          Base URL <span style={requiredStyle}>*</span>
         </label>
         <Input
           type="text"
@@ -91,12 +94,12 @@ export function BasicFields({
           required
           disabled={saving}
         />
-        {errors.baseUrl && <p className="mt-1.5 text-xs text-red-600">{errors.baseUrl}</p>}
+        {errors.baseUrl && <p className="mt-1.5 text-xs" style={errorStyle}>{errors.baseUrl}</p>}
       </div>
 
       <div>
         <label htmlFor="apiKey" className="mb-2 block text-sm font-semibold text-[var(--text-primary)]">
-          API Key {!isEdit && <span className="text-red-600">*</span>}
+          API Key {!isEdit && <span style={requiredStyle}>*</span>}
         </label>
         <Input
           type="password"
@@ -107,7 +110,7 @@ export function BasicFields({
           required={!isEdit}
           disabled={saving}
         />
-        {errors.apiKey && <p className="mt-1.5 text-xs text-red-600">{errors.apiKey}</p>}
+        {errors.apiKey && <p className="mt-1.5 text-xs" style={errorStyle}>{errors.apiKey}</p>}
         {!errors.apiKey && isEdit && <p className="mt-1.5 text-xs text-[var(--text-muted)]">Leave empty to keep existing API key</p>}
       </div>
 

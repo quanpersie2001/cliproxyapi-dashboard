@@ -6,6 +6,10 @@ import { prisma } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { randomUUID, timingSafeEqual } from "crypto";
 import { Errors } from "@/lib/errors";
+import {
+  isUsageRecordEndpointUnavailableError,
+  omitUsageRecordEndpointFromMany,
+} from "@/lib/usage/endpoint-compat";
 
 const CLIPROXYAPI_MANAGEMENT_URL =
   process.env.CLIPROXYAPI_MANAGEMENT_URL ||
@@ -139,6 +143,7 @@ interface UsageRecordCandidate {
   authIndex: string;
   apiKeyId: string | null;
   userId: string | null;
+  endpoint: string | null;
   model: string;
   source: string;
   timestamp: Date;
@@ -445,6 +450,7 @@ export async function POST(request: NextRequest) {
             authIndex,
             apiKeyId: resolvedApiKeyId,
             userId: resolvedUserId,
+            endpoint: apiGroupKey || null,
             model: modelName,
             source: detail.source || "",
             timestamp: new Date(detail.timestamp),
@@ -461,12 +467,33 @@ export async function POST(request: NextRequest) {
     }
 
     let totalStored = 0;
+    let endpointPersistenceAvailable = true;
     for (let i = 0; i < candidates.length; i += BATCH_SIZE) {
       const batch = candidates.slice(i, i + BATCH_SIZE);
-      const result = await prisma.usageRecord.createMany({
-        data: batch,
-        skipDuplicates: true,
-      });
+      let result: { count: number };
+
+      try {
+        result = await prisma.usageRecord.createMany({
+          data: endpointPersistenceAvailable ? batch : omitUsageRecordEndpointFromMany(batch),
+          skipDuplicates: true,
+        });
+      } catch (error) {
+        if (!endpointPersistenceAvailable || !isUsageRecordEndpointUnavailableError(error)) {
+          throw error;
+        }
+
+        endpointPersistenceAvailable = false;
+        logger.warn(
+          { err: error, runId },
+          "UsageRecord.endpoint unavailable for collector writes, retrying without endpoint"
+        );
+
+        result = await prisma.usageRecord.createMany({
+          data: omitUsageRecordEndpointFromMany(batch),
+          skipDuplicates: true,
+        });
+      }
+
       totalStored += result.count;
     }
 

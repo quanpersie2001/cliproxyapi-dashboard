@@ -5,6 +5,7 @@ import { Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter } from "@/com
 import { Button } from "@/components/ui/button";
 import { useUpdateCheck } from "@/hooks/use-update-check";
 import { UpdateOverlay } from "@/components/update-overlay";
+import { getStateToneStyle } from "@/components/ui/state-styles";
 
 export function UpdateNotification() {
   const {
@@ -83,15 +84,15 @@ export function UpdateNotification() {
               {updateInfo.releaseNotes && (
                 <div className="rounded-xl bg-[var(--surface-muted)] border border-[var(--surface-border)] p-3">
                   <p className="text-[11px] uppercase tracking-wider text-[var(--text-muted)] mb-2">What&apos;s New</p>
-                  <div className="prose prose-xs max-w-none max-h-40 overflow-y-auto scrollbar-thin text-[var(--text-muted)] text-xs leading-relaxed [&_h1]:text-sm [&_h1]:font-semibold [&_h1]:text-[var(--text-secondary)] [&_h2]:text-xs [&_h2]:font-semibold [&_h2]:text-[var(--text-secondary)] [&_h3]:text-xs [&_h3]:font-semibold [&_h3]:text-[var(--text-secondary)] [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:my-0.5 [&_code]:bg-[var(--surface-hover)] [&_code]:px-1 [&_code]:rounded [&_a]:text-blue-600 [&_a]:underline [&_p]:my-1">
+                  <div className="prose prose-xs max-w-none max-h-40 overflow-y-auto scrollbar-thin text-[var(--text-muted)] text-xs leading-relaxed [&_h1]:text-sm [&_h1]:font-semibold [&_h1]:text-[var(--text-secondary)] [&_h2]:text-xs [&_h2]:font-semibold [&_h2]:text-[var(--text-secondary)] [&_h3]:text-xs [&_h3]:font-semibold [&_h3]:text-[var(--text-secondary)] [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:my-0.5 [&_code]:bg-[var(--surface-hover)] [&_code]:px-1 [&_code]:rounded [&_a]:text-[var(--state-info-accent)] [&_a]:underline [&_p]:my-1">
                     <Markdown>{updateInfo.releaseNotes}</Markdown>
                   </div>
                 </div>
               )}
 
               {updateError && (
-                <div className="rounded-lg bg-red-50 border border-red-200 p-3">
-                  <p className="text-red-600 text-sm">{updateError}</p>
+                <div className="rounded-lg border p-3" style={getStateToneStyle("danger")}>
+                  <p className="text-sm">{updateError}</p>
                 </div>
               )}
 
