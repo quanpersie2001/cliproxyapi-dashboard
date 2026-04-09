@@ -1,7 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
-import { ConfigField, SectionHeader, Select, Toggle } from "@/components/config/config-fields";
+import { ConfigField, Select, Toggle } from "@/components/config/config-fields";
 import {
   ROUTING_STRATEGIES,
   isRoutingStrategy,
@@ -42,17 +43,75 @@ interface AgentConfigEditorProps {
   removeOAuthAliasEntry: (provider: string, index: number) => void;
 }
 
+type PanelKey =
+  | "general"
+  | "streaming"
+  | "retry"
+  | "logging"
+  | "tls"
+  | "kiro"
+  | "claudeHeaders"
+  | "ampcode"
+  | "pprof"
+  | "oauthAliases"
+  | "payload";
+
+const DEFAULT_PANEL_STATE: Record<PanelKey, boolean> = {
+  general: true,
+  streaming: true,
+  retry: true,
+  logging: false,
+  tls: false,
+  kiro: false,
+  claudeHeaders: false,
+  ampcode: false,
+  pprof: false,
+  oauthAliases: false,
+  payload: false,
+};
+
 function Panel({
+  panelKey,
   title,
+  expanded,
+  onToggle,
   children,
 }: {
+  panelKey: PanelKey;
   title: string;
+  expanded: boolean;
+  onToggle: (key: PanelKey) => void;
   children: React.ReactNode;
 }) {
   return (
     <section className="space-y-3 rounded-lg border border-[var(--surface-border)] bg-[var(--surface-base)] p-4">
-      <SectionHeader title={title} />
-      {children}
+      <button
+        type="button"
+        onClick={() => onToggle(panelKey)}
+        aria-expanded={expanded}
+        className="flex w-full items-center justify-between gap-3 text-left"
+      >
+        <h3 className="text-sm font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+          {title}
+        </h3>
+        <span
+          className={`flex size-7 shrink-0 items-center justify-center rounded-md border border-[var(--surface-border)] bg-[var(--surface-muted)] text-[var(--text-muted)] transition-transform ${
+            expanded ? "rotate-180" : ""
+          }`}
+          aria-hidden="true"
+        >
+          <svg viewBox="0 0 16 16" fill="none" className="size-3.5">
+            <path
+              d="M4 6.25L8 10.25L12 6.25"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </span>
+      </button>
+      {expanded ? children : null}
     </section>
   );
 }
@@ -125,9 +184,23 @@ export default function AgentConfigEditor({
   addOAuthAliasEntry,
   removeOAuthAliasEntry,
 }: AgentConfigEditorProps) {
+  const [expandedPanels, setExpandedPanels] = useState<Record<PanelKey, boolean>>(DEFAULT_PANEL_STATE);
+
+  const togglePanelExpanded = (panelKey: PanelKey) => {
+    setExpandedPanels((current) => ({
+      ...current,
+      [panelKey]: !current[panelKey],
+    }));
+  };
+
   return (
     <>
-      <Panel title="General Settings">
+      <Panel
+        panelKey="general"
+        title="General Settings"
+        expanded={expandedPanels.general}
+        onToggle={togglePanelExpanded}
+      >
         <div className="grid gap-4 sm:grid-cols-2">
           <ConfigField
             label="Upstream Proxy"
@@ -179,7 +252,12 @@ export default function AgentConfigEditor({
         </div>
       </Panel>
 
-      <Panel title="Streaming">
+      <Panel
+        panelKey="streaming"
+        title="Streaming"
+        expanded={expandedPanels.streaming}
+        onToggle={togglePanelExpanded}
+      >
         <div className="grid gap-4 sm:grid-cols-2">
           <ConfigField label="Keepalive Seconds" description="SSE keepalive interval in seconds.">
             <NumberInput
@@ -208,7 +286,12 @@ export default function AgentConfigEditor({
         </div>
       </Panel>
 
-      <Panel title="Retry & Resilience">
+      <Panel
+        panelKey="retry"
+        title="Retry & Resilience"
+        expanded={expandedPanels.retry}
+        onToggle={togglePanelExpanded}
+      >
         <div className="grid gap-4 sm:grid-cols-2">
           <ConfigField label="Request Retry Attempts" description="Maximum number of retry attempts for failed requests.">
             <NumberInput
@@ -266,7 +349,12 @@ export default function AgentConfigEditor({
         </div>
       </Panel>
 
-      <Panel title="Logging">
+      <Panel
+        panelKey="logging"
+        title="Logging"
+        expanded={expandedPanels.logging}
+        onToggle={togglePanelExpanded}
+      >
         <div className="grid gap-4 sm:grid-cols-2">
           <ConfigField label="Logging to File" description="Enable persistent file-based logging.">
             <Toggle enabled={config["logging-to-file"]} onChange={(value) => updateConfig("logging-to-file", value)} />
@@ -294,7 +382,12 @@ export default function AgentConfigEditor({
         </div>
       </Panel>
 
-      <Panel title="TLS / HTTPS">
+      <Panel
+        panelKey="tls"
+        title="TLS / HTTPS"
+        expanded={expandedPanels.tls}
+        onToggle={togglePanelExpanded}
+      >
         <div className="rounded-md border border-[var(--surface-border)] bg-[var(--surface-muted)] p-3 text-xs text-[var(--text-muted)]">
           TLS is typically handled by the reverse proxy. Only configure this for direct TLS
           termination.
@@ -326,7 +419,12 @@ export default function AgentConfigEditor({
         </div>
       </Panel>
 
-      <Panel title="Kiro">
+      <Panel
+        panelKey="kiro"
+        title="Kiro"
+        expanded={expandedPanels.kiro}
+        onToggle={togglePanelExpanded}
+      >
         <div className="grid gap-4 sm:grid-cols-2">
           <ConfigField label="Preferred Endpoint" description="Preferred Kiro API endpoint URL.">
             <Input
@@ -341,7 +439,12 @@ export default function AgentConfigEditor({
         </div>
       </Panel>
 
-      <Panel title="Claude Header Defaults">
+      <Panel
+        panelKey="claudeHeaders"
+        title="Claude Header Defaults"
+        expanded={expandedPanels.claudeHeaders}
+        onToggle={togglePanelExpanded}
+      >
         <p className="text-xs text-[var(--text-muted)]">
           Custom headers sent with Claude API requests when those defaults are configured.
         </p>
@@ -385,7 +488,12 @@ export default function AgentConfigEditor({
         </div>
       </Panel>
 
-      <Panel title="Amp Code">
+      <Panel
+        panelKey="ampcode"
+        title="Amp Code"
+        expanded={expandedPanels.ampcode}
+        onToggle={togglePanelExpanded}
+      >
         <p className="text-xs text-[var(--text-muted)]">
           Configuration for Amp Code upstream integration.
         </p>
@@ -423,7 +531,12 @@ export default function AgentConfigEditor({
         </div>
       </Panel>
 
-      <Panel title="Profiling (pprof)">
+      <Panel
+        panelKey="pprof"
+        title="Profiling (pprof)"
+        expanded={expandedPanels.pprof}
+        onToggle={togglePanelExpanded}
+      >
         <div className="rounded-md border border-[var(--surface-border)] bg-[var(--surface-muted)] p-3 text-xs text-[var(--text-muted)]">
           Go runtime profiling. Only enable for debugging.
         </div>
@@ -444,7 +557,12 @@ export default function AgentConfigEditor({
         </div>
       </Panel>
 
-      <Panel title="OAuth Model Aliases">
+      <Panel
+        panelKey="oauthAliases"
+        title="OAuth Model Aliases"
+        expanded={expandedPanels.oauthAliases}
+        onToggle={togglePanelExpanded}
+      >
         <p className="text-xs text-[var(--text-muted)]">
           Override model names for OAuth providers. Each provider has its own list of model name
           mappings.
@@ -527,7 +645,12 @@ export default function AgentConfigEditor({
         </div>
       </Panel>
 
-      <Panel title="Payload Manipulation">
+      <Panel
+        panelKey="payload"
+        title="Payload Manipulation"
+        expanded={expandedPanels.payload}
+        onToggle={togglePanelExpanded}
+      >
         <p className="text-xs text-[var(--text-muted)]">
           Override or filter request payloads sent to upstream providers. Values are JSON when
           possible.
