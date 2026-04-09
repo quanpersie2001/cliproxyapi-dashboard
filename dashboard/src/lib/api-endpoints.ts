@@ -20,7 +20,6 @@ export const API_ENDPOINTS = {
   UPDATE: {
     BASE: "/api/update",
     CHECK: "/api/update/check",
-    DASHBOARD: "/api/update/dashboard",
     DASHBOARD_CHECK: "/api/update/dashboard/check",
   },
   QUOTA: {

@@ -1,24 +1,6 @@
 - id: deploy-dashboard
-  execute-command: /opt/cliproxyapi-dashboard/infrastructure/deploy.sh
-  command-working-directory: /opt/cliproxyapi-dashboard/infrastructure
-  pass-arguments-to-command:
-    - source: payload
-      name: no_cache
-  trigger-rule:
-    and:
-      - match:
-          type: value
-          value: "{{DEPLOY_SECRET}}"
-          parameter:
-            source: header
-            name: X-Deploy-Token
-
-- id: deploy-dashboard-nocache
-  execute-command: /opt/cliproxyapi-dashboard/infrastructure/deploy.sh
-  command-working-directory: /opt/cliproxyapi-dashboard/infrastructure
-  pass-arguments-to-command:
-    - source: string
-      name: "--no-cache"
+  execute-command: "{{INSTALL_DIR}}/infrastructure/deploy.sh"
+  command-working-directory: "{{INSTALL_DIR}}/infrastructure"
   trigger-rule:
     and:
       - match:
@@ -30,10 +12,10 @@
 
 - id: deploy-status
   execute-command: /bin/cat
-  command-working-directory: /var/log/cliproxyapi
+  command-working-directory: "{{LOG_DIR}}"
   pass-arguments-to-command:
     - source: string
-      name: "/var/log/cliproxyapi/dashboard-deploy-status.json"
+      name: "{{LOG_DIR}}/dashboard-deploy-status.json"
   trigger-rule:
     and:
       - match:
@@ -45,10 +27,10 @@
 
 - id: deploy-log
   execute-command: /bin/cat
-  command-working-directory: /var/log/cliproxyapi
+  command-working-directory: "{{LOG_DIR}}"
   pass-arguments-to-command:
     - source: string
-      name: "/var/log/cliproxyapi/dashboard-deploy.log"
+      name: "{{LOG_DIR}}/dashboard-deploy.log"
   trigger-rule:
     and:
       - match:

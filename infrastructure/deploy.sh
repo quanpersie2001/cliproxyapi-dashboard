@@ -1,11 +1,12 @@
-#!/bin/bash
-# Dashboard Deploy Script
-# Triggered by webhook from dashboard admin panel
+#!/usr/bin/env bash
+# Dashboard deploy driver for the webhook service.
+# Pulls the latest published dashboard image and restarts the dashboard container.
 
-# Configuration
-REPO_DIR="/opt/cliproxyapi-dashboard"
-INFRA_DIR="/opt/cliproxyapi-dashboard/infrastructure"
-LOG_DIR="/var/log/cliproxyapi"
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+MANAGE_SCRIPT="${SCRIPT_DIR}/manage.sh"
+LOG_DIR="${CLIPROXYAPI_DEPLOY_LOG_DIR:-/var/log/cliproxyapi}"
 LOG_FILE="${LOG_DIR}/dashboard-deploy.log"
 STATUS_FILE="${LOG_DIR}/dashboard-deploy-status.json"
 LOCK_FILE="${LOG_DIR}/deploy.lock"
@@ -17,9 +18,14 @@ chmod 755 "$LOG_DIR"
 # Parse arguments
 FOREGROUND=false
 for arg in "$@"; do
-    if [ "$arg" = "--foreground" ]; then
-        FOREGROUND=true
-    fi
+    case "$arg" in
+        --foreground)
+            FOREGROUND=true
+            ;;
+        --no-cache)
+            # Deprecated no-op. Dashboard updates pull a published image and do not build locally.
+            ;;
+    esac
 done
 
 # Helper function to update status
@@ -75,8 +81,7 @@ update_status "init" "running" "Starting deployment..."
 
 # Step 1: Pull latest image
 update_status "pull" "running" "Pulling latest dashboard image from GHCR..."
-cd "$INFRA_DIR"
-if docker compose pull dashboard >> "$LOG_FILE" 2>&1; then
+if "${MANAGE_SCRIPT}" pull dashboard >> "$LOG_FILE" 2>&1; then
     update_status "pull" "completed" "Image pull successful"
 else
     update_status "pull" "failed" "Image pull failed"
@@ -85,7 +90,7 @@ fi
 
 # Step 2: Ensure docker-proxy is running
 update_status "proxy" "running" "Ensuring Docker socket proxy is running..."
-if docker compose up -d docker-proxy >> "$LOG_FILE" 2>&1; then
+if "${MANAGE_SCRIPT}" up docker-proxy >> "$LOG_FILE" 2>&1; then
     update_status "proxy" "completed" "Docker socket proxy is running"
 else
     update_status "proxy" "failed" "Failed to start Docker socket proxy"
@@ -93,8 +98,8 @@ else
 fi
 
 # Step 3: Deploy new dashboard container
-update_status "deploy" "running" "Starting new dashboard container..."
-if docker compose up -d --no-deps dashboard >> "$LOG_FILE" 2>&1; then
+update_status "deploy" "running" "Restarting dashboard container..."
+if "${MANAGE_SCRIPT}" compose up -d --no-deps dashboard >> "$LOG_FILE" 2>&1; then
     update_status "deploy" "completed" "Container started successfully"
 else
     update_status "deploy" "failed" "Failed to start container"

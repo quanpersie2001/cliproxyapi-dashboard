@@ -16,7 +16,6 @@ interface DashboardUpdateInfo {
   currentVersion: string;
   latestVersion: string;
   updateAvailable: boolean;
-  availableVersions: string[];
   releaseUrl: string | null;
   releaseNotes: string | null;
 }

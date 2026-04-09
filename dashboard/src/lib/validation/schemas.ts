@@ -85,10 +85,6 @@ export const UpdateProxySchema = z.object({
   }),
 });
 
-export const DeploySchema = z.object({
-  noCache: z.boolean().optional(),
-});
-
 export const CreateProviderGroupSchema = z.object({
   name: z.string().min(1).max(50),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).optional(),

@@ -11,7 +11,6 @@ export interface UpdateInfo {
   latestVersion: string;
   updateAvailable: boolean;
   buildInProgress: boolean;
-  availableVersions: string[];
   releaseUrl: string | null;
   releaseNotes: string | null;
 }
@@ -84,14 +83,14 @@ export function useUpdateCheck() {
     setShowPopup(false);
   }, [updateInfo]);
 
-  const performUpdate = useCallback(async (version: string) => {
+  const performUpdate = useCallback(async () => {
     setIsUpdating(true);
     setUpdateError(null);
     try {
-      const res = await fetch(API_ENDPOINTS.UPDATE.DASHBOARD, {
+      const res = await fetch(API_ENDPOINTS.ADMIN.DEPLOY, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ version, confirm: true }),
+        body: JSON.stringify({ confirm: true }),
       });
 
       if (!res.ok) {

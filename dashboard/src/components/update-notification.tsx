@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import Markdown from "react-markdown";
 import { Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
@@ -17,12 +16,11 @@ export function UpdateNotification() {
     dismissUpdate,
     performUpdate,
   } = useUpdateCheck();
-  const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
 
-  const targetVersion = selectedVersion || updateInfo?.latestVersion || "latest";
+  const targetVersion = updateInfo?.latestVersion || "latest";
 
   const handleUpdate = async () => {
-    await performUpdate(targetVersion);
+    await performUpdate();
   };
 
   return (
@@ -88,35 +86,6 @@ export function UpdateNotification() {
                   <div className="prose prose-xs max-w-none max-h-40 overflow-y-auto scrollbar-thin text-[#777169] text-xs leading-relaxed [&_h1]:text-sm [&_h1]:font-semibold [&_h1]:text-[#4e4e4e] [&_h2]:text-xs [&_h2]:font-semibold [&_h2]:text-[#4e4e4e] [&_h3]:text-xs [&_h3]:font-semibold [&_h3]:text-[#4e4e4e] [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:my-0.5 [&_code]:bg-[#f0f0f0] [&_code]:px-1 [&_code]:rounded [&_a]:text-blue-600 [&_a]:underline [&_p]:my-1">
                     <Markdown>{updateInfo.releaseNotes}</Markdown>
                   </div>
-                </div>
-              )}
-
-              {updateInfo.availableVersions && updateInfo.availableVersions.length > 1 && (
-                <div>
-                  <label
-                    htmlFor="version-select"
-                    className="block text-[11px] uppercase tracking-wider text-[#999] mb-2"
-                  >
-                    Or select a specific version
-                  </label>
-                  <select
-                    id="version-select"
-                    value={selectedVersion || ""}
-                    onChange={(e) => setSelectedVersion(e.target.value || null)}
-                    className="w-full rounded-lg bg-[#f5f5f5] border border-[#e5e5e5] text-black text-sm px-3 py-2 outline-none focus:border-black/20 transition-colors"
-                  >
-                    <option value="" className="bg-white">
-                      Latest ({updateInfo.latestVersion || "latest"})
-                    </option>
-                    {updateInfo.availableVersions
-                      .filter((v) => v !== updateInfo.latestVersion)
-                      .slice(0, 10)
-                      .map((version) => (
-                        <option key={version} value={version} className="bg-white">
-                          {version}
-                        </option>
-                      ))}
-                  </select>
                 </div>
               )}
 

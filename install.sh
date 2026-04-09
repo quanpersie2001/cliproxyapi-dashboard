@@ -189,8 +189,7 @@ EOF
 
 install_systemd_service() {
     local service_file="/etc/systemd/system/cliproxyapi-stack.service"
-    local docker_bin
-    docker_bin="$(command -v docker)"
+    local manage_script="$INSTALL_DIR/infrastructure/manage.sh"
     local skip_service=0
 
     if [ -f "$service_file" ]; then
@@ -206,6 +205,8 @@ install_systemd_service() {
         return
     fi
 
+    chmod +x "$manage_script"
+
     cat > "$service_file" << EOF
 [Unit]
 Description=CLIProxyAPI Dashboard Stack (Docker Compose)
@@ -217,8 +218,8 @@ Wants=network-online.target
 Type=oneshot
 RemainAfterExit=true
 WorkingDirectory=${INSTALL_DIR}/infrastructure
-ExecStart=${docker_bin} compose up -d --wait
-ExecStop=${docker_bin} compose down
+ExecStart=${manage_script} up
+ExecStop=${manage_script} down
 TimeoutStartSec=300
 TimeoutStopSec=120
 Restart=on-failure
@@ -314,9 +315,14 @@ install_webhook_service() {
     deploy_secret="$(openssl rand -hex 32)"
 
     mkdir -p /etc/webhook
-    sed "s/{{DEPLOY_SECRET}}/${deploy_secret}/g" "$INSTALL_DIR/infrastructure/webhook.yaml" > /etc/webhook/hooks.yaml
+    sed \
+        -e "s|{{DEPLOY_SECRET}}|${deploy_secret}|g" \
+        -e "s|{{INSTALL_DIR}}|${INSTALL_DIR}|g" \
+        -e "s|{{LOG_DIR}}|/var/log/cliproxyapi|g" \
+        "$INSTALL_DIR/infrastructure/webhook.yaml" > /etc/webhook/hooks.yaml
     chmod 600 /etc/webhook/hooks.yaml
     chmod +x "$INSTALL_DIR/infrastructure/deploy.sh"
+    chmod +x "$INSTALL_DIR/infrastructure/manage.sh"
 
     cat > /etc/systemd/system/webhook-deploy.service << EOF
 [Unit]

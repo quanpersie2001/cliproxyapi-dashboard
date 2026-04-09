@@ -28,13 +28,17 @@ Save this token - you'll need it for both the webhook config and the dashboard.
 
 ### 3. Configure webhook
 
-Edit `infrastructure/webhook.yaml` and replace `{{DEPLOY_SECRET}}` with your generated token:
+Generate `/etc/webhook/hooks.yaml` from the template so both the install path and secret are correct:
 
-```yaml
-trigger-rule:
-  match:
-    type: value
-    value: "your-generated-token-here"
+```bash
+INSTALL_DIR=/opt/cliproxyapi-dashboard
+DEPLOY_SECRET=your-generated-token-here
+
+sed \
+  -e "s|{{INSTALL_DIR}}|${INSTALL_DIR}|g" \
+  -e "s|{{LOG_DIR}}|/var/log/cliproxyapi|g" \
+  -e "s|{{DEPLOY_SECRET}}|${DEPLOY_SECRET}|g" \
+  "${INSTALL_DIR}/infrastructure/webhook.yaml" > /etc/webhook/hooks.yaml
 ```
 
 ### 4. Set environment variables
@@ -50,7 +54,7 @@ DEPLOY_SECRET=your-generated-token-here
 
 ```bash
 # Run directly
-webhook -hooks /opt/cliproxyapi-dashboard/infrastructure/webhook.yaml -port 9000 -verbose
+webhook -hooks /etc/webhook/hooks.yaml -port 9000 -verbose
 
 # Or create a systemd service (recommended)
 ```
@@ -66,7 +70,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=/usr/bin/webhook -hooks /opt/cliproxyapi-dashboard/infrastructure/webhook.yaml -port 9000
+ExecStart=/usr/bin/webhook -hooks /etc/webhook/hooks.yaml -port 9000
 Restart=always
 RestartSec=5
 
@@ -84,10 +88,8 @@ systemctl start dashboard-webhook
 
 ## Usage
 
-Once configured, you can deploy the dashboard from Settings > System > Dashboard Deployment:
-
-- **Quick Update**: Uses Docker cache for faster builds (30-60 seconds)
-- **Full Rebuild**: Builds without cache, useful when dependencies change (3-5 minutes)
+Once configured, you can deploy the dashboard from Settings > System > Dashboard Deployment.
+The webhook pulls the latest published dashboard image from GHCR and restarts the dashboard container.
 
 ## Security Notes
 

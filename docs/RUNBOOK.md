@@ -13,10 +13,12 @@ Returns 200 if the dashboard is running. Does not check database connectivity.
 ### Docker (Production)
 
 ```bash
-# Build and deploy via dashboard UI
-# Navigate to Settings → Deploy section
-# Or via API:
+# Deploy the latest published dashboard image
 POST /api/admin/deploy
+
+# Or on the host:
+cd infrastructure
+./manage.sh dashboard-update
 ```
 
 ### Local Development
@@ -86,7 +88,9 @@ Settings → CLIProxyAPI Updates → Update
 ### Update Dashboard
 ```
 Settings → Dashboard Updates → Update
-# Or: POST /api/update/dashboard
+# Or: POST /api/admin/deploy
+# Or on the host:
+# cd infrastructure && ./manage.sh dashboard-update
 ```
 
 ## Monitoring

@@ -22,7 +22,6 @@ interface DashboardUpdateInfo {
   currentVersion: string;
   latestVersion: string;
   updateAvailable: boolean;
-  availableVersions: string[];
   releaseUrl: string | null;
   releaseNotes: string | null;
 }
@@ -146,7 +145,7 @@ export default function SettingsPage() {
   const handleDashboardUpdate = async () => {
     setDashboardUpdating(true);
     try {
-      const res = await fetch(API_ENDPOINTS.UPDATE.DASHBOARD, {
+      const res = await fetch(API_ENDPOINTS.ADMIN.DEPLOY, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ confirm: true }),
@@ -255,7 +254,7 @@ export default function SettingsPage() {
         onClose={() => setShowConfirmDashboardUpdate(false)}
         onConfirm={handleDashboardUpdate}
         title="Update Dashboard"
-        message="Update Dashboard to latest version? The container will restart."
+        message="Update Dashboard to the latest published image? The container will restart."
         confirmLabel="Update"
         cancelLabel="Cancel"
         variant="warning"

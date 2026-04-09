@@ -19,7 +19,6 @@ interface VersionInfo {
   latestVersion: string;
   updateAvailable: boolean;
   buildInProgress: boolean;
-  availableVersions: string[];
   releaseUrl: string | null;
   releaseNotes: string | null;
 }
@@ -103,7 +102,6 @@ export async function GET() {
       latestVersion,
       updateAvailable,
       buildInProgress: false,
-      availableVersions: remote ? [remote.tag] : [],
       releaseUrl: remote?.releaseUrl ?? null,
       releaseNotes: remote?.releaseNotes?.slice(0, 2000) ?? null,
     };

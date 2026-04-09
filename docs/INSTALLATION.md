@@ -73,9 +73,12 @@ The installer:
 Then start the stack:
 
 ```bash
-sudo systemctl start cliproxyapi-stack
-sudo systemctl status cliproxyapi-stack
+cd infrastructure
+./manage.sh up
+./manage.sh ps
 ```
+
+If you prefer `systemd`, the installer also creates `cliproxyapi-stack.service`.
 
 ## Public Access
 
@@ -131,7 +134,7 @@ chmod 600 infrastructure/.env
 
 ```bash
 cd infrastructure
-docker compose up -d --wait
+./manage.sh up
 ```
 
 ### 4. Create The First Admin Account

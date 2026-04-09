@@ -24,42 +24,44 @@ sudo systemctl enable cliproxyapi-stack
 sudo systemctl disable cliproxyapi-stack
 ```
 
-## Docker Compose Commands
+## Manage Script
+
+Use the checked-in helper so the correct compose file and `.env` are always selected:
 
 ```bash
 cd infrastructure
 
 # Start services
-docker compose up -d
+./manage.sh up
 
 # Stop services
-docker compose down
+./manage.sh down
 
 # Restart services
-docker compose restart
+./manage.sh restart
 
 # View running containers
-docker compose ps
+./manage.sh ps
 
 # View logs (all services)
-docker compose logs -f
+./manage.sh logs
 
 # View logs (specific service)
-docker compose logs -f cliproxyapi
-docker compose logs -f dashboard
-docker compose logs -f postgres
-docker compose logs -f docker-proxy
+./manage.sh logs cliproxyapi
+./manage.sh logs dashboard
+./manage.sh logs postgres
+./manage.sh logs docker-proxy
 
 # Execute command in container
-docker compose exec cliproxyapi sh
-docker compose exec dashboard sh
-docker compose exec postgres psql -U cliproxyapi -d cliproxyapi
+./manage.sh compose exec cliproxyapi sh
+./manage.sh compose exec dashboard sh
+./manage.sh compose exec postgres psql -U cliproxyapi -d cliproxyapi
 
 # Pull latest images
-docker compose pull
+./manage.sh pull
 
-# Update services
-docker compose up -d --pull always
+# Pull and restart just the dashboard
+./manage.sh dashboard-update
 ```
 
 ## Exposed Endpoints

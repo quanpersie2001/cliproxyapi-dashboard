@@ -52,6 +52,15 @@ Open **http://localhost:3000** → create admin account → done.
 
 > **Server deployment**: See the full [Installation Guide](docs/INSTALLATION.md).
 
+Production operations are exposed through one helper entrypoint:
+
+```bash
+cd infrastructure
+./manage.sh up
+./manage.sh ps
+./manage.sh logs dashboard
+```
+
 ## Features
 
 - **Visual Configuration** — Manage CLIProxyAPIPlus settings through structured forms, no YAML editing

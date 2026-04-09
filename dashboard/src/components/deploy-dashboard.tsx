@@ -32,7 +32,6 @@ export function DeployDashboard() {
   const [deploying, setDeploying] = useState(false);
   const [webhookConfigured, setWebhookConfigured] = useState<boolean | null>(null);
   const [showConfirm, setShowConfirm] = useState(false);
-  const [pendingDeploy, setPendingDeploy] = useState<{ noCache: boolean } | null>(null);
 
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const fetchStatusRef = useRef<(shouldStartPolling?: boolean) => Promise<void>>(async () => {});
@@ -90,17 +89,11 @@ export function DeployDashboard() {
     pollingRef.current = setInterval(fetchStatus, 2000);
   };
 
-  const handleDeploy = (noCache: boolean) => {
-    setPendingDeploy({ noCache });
+  const handleDeploy = () => {
     setShowConfirm(true);
   };
 
   const executeDeploy = async () => {
-    if (!pendingDeploy) return;
-
-    const { noCache } = pendingDeploy;
-    const mode = noCache ? "Full Rebuild" : "Quick Update";
-
     setDeploying(true);
     setStatus({ status: "running", step: "init", message: "Starting deployment..." });
 
@@ -108,11 +101,11 @@ export function DeployDashboard() {
       const res = await fetch(API_ENDPOINTS.ADMIN.DEPLOY, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ noCache }),
+        body: JSON.stringify({ confirm: true }),
       });
 
       if (res.ok) {
-        showToast(`${mode} started`, "success");
+        showToast("Deployment started", "success");
         startPolling();
       } else {
         const data = await res.json();
@@ -131,8 +124,8 @@ export function DeployDashboard() {
   const getStepLabel = (step?: string) => {
     switch (step) {
       case "init": return "Initializing...";
-      case "git": return "Pulling latest code...";
-      case "build": return "Building Docker image...";
+      case "pull": return "Pulling latest image...";
+      case "proxy": return "Checking Docker proxy...";
       case "deploy": return "Deploying container...";
       case "health": return "Health check...";
       case "done": return "Complete!";
@@ -156,7 +149,7 @@ export function DeployDashboard() {
       <div className="space-y-3">
         <div>
           <h2 className="text-sm font-semibold text-black">Dashboard Deployment</h2>
-          <p className="text-xs text-[#777169]">Deploy the latest dashboard changes from the repository</p>
+          <p className="text-xs text-[#777169]">Pull and restart the latest published dashboard image</p>
         </div>
 
         <div className="space-y-4">
@@ -171,10 +164,9 @@ export function DeployDashboard() {
           <div className="space-y-3 text-sm text-[#4e4e4e]">
             <div className="font-medium text-black">Setup Instructions:</div>
             <ol className="list-decimal list-inside space-y-2 text-[#777169]">
-              <li>Install webhook: <code className="rounded-sm bg-[#f5f5f5] px-1">apt install webhook</code></li>
-              <li>Copy webhook config from <code className="rounded-sm bg-[#f5f5f5] px-1">infrastructure/webhook.yaml</code></li>
-              <li>Set environment variables: <code className="rounded-sm bg-[#f5f5f5] px-1">WEBHOOK_HOST</code>, <code className="rounded-sm bg-[#f5f5f5] px-1">DEPLOY_SECRET</code></li>
-              <li>Start webhook service: <code className="rounded-sm bg-[#f5f5f5] px-1">webhook -hooks /path/to/webhook.yaml -port 9000</code></li>
+              <li>Run <code className="rounded-sm bg-[#f5f5f5] px-1">sudo ./install.sh</code> and enable the webhook option, or follow <code className="rounded-sm bg-[#f5f5f5] px-1">infrastructure/WEBHOOK_SETUP.md</code></li>
+              <li>Make sure <code className="rounded-sm bg-[#f5f5f5] px-1">WEBHOOK_HOST</code> and <code className="rounded-sm bg-[#f5f5f5] px-1">DEPLOY_SECRET</code> are set in <code className="rounded-sm bg-[#f5f5f5] px-1">infrastructure/.env</code></li>
+              <li>Reload the webhook service after updating the config</li>
             </ol>
           </div>
         </div>
@@ -187,7 +179,7 @@ export function DeployDashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-sm font-semibold text-black">Dashboard Deployment</h2>
-          <p className="text-xs text-[#777169]">Deploy the latest dashboard changes from the repository</p>
+          <p className="text-xs text-[#777169]">Pull and restart the latest published dashboard image</p>
         </div>
         <div className="flex items-center gap-2">
           {status.status === "running" && (
@@ -208,23 +200,12 @@ export function DeployDashboard() {
         </div>
       </div>
 
-      <p className="text-xs text-[#777169]">
-        Quick Update uses Docker cache for faster builds. Full Rebuild rebuilds everything from scratch.
-      </p>
-
       <div className="flex flex-wrap gap-2">
         <Button
-          onClick={() => handleDeploy(false)}
+          onClick={handleDeploy}
           disabled={deploying}
         >
-          {deploying ? "Deploying..." : "Quick Update"}
-        </Button>
-        <Button
-          variant="secondary"
-          onClick={() => handleDeploy(true)}
-          disabled={deploying}
-        >
-          Full Rebuild (no-cache)
+          {deploying ? "Deploying..." : "Deploy Latest"}
         </Button>
         <Button
           variant="ghost"
@@ -268,11 +249,10 @@ export function DeployDashboard() {
         isOpen={showConfirm}
         onClose={() => {
           setShowConfirm(false);
-          setPendingDeploy(null);
         }}
         onConfirm={executeDeploy}
-        title={pendingDeploy?.noCache ? "Full Rebuild" : "Quick Update"}
-        message={`Start ${pendingDeploy?.noCache ? "Full Rebuild" : "Quick Update"}? The dashboard will restart after deployment.`}
+        title="Deploy Latest Dashboard"
+        message="Pull and restart the latest published dashboard image?"
         confirmLabel="Deploy"
         cancelLabel="Cancel"
         variant="warning"

@@ -10,8 +10,8 @@ Check the service manager and compose state:
 sudo systemctl status cliproxyapi-stack
 
 cd infrastructure
-docker compose ps
-docker compose logs -f
+./manage.sh ps
+./manage.sh logs
 ```
 
 ## Database Connection Errors
@@ -33,15 +33,15 @@ docker compose -f docker-compose.local.yml down -v
 
 # Server setup
 cd infrastructure
-docker compose down -v
-sudo systemctl start cliproxyapi-stack
+./manage.sh compose down -v
+./manage.sh up
 ```
 
 ### Fix Option 2: Update the PostgreSQL Password In Place
 
 ```bash
 cd infrastructure
-docker compose exec postgres psql -U cliproxyapi -d cliproxyapi -c \
+./manage.sh compose exec postgres psql -U cliproxyapi -d cliproxyapi -c \
   "ALTER USER cliproxyapi PASSWORD 'YOUR_NEW_PASSWORD_FROM_ENV';"
 ```
 
@@ -49,8 +49,8 @@ docker compose exec postgres psql -U cliproxyapi -d cliproxyapi -c \
 
 ```bash
 cd infrastructure
-docker compose ps postgres
-docker compose exec postgres pg_isready -U cliproxyapi
+./manage.sh compose ps postgres
+./manage.sh compose exec postgres pg_isready -U cliproxyapi
 grep -E 'POSTGRES_PASSWORD|DATABASE_URL' .env
 ```
 
@@ -60,8 +60,8 @@ Verify the dashboard is healthy and reachable locally:
 
 ```bash
 cd infrastructure
-docker compose ps
-docker compose logs dashboard
+./manage.sh ps
+./manage.sh logs dashboard
 curl -I http://127.0.0.1:3000/api/health
 ```
 
@@ -78,7 +78,7 @@ Verify the proxy container and local bind:
 
 ```bash
 cd infrastructure
-docker compose logs cliproxyapi
+./manage.sh logs cliproxyapi
 curl -I http://127.0.0.1:8317/
 ```
 
@@ -103,7 +103,7 @@ Check proxy logs:
 
 ```bash
 cd infrastructure
-docker compose logs -f cliproxyapi
+./manage.sh logs cliproxyapi
 ```
 
 ## Port Already In Use
@@ -138,5 +138,5 @@ If you need to reset the admin account:
 
 ```bash
 cd infrastructure
-docker compose exec postgres psql -U cliproxyapi -d cliproxyapi -c "DELETE FROM users;"
+./manage.sh compose exec postgres psql -U cliproxyapi -d cliproxyapi -c "DELETE FROM users;"
 ```

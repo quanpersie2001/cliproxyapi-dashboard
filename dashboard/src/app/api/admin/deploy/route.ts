@@ -3,7 +3,7 @@ import { verifySession } from "@/lib/auth/session";
 import { validateOrigin } from "@/lib/auth/origin";
 import { prisma } from "@/lib/db";
 import { Errors, apiSuccess } from "@/lib/errors";
-import { DeploySchema } from "@/lib/validation/schemas";
+import { ConfirmActionSchema } from "@/lib/validation/schemas";
 import { logger } from "@/lib/logger";
 
 const WEBHOOK_HOST = process.env.WEBHOOK_HOST || "http://localhost:9000";
@@ -32,16 +32,17 @@ export async function POST(request: NextRequest) {
     }
 
     if (!DEPLOY_SECRET) {
-      return Errors.internal("Deploy secret not configured");
+      return Errors.internal("Deploy webhook is not configured");
     }
 
     const body = await request.json().catch(() => ({}));
-    const result = DeploySchema.safeParse(body);
-    const noCache = result.success ? (result.data.noCache ?? false) : false;
+    const result = ConfirmActionSchema.safeParse(body);
 
-    const endpoint = noCache ? "deploy-dashboard-nocache" : "deploy-dashboard";
+    if (!result.success) {
+      return Errors.zodValidation(result.error.issues);
+    }
 
-    const response = await fetch(`${WEBHOOK_HOST}/hooks/${endpoint}`, {
+    const response = await fetch(`${WEBHOOK_HOST}/hooks/deploy-dashboard`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -59,7 +60,7 @@ export async function POST(request: NextRequest) {
     await response.body?.cancel();
 
     return apiSuccess({
-      message: noCache ? "Full rebuild started" : "Quick update started",
+      message: "Deployment started",
     });
   } catch (error) {
     logger.error({ err: error }, "Deploy error");
@@ -82,7 +83,10 @@ export async function GET(request: NextRequest) {
     }
 
     if (!DEPLOY_SECRET) {
-      return Errors.internal("Deploy secret not configured");
+      return apiSuccess({
+        webhookConfigured: false,
+        status: { status: "idle", message: "Deploy webhook is not configured" },
+      });
     }
 
     const url = new URL(request.url);
@@ -102,6 +106,7 @@ export async function GET(request: NextRequest) {
       if (response.status === 404) {
         await response.body?.cancel();
         return apiSuccess({
+          webhookConfigured: true,
           status: { status: "idle", message: "No deployment in progress" },
         });
       }
@@ -112,14 +117,15 @@ export async function GET(request: NextRequest) {
     const text = await response.text();
 
     if (type === "log") {
-      return apiSuccess({ log: text });
+      return apiSuccess({ webhookConfigured: true, log: text });
     }
 
     try {
       const status = JSON.parse(text);
-      return apiSuccess({ status });
+      return apiSuccess({ webhookConfigured: true, status });
     } catch {
       return apiSuccess({
+        webhookConfigured: true,
         status: { status: "idle", message: "No deployment in progress" },
       });
     }
