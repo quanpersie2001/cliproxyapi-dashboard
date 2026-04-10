@@ -36,6 +36,12 @@ export const API_ENDPOINTS = {
     OAUTH: "/api/providers/oauth",
     OAUTH_IMPORT: "/api/providers/oauth/import",
     OAUTH_CLAIM: "/api/providers/oauth/claim",
+    OAUTH_ACCOUNT_MODELS: (accountName: string) =>
+      `/api/providers/oauth/${encodeURIComponent(accountName)}/models`,
+    OAUTH_ACCOUNT_DOWNLOAD: (accountName: string) =>
+      `/api/providers/oauth/${encodeURIComponent(accountName)}/download`,
+    OAUTH_ACCOUNT_SETTINGS: (accountName: string) =>
+      `/api/providers/oauth/${encodeURIComponent(accountName)}/settings`,
   },
   CUSTOM_PROVIDERS: {
     FETCH_MODELS: "/api/custom-providers/fetch-models",

@@ -18,6 +18,54 @@ import {
   type OAuthAccountWithOwnership,
 } from "./management-api";
 
+function readOptionalString(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  return trimmed ? trimmed : null;
+}
+
+function readOptionalNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) {
+      return null;
+    }
+
+    const parsed = Number(trimmed);
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return null;
+}
+
+function readOptionalIsoDate(value: unknown): string | null {
+  const numericValue = readOptionalNumber(value);
+  if (numericValue !== null) {
+    const timestamp = numericValue < 1e12 ? numericValue * 1000 : numericValue;
+    const date = new Date(timestamp);
+    if (!Number.isNaN(date.getTime())) {
+      return date.toISOString();
+    }
+  }
+
+  const textValue = readOptionalString(value);
+  if (!textValue) {
+    return null;
+  }
+
+  const date = new Date(textValue);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
 export async function contributeOAuthAccount(
   userId: string,
   provider: OAuthProvider,
@@ -293,37 +341,67 @@ export async function listOAuthWithOwnership(
       type?: string;
       email?: string;
       status?: string;
+      disabled?: boolean;
       status_message?: string;
       unavailable?: boolean;
+      size?: number | string;
+      modtime?: number | string;
+      modified?: number | string;
+      updated_at?: number | string;
+      last_refresh?: number | string;
     }>;
 
     const accountNames = authFiles.map((file) => file.name);
 
     const ownerships = await prisma.providerOAuthOwnership.findMany({
       where: { accountName: { in: accountNames } },
-      include: { user: { select: { id: true, username: true } } },
+      include: {
+        user: { select: { id: true, username: true } },
+      },
     });
 
     const ownershipMap = new Map(ownerships.map((o) => [o.accountName, o]));
 
-     const accountsWithOwnership: OAuthAccountWithOwnership[] = authFiles.map((file, index) => {
-       const ownership = ownershipMap.get(file.name);
-       const isOwn = ownership?.userId === userId;
-       const canSeeDetails = isOwn || isAdmin;
+    const accountsWithOwnership: OAuthAccountWithOwnership[] = authFiles.map((file, index) => {
+      const normalizedAccountName = readOptionalString(file.name) ?? "";
+      const ownership = ownershipMap.get(normalizedAccountName);
+      const isOwn = ownership?.userId === userId;
+      const canSeeDetails = isOwn || isAdmin;
+      const providerFromApi = readOptionalString(file.provider) ?? readOptionalString(file.type);
+      const provider =
+        providerFromApi && providerFromApi.toLowerCase() !== "unknown"
+          ? providerFromApi
+          : ownership?.provider ?? providerFromApi ?? "unknown";
+      const statusFromApi = readOptionalString(file.status);
+      const isDisabled = file.disabled === true || statusFromApi?.toLowerCase() === "disabled";
 
-       return {
-         id: canSeeDetails ? file.id : `account-${index + 1}`,
-         accountName: canSeeDetails ? file.name : `Account ${index + 1}`,
-         accountEmail: canSeeDetails ? file.email || null : null,
-         provider: file.provider || file.type || "unknown",
-         ownerUsername: canSeeDetails ? ownership?.user.username || null : null,
-         ownerUserId: canSeeDetails ? ownership?.user.id || null : null,
-         isOwn,
-         status: file.status || "active",
-         statusMessage: file.status_message || null,
-         unavailable: file.unavailable ?? false,
-       };
-     });
+      return {
+        id: canSeeDetails
+          ? readOptionalString(file.id) ?? ownership?.id ?? `account-${index + 1}`
+          : `account-${index + 1}`,
+        accountName: canSeeDetails
+          ? normalizedAccountName || ownership?.accountName || `Account ${index + 1}`
+          : `Account ${index + 1}`,
+        accountEmail: canSeeDetails
+          ? readOptionalString(file.email) ?? ownership?.accountEmail ?? null
+          : null,
+        provider,
+        ownerUsername: canSeeDetails ? ownership?.user.username ?? null : null,
+        ownerUserId: canSeeDetails ? ownership?.user.id ?? null : null,
+        isOwn,
+        status: isDisabled ? "disabled" : statusFromApi ?? "active",
+        statusMessage: readOptionalString(file.status_message),
+        unavailable: file.unavailable ?? false,
+        claimedAt: canSeeDetails ? ownership?.createdAt.toISOString() ?? null : null,
+        fileSizeBytes: canSeeDetails ? readOptionalNumber(file.size) : null,
+        modifiedAt: canSeeDetails
+          ? readOptionalIsoDate(file.modtime)
+            ?? readOptionalIsoDate(file.modified)
+            ?? readOptionalIsoDate(file.updated_at)
+            ?? readOptionalIsoDate(file.last_refresh)
+          : null,
+      };
+    });
 
     return { ok: true, accounts: accountsWithOwnership };
   } catch (error) {
@@ -536,12 +614,12 @@ export async function toggleOAuthAccountByIdOrName(
       }
     }
 
-    const endpoint = `${MANAGEMENT_BASE_URL}/auth-files?name=${encodeURIComponent(resolved.accountName)}`;
+    const endpoint = `${MANAGEMENT_BASE_URL}/auth-files/status`;
 
-    let postRes: Response;
+    let patchRes: Response;
     try {
-      postRes = await fetchWithTimeout(endpoint, {
-        method: "POST",
+      patchRes = await fetchWithTimeout(endpoint, {
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${MANAGEMENT_API_KEY}`,
@@ -558,15 +636,15 @@ export async function toggleOAuthAccountByIdOrName(
           endpoint,
           accountName: resolved.accountName,
           timeoutMs: FETCH_TIMEOUT_MS,
-        }, "Fetch timeout - toggleOAuthAccountByIdOrName POST");
+        }, "Fetch timeout - toggleOAuthAccountByIdOrName PATCH");
         return { ok: false, error: "Request timeout toggling OAuth account" };
       }
       throw fetchError;
     }
 
-    if (!postRes.ok) {
-      const errorBody = await postRes.text().catch(() => "");
-      return { ok: false, error: `Failed to toggle OAuth account: HTTP ${postRes.status}${errorBody ? ` - ${errorBody}` : ""}` };
+    if (!patchRes.ok) {
+      const errorBody = await patchRes.text().catch(() => "");
+      return { ok: false, error: `Failed to toggle OAuth account: HTTP ${patchRes.status}${errorBody ? ` - ${errorBody}` : ""}` };
     }
 
     return { ok: true, disabled };

@@ -100,6 +100,9 @@ export interface OAuthAccountWithOwnership {
   status: "active" | "error" | "disabled" | string;
   statusMessage: string | null;
   unavailable: boolean;
+  claimedAt: string | null;
+  fileSizeBytes: number | null;
+  modifiedAt: string | null;
 }
 
 export interface ListOAuthResult {

@@ -9,15 +9,33 @@ import { useToast } from "@/components/ui/toast";
 import { extractApiError } from "@/lib/utils";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import type { CurrentUserLike } from "@/components/providers/api-key-section";
-import { OAuthCredentialList, type OAuthAccountWithOwnership } from "@/components/providers/oauth-credential-list";
+import {
+  OAuthCredentialList,
+  type OAuthAccountUsageStats,
+  type OAuthAccountWithOwnership,
+} from "@/components/providers/oauth-credential-list";
 import { OAuthImportForm } from "@/components/providers/oauth-import-form";
 import { OAuthActions } from "@/components/providers/oauth-actions";
+import {
+  OAuthAccountModelsModal,
+  type OAuthAccountModel,
+} from "@/components/providers/oauth-account-models-modal";
+import { OAuthAccountSettingsModal } from "@/components/providers/oauth-account-settings-modal";
 import {
   getOAuthProviderById,
   OAUTH_PROVIDERS,
   type OAuthProviderId,
 } from "@/components/providers/oauth-provider-meta";
 import { getStateAccentBorderStyle, getStateToneStyle } from "@/components/ui/state-styles";
+import {
+  buildOAuthAuthFileSettingsPayload,
+  createOAuthAuthFileSettingsEditor,
+  formatOAuthAuthFileSettingsPreview,
+  isOAuthAuthFileSettingsDirty,
+  OAUTH_AUTH_FILE_MAX_BYTES,
+  type DisableCoolingMode,
+  type OAuthAuthFileSettingsEditor,
+} from "@/lib/providers/oauth-auth-file-settings";
 
 type ShowToast = ReturnType<typeof useToast>["showToast"];
 
@@ -72,6 +90,17 @@ interface AuthStatusResponse {
 interface OAuthCallbackResponse {
   status?: number;
   error?: string;
+}
+
+interface UsageHistoryResponse {
+  data?: {
+    credentialBreakdown?: Array<{
+      sourceId?: string;
+      sourceDisplay?: string;
+      successCount?: number;
+      failureCount?: number;
+    }>;
+  };
 }
 
 function isTabVisible(): boolean {
@@ -149,6 +178,18 @@ export function OAuthSection({
   const [importErrorMessage, setImportErrorMessage] = useState<string | null>(null);
   const [isConnectActionsExpanded, setIsConnectActionsExpanded] = useState(true);
   const connectActionsInitializedRef = useRef(false);
+  const [accountStats, setAccountStats] = useState<Record<string, OAuthAccountUsageStats>>({});
+  const [accountStatsLoading, setAccountStatsLoading] = useState(true);
+  const [modelsModalAccount, setModelsModalAccount] = useState<OAuthAccountWithOwnership | null>(null);
+  const [modelsLoading, setModelsLoading] = useState(false);
+  const [modelsErrorMessage, setModelsErrorMessage] = useState<string | null>(null);
+  const [models, setModels] = useState<OAuthAccountModel[]>([]);
+  const [downloadingAccountName, setDownloadingAccountName] = useState<string | null>(null);
+  const [settingsAccount, setSettingsAccount] = useState<OAuthAccountWithOwnership | null>(null);
+  const [settingsLoading, setSettingsLoading] = useState(false);
+  const [settingsSaving, setSettingsSaving] = useState(false);
+  const [settingsErrorMessage, setSettingsErrorMessage] = useState<string | null>(null);
+  const [settingsEditor, setSettingsEditor] = useState<OAuthAuthFileSettingsEditor | null>(null);
 
   const selectedOAuthProvider = getOAuthProviderById(selectedOAuthProviderId);
   const selectedOAuthProviderRequiresCallback = selectedOAuthProvider?.requiresCallback ?? true;
@@ -191,21 +232,69 @@ export function OAuthSection({
     }
   }, [onAccountCountChange, showToast]);
 
+  const loadAccountStats = useCallback(async () => {
+    setAccountStatsLoading(true);
+    try {
+      const res = await fetch(`${API_ENDPOINTS.USAGE.HISTORY}?window=7d`);
+      if (!res.ok) {
+        setAccountStats({});
+        setAccountStatsLoading(false);
+        return;
+      }
+
+      const data: UsageHistoryResponse = await res.json();
+      const breakdown = Array.isArray(data.data?.credentialBreakdown)
+        ? data.data.credentialBreakdown
+        : [];
+
+      const nextStats: Record<string, OAuthAccountUsageStats> = {};
+      for (const entry of breakdown) {
+        const sourceId = typeof entry.sourceId === "string" ? entry.sourceId : "";
+        const sourceDisplay = typeof entry.sourceDisplay === "string" ? entry.sourceDisplay : "";
+        if (!sourceId.startsWith("oauth:") || !sourceDisplay) {
+          continue;
+        }
+
+        nextStats[sourceDisplay] = {
+          successCount: typeof entry.successCount === "number" ? entry.successCount : 0,
+          failureCount: typeof entry.failureCount === "number" ? entry.failureCount : 0,
+        };
+      }
+
+      setAccountStats(nextStats);
+    } catch {
+      setAccountStats({});
+    } finally {
+      setAccountStatsLoading(false);
+    }
+  }, []);
+
   const toggleOAuthAccount = async (accountId: string, currentlyDisabled: boolean) => {
     setTogglingAccountId(accountId);
+    const nextDisabled = !currentlyDisabled;
     try {
       const res = await fetch(`${API_ENDPOINTS.PROVIDERS.OAUTH}/${accountId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ disabled: !currentlyDisabled }),
+        body: JSON.stringify({ disabled: nextDisabled }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         showToast(extractApiError(data, "Failed to update account"), "error");
       } else {
-        showToast(`OAuth account ${!currentlyDisabled ? "disabled" : "enabled"}`, "success");
-        await loadAccounts();
-        await refreshProviders();
+        setAccounts((current) =>
+          current.map((account) =>
+            account.id === accountId
+              ? {
+                  ...account,
+                  status: nextDisabled ? "disabled" : "active",
+                  statusMessage: null,
+                  unavailable: false,
+                }
+              : account
+          )
+        );
+        showToast(`OAuth account ${nextDisabled ? "disabled" : "enabled"}`, "success");
       }
     } catch {
       showToast("Network error", "error");
@@ -228,11 +317,193 @@ export function OAuthSection({
       } else {
         showToast("Account claimed successfully", "success");
         await loadAccounts();
+        void loadAccountStats();
       }
     } catch {
       showToast("Network error", "error");
     } finally {
       setClaimingAccountName(null);
+    }
+  };
+
+  const openModelsModal = async (account: OAuthAccountWithOwnership) => {
+    setModelsModalAccount(account);
+    setModelsLoading(true);
+    setModelsErrorMessage(null);
+    setModels([]);
+
+    try {
+      const res = await fetch(API_ENDPOINTS.PROVIDERS.OAUTH_ACCOUNT_MODELS(account.accountName));
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setModelsErrorMessage(extractApiError(data, "Failed to load models for this auth file."));
+        return;
+      }
+
+      setModels(Array.isArray(data.models) ? data.models : []);
+    } catch {
+      setModelsErrorMessage("Network error while loading models.");
+    } finally {
+      setModelsLoading(false);
+    }
+  };
+
+  const closeModelsModal = () => {
+    setModelsModalAccount(null);
+    setModelsLoading(false);
+    setModelsErrorMessage(null);
+    setModels([]);
+  };
+
+  const downloadOAuthAccount = async (account: OAuthAccountWithOwnership) => {
+    setDownloadingAccountName(account.accountName);
+    try {
+      const res = await fetch(API_ENDPOINTS.PROVIDERS.OAUTH_ACCOUNT_DOWNLOAD(account.accountName));
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        showToast(extractApiError(data, "Failed to download auth file"), "error");
+        return;
+      }
+
+      const blob = await res.blob();
+      const objectUrl = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = objectUrl;
+      anchor.download = account.accountName;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      window.URL.revokeObjectURL(objectUrl);
+      showToast("Auth file downloaded", "success");
+    } catch {
+      showToast("Network error", "error");
+    } finally {
+      setDownloadingAccountName(null);
+    }
+  };
+
+  const openSettingsModal = async (account: OAuthAccountWithOwnership) => {
+    setSettingsAccount(account);
+    setSettingsLoading(true);
+    setSettingsSaving(false);
+    setSettingsErrorMessage(null);
+    setSettingsEditor(null);
+
+    try {
+      const res = await fetch(API_ENDPOINTS.PROVIDERS.OAUTH_ACCOUNT_SETTINGS(account.accountName));
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setSettingsErrorMessage(extractApiError(data, "Failed to load auth file settings."));
+        return;
+      }
+
+      if (typeof data.rawText !== "string") {
+        setSettingsErrorMessage("Auth file payload is missing.");
+        return;
+      }
+
+      const editor = createOAuthAuthFileSettingsEditor(data.rawText, account.provider);
+      setSettingsEditor(editor);
+    } catch (error) {
+      setSettingsErrorMessage(
+        error instanceof Error ? error.message : "Network error while loading auth file settings."
+      );
+    } finally {
+      setSettingsLoading(false);
+    }
+  };
+
+  const closeSettingsModal = () => {
+    setSettingsAccount(null);
+    setSettingsLoading(false);
+    setSettingsSaving(false);
+    setSettingsErrorMessage(null);
+    setSettingsEditor(null);
+  };
+
+  const updateSettingsField = (
+    field: "prefix" | "proxyUrl" | "priority" | "excludedModelsText" | "note",
+    value: string
+  ) => {
+    setSettingsEditor((current) => {
+      if (!current) {
+        return current;
+      }
+
+      if (field === "note") {
+        return {
+          ...current,
+          note: value,
+          noteTouched: true,
+        };
+      }
+
+      return {
+        ...current,
+        [field]: value,
+      };
+    });
+  };
+
+  const updateSettingsDisableCooling = (value: DisableCoolingMode) => {
+    setSettingsEditor((current) => (current ? { ...current, disableCooling: value } : current));
+  };
+
+  const updateSettingsWebsockets = (value: boolean) => {
+    setSettingsEditor((current) => (current ? { ...current, websockets: value } : current));
+  };
+
+  const copySettingsPreview = async () => {
+    if (!settingsEditor) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(formatOAuthAuthFileSettingsPreview(settingsEditor));
+      showToast("Auth file preview copied", "success");
+    } catch {
+      showToast("Failed to copy auth file preview", "error");
+    }
+  };
+
+  const saveSettings = async () => {
+    if (!settingsAccount || !settingsEditor) {
+      return;
+    }
+
+    const payload = buildOAuthAuthFileSettingsPayload(settingsEditor);
+    if (new Blob([payload]).size > OAUTH_AUTH_FILE_MAX_BYTES) {
+      setSettingsErrorMessage("Auth file content exceeds the 1MB limit.");
+      return;
+    }
+
+    setSettingsSaving(true);
+    setSettingsErrorMessage(null);
+
+    try {
+      const res = await fetch(API_ENDPOINTS.PROVIDERS.OAUTH_ACCOUNT_SETTINGS(settingsAccount.accountName), {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fileContent: payload }),
+      });
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setSettingsErrorMessage(extractApiError(data, "Failed to save auth file settings."));
+        return;
+      }
+
+      setSettingsEditor(createOAuthAuthFileSettingsEditor(payload, settingsAccount.provider));
+      showToast("Auth file settings saved", "success");
+      await loadAccounts();
+      await refreshProviders();
+      void loadAccountStats();
+    } catch {
+      setSettingsErrorMessage("Network error while saving auth file settings.");
+    } finally {
+      setSettingsSaving(false);
     }
   };
 
@@ -294,6 +565,7 @@ export function OAuthSection({
           showToast("OAuth account connected", "success");
           await refreshProviders();
           void loadAccounts();
+          void loadAccountStats();
           return;
         }
 
@@ -368,6 +640,7 @@ export function OAuthSection({
 
       stopNoCallbackClaimPolling();
       void loadAccounts();
+      void loadAccountStats();
     } catch {
       if (noCallbackClaimAttemptsRef.current >= 25) {
         stopNoCallbackClaimPolling();
@@ -564,6 +837,7 @@ export function OAuthSection({
       showToast("OAuth account removed", "success");
       await refreshProviders();
       void loadAccounts();
+      void loadAccountStats();
     } catch {
       showToast("Network error", "error");
     }
@@ -684,6 +958,7 @@ export function OAuthSection({
       showToast("OAuth credential imported successfully", "success");
       await refreshProviders();
       void loadAccounts();
+      void loadAccountStats();
     } catch {
       setImportStatus("error");
       setImportErrorMessage("Network error while importing credential.");
@@ -701,6 +976,16 @@ export function OAuthSection({
       stopNoCallbackClaimPolling();
     };
   }, [loadAccounts, stopNoCallbackClaimPolling, stopPolling]);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      void loadAccountStats();
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [loadAccountStats]);
 
   useEffect(() => {
     if (oauthAccountsLoading || connectActionsInitializedRef.current) {
@@ -721,6 +1006,12 @@ export function OAuthSection({
   const importProviderName = importProviderId
     ? getOAuthProviderById(importProviderId)?.name || importProviderId
     : "";
+  const settingsPreviewText = settingsEditor
+    ? formatOAuthAuthFileSettingsPreview(settingsEditor)
+    : "";
+  const settingsDirty = settingsEditor
+    ? isOAuthAuthFileSettingsDirty(settingsEditor)
+    : false;
 
   return (
     <>
@@ -728,7 +1019,7 @@ export function OAuthSection({
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-sm font-semibold text-[var(--text-primary)]">OAuth Accounts</h2>
-            <p className="text-xs text-[var(--text-muted)]">Subscription-based provider connections</p>
+            <p className="text-xs text-[var(--text-muted)]">OAuth auth files managed by the proxy</p>
           </div>
           <span className="text-xs font-medium text-[var(--text-muted)]">{accounts.length} connected</span>
         </div>
@@ -737,12 +1028,20 @@ export function OAuthSection({
           <OAuthCredentialList
             accounts={accounts}
             loading={oauthAccountsLoading}
+            statsLoading={accountStatsLoading}
+            accountStats={accountStats}
             currentUser={currentUser}
             togglingAccountId={togglingAccountId}
             claimingAccountName={claimingAccountName}
+            downloadingAccountName={downloadingAccountName}
+            inspectingModelsAccountName={modelsLoading ? modelsModalAccount?.accountName ?? null : null}
+            inspectingSettingsAccountName={settingsLoading ? settingsAccount?.accountName ?? null : null}
             onToggle={toggleOAuthAccount}
             onDelete={confirmDeleteOAuth}
             onClaim={claimOAuthAccount}
+            onOpenModels={openModelsModal}
+            onDownload={downloadOAuthAccount}
+            onOpenSettings={openSettingsModal}
           />
 
           <OAuthActions
@@ -1016,6 +1315,40 @@ export function OAuthSection({
         onFileSelect={handleImportFileSelect}
         onJsonChange={handleImportJsonChange}
         onSubmit={handleImportSubmit}
+      />
+
+      <OAuthAccountModelsModal
+        isOpen={Boolean(modelsModalAccount)}
+        account={modelsModalAccount}
+        loading={modelsLoading}
+        errorMessage={modelsErrorMessage}
+        models={models}
+        onClose={closeModelsModal}
+        onCopyModelId={async (modelId) => {
+          try {
+            await navigator.clipboard.writeText(modelId);
+            showToast("Model id copied", "success");
+          } catch {
+            showToast("Failed to copy model id", "error");
+          }
+        }}
+      />
+
+      <OAuthAccountSettingsModal
+        isOpen={Boolean(settingsAccount)}
+        account={settingsAccount}
+        editor={settingsEditor}
+        loading={settingsLoading}
+        saving={settingsSaving}
+        errorMessage={settingsErrorMessage}
+        previewText={settingsPreviewText}
+        dirty={settingsDirty}
+        onClose={closeSettingsModal}
+        onCopyPreview={copySettingsPreview}
+        onSave={saveSettings}
+        onStringFieldChange={updateSettingsField}
+        onDisableCoolingChange={updateSettingsDisableCooling}
+        onWebsocketsChange={updateSettingsWebsockets}
       />
     </>
   );

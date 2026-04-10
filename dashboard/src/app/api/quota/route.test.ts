@@ -275,10 +275,32 @@ describe("GET /api/quota — imported provider normalization (issue #provider-fi
     };
 
     fetchMock
-      // First call: auth-files — no second call needed, route falls through before fetching
+      // First call: auth-files
       .mockResolvedValueOnce({
         ok: true,
         json: () => Promise.resolve(authFilesResponse),
+        body: { cancel: vi.fn() },
+      })
+      // Second call: Claude usage
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          status_code: 200,
+          body: {
+            five_hour: { utilization: 0.1, resets_at: "2026-03-20T18:00:00Z" },
+          },
+        }),
+        body: { cancel: vi.fn() },
+      })
+      // Third call: Claude profile
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          status_code: 200,
+          body: {
+            account: { has_claude_pro: true },
+          },
+        }),
         body: { cancel: vi.fn() },
       });
 
@@ -367,6 +389,16 @@ describe("GET /api/quota — imported provider normalization (issue #provider-fi
         ok: true,
         json: () => Promise.resolve({ status_code: 200, body: claudeUsageResponse }),
         body: { cancel: vi.fn() },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          status_code: 200,
+          body: {
+            account: { has_claude_pro: true },
+          },
+        }),
+        body: { cancel: vi.fn() },
       });
 
     const { GET } = await import("./route");
@@ -383,5 +415,119 @@ describe("GET /api/quota — imported provider normalization (issue #provider-fi
     expect(account.email).toBe("claude-credential.json");
     expect(account.groups).toBeDefined();
     expect(account.groups.length).toBeGreaterThan(0);
+  });
+});
+
+describe("GET /api/quota — plan detection", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("returns Claude plan from profile payload", async () => {
+    const authFilesResponse = {
+      files: [
+        {
+          auth_index: 0,
+          provider: "claude",
+          email: "user@anthropic.com",
+          disabled: false,
+          status: "active",
+        },
+      ],
+    };
+
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(authFilesResponse),
+        body: { cancel: vi.fn() },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          status_code: 200,
+          body: {
+            five_hour: { utilization: 0.25, resets_at: "2026-03-20T18:00:00Z" },
+          },
+        }),
+        body: { cancel: vi.fn() },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          status_code: 200,
+          body: {
+            account: { has_claude_pro: true, has_claude_max: false },
+          },
+        }),
+        body: { cancel: vi.fn() },
+      });
+
+    const { GET } = await import("./route");
+
+    const response = await GET(createQuotaRequest());
+    const data = await response.json();
+    const account = data.accounts[0];
+
+    expect(account.supported).toBe(true);
+    expect(account.plan).toBe("plan_pro");
+  });
+
+  it("falls back to Codex plan from auth file metadata and forwards Chatgpt-Account-Id", async () => {
+    const authFilesResponse = {
+      files: [
+        {
+          auth_index: 1,
+          provider: "codex",
+          email: "user@openai.com",
+          plan_type: "team",
+          id_token: {
+            chatgpt_account_id: "acct_test_123",
+          },
+          disabled: false,
+          status: "active",
+        },
+      ],
+    };
+
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve(authFilesResponse),
+        body: { cancel: vi.fn() },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          status_code: 200,
+          body: {
+            rate_limit: {
+              primary_window: {
+                used_percent: 25,
+                limit_window_seconds: 18_000,
+                reset_at: 1_776_000_000,
+              },
+            },
+          },
+        }),
+        body: { cancel: vi.fn() },
+      });
+
+    const { GET } = await import("./route");
+
+    const response = await GET(createQuotaRequest());
+    const data = await response.json();
+    const account = data.accounts[0];
+
+    expect(account.supported).toBe(true);
+    expect(account.plan).toBe("team");
+
+    const codexRequest = fetchMock.mock.calls[1];
+    expect(codexRequest).toBeDefined();
+
+    const requestInit = codexRequest?.[1] as RequestInit | undefined;
+    const requestBody = typeof requestInit?.body === "string" ? JSON.parse(requestInit.body) : null;
+
+    expect(requestBody?.header?.["Chatgpt-Account-Id"]).toBe("acct_test_123");
   });
 });

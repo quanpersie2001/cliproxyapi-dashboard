@@ -19,8 +19,14 @@ interface AuthFile {
   email?: string;
   name?: string;
   label?: string;
+  plan_type?: string;
+  planType?: string;
+  id_token?: unknown;
+  metadata?: unknown;
+  attributes?: unknown;
   disabled: boolean;
   status: string;
+  [key: string]: unknown;
 }
 
 interface AuthFilesResponse {
@@ -57,6 +63,7 @@ interface QuotaAccount {
   provider: string;
   email: string;
   supported: boolean;
+  plan?: string | null;
   error?: string;
   groups?: QuotaGroup[];
   raw?: unknown;
@@ -64,6 +71,180 @@ interface QuotaAccount {
 
 interface QuotaResponse {
   accounts: QuotaAccount[];
+}
+
+interface QuotaFetchSuccess {
+  groups: QuotaGroup[];
+  plan?: string | null;
+}
+
+interface QuotaFetchFailure {
+  error: string;
+  plan?: string | null;
+}
+
+function readOptionalString(value: unknown): string | null {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed ? trimmed : null;
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  return null;
+}
+
+function readOptionalRecord(value: unknown): Record<string, unknown> | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+
+  return value as Record<string, unknown>;
+}
+
+function normalizePlanType(value: unknown): string | null {
+  const normalized = readOptionalString(value);
+  return normalized ? normalized.toLowerCase() : null;
+}
+
+function parseOptionalBoolean(value: unknown): boolean | undefined {
+  if (typeof value === "boolean") {
+    return value;
+  }
+
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value !== 0;
+  }
+
+  const normalized = readOptionalString(value)?.toLowerCase();
+  if (!normalized) {
+    return undefined;
+  }
+
+  if (["true", "1", "yes", "y", "on"].includes(normalized)) {
+    return true;
+  }
+
+  if (["false", "0", "no", "n", "off"].includes(normalized)) {
+    return false;
+  }
+
+  return undefined;
+}
+
+function decodeBase64UrlPayload(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  try {
+    const normalized = trimmed.replace(/-/g, "+").replace(/_/g, "/");
+    const padded = normalized.padEnd(Math.ceil(normalized.length / 4) * 4, "=");
+    return Buffer.from(padded, "base64").toString("utf8");
+  } catch {
+    return null;
+  }
+}
+
+function parseIdTokenPayload(value: unknown): Record<string, unknown> | null {
+  const directRecord = readOptionalRecord(value);
+  if (directRecord) {
+    return directRecord;
+  }
+
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(trimmed) as unknown;
+    return readOptionalRecord(parsed);
+  } catch {
+    // Continue to JWT parsing.
+  }
+
+  const segments = trimmed.split(".");
+  if (segments.length < 2) {
+    return null;
+  }
+
+  const decoded = decodeBase64UrlPayload(segments[1]);
+  if (!decoded) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(decoded) as unknown;
+    return readOptionalRecord(parsed);
+  } catch {
+    return null;
+  }
+}
+
+function extractCodexChatgptAccountId(value: unknown): string | null {
+  const payload = parseIdTokenPayload(value);
+  if (!payload) {
+    return null;
+  }
+
+  return readOptionalString(payload.chatgpt_account_id ?? payload.chatgptAccountId);
+}
+
+function resolveCodexChatgptAccountId(account: AuthFile): string | null {
+  const metadata = readOptionalRecord(account.metadata);
+  const attributes = readOptionalRecord(account.attributes);
+  const candidates = [account.id_token, metadata?.id_token, attributes?.id_token];
+
+  for (const candidate of candidates) {
+    const accountId = extractCodexChatgptAccountId(candidate);
+    if (accountId) {
+      return accountId;
+    }
+  }
+
+  return null;
+}
+
+function resolveCodexPlanType(account: AuthFile): string | null {
+  const metadata = readOptionalRecord(account.metadata);
+  const attributes = readOptionalRecord(account.attributes);
+  const idToken = readOptionalRecord(account.id_token);
+  const metadataIdToken = readOptionalRecord(metadata?.id_token);
+
+  const candidates = [
+    account.plan_type,
+    account.planType,
+    account["plan_type"],
+    account["planType"],
+    account.id_token,
+    idToken?.plan_type,
+    idToken?.planType,
+    metadata?.plan_type,
+    metadata?.planType,
+    metadata?.id_token,
+    metadataIdToken?.plan_type,
+    metadataIdToken?.planType,
+    attributes?.plan_type,
+    attributes?.planType,
+    attributes?.id_token,
+  ];
+
+  for (const candidate of candidates) {
+    const planType = normalizePlanType(candidate);
+    if (planType) {
+      return planType;
+    }
+  }
+
+  return null;
 }
 
 function isMeaningfulDisplayValue(value: string | undefined): value is string {
@@ -120,6 +301,13 @@ interface ClaudeOAuthUsageResponse {
     utilization?: number;
     monthly_limit?: number;
     used_credits?: number;
+  };
+}
+
+interface ClaudeProfileResponse {
+  account?: {
+    has_claude_max?: boolean | string | number;
+    has_claude_pro?: boolean | string | number;
   };
 }
 
@@ -282,6 +470,7 @@ interface CodexWhamUsageResponse {
     secondary_window?: CodexRateWindow;
   };
   plan_type?: string;
+  planType?: string;
 }
 
 function formatWindowLabel(seconds: number): string {
@@ -329,9 +518,23 @@ function parseCodexQuota(data: CodexWhamUsageResponse): QuotaGroup[] {
 }
 
 async function fetchCodexQuota(
-  authIndex: string
-): Promise<QuotaGroup[] | { error: string }> {
+  account: AuthFile
+): Promise<QuotaFetchSuccess | QuotaFetchFailure> {
+  const authIndex = String(account.auth_index);
+  const fallbackPlan = resolveCodexPlanType(account);
+  const chatgptAccountId = resolveCodexChatgptAccountId(account);
+
   try {
+    const requestHeaders: Record<string, string> = {
+      Authorization: "Bearer $TOKEN$",
+      "Content-Type": "application/json",
+      "User-Agent": "codex-cli/1.0.0",
+    };
+
+    if (chatgptAccountId) {
+      requestHeaders["Chatgpt-Account-Id"] = chatgptAccountId;
+    }
+
     const response = await fetch(`${CLIPROXYAPI_MANAGEMENT_URL}/api-call`, {
       method: "POST",
       headers: {
@@ -343,16 +546,13 @@ async function fetchCodexQuota(
         auth_index: authIndex,
         method: "GET",
         url: "https://chatgpt.com/backend-api/wham/usage",
-        header: {
-          Authorization: "Bearer $TOKEN$",
-          "User-Agent": "codex-cli/1.0.0",
-        },
+        header: requestHeaders,
       }),
     });
 
     if (!response.ok) {
       await response.body?.cancel();
-      return { error: `API call failed: ${response.status}` };
+      return { error: `API call failed: ${response.status}`, plan: fallbackPlan };
     }
 
     const apiCallResult = (await response.json()) as ApiCallResponse | CodexWhamUsageResponse;
@@ -367,14 +567,14 @@ async function fetchCodexQuota(
       const typedResult = apiCallResult as ApiCallResponse;
       const statusCode = Number(typedResult.status_code ?? typedResult.statusCode ?? 0);
       if (statusCode < 200 || statusCode >= 300) {
-        return { error: `Provider API failed: ${statusCode}` };
+        return { error: `Provider API failed: ${statusCode}`, plan: fallbackPlan };
       }
 
       if (typeof typedResult.body === "string") {
         try {
           parsedBody = JSON.parse(typedResult.body);
         } catch {
-          return { error: "Invalid provider response body" };
+          return { error: "Invalid provider response body", plan: fallbackPlan };
         }
       } else {
         parsedBody = typedResult.body;
@@ -385,15 +585,18 @@ async function fetchCodexQuota(
 
     const data = parsedBody as CodexWhamUsageResponse;
     const groups = parseCodexQuota(data);
+    const usagePlan = normalizePlanType(data.plan_type ?? data.planType);
+    const plan = usagePlan ?? fallbackPlan;
 
     if (groups.length === 0) {
-      return { error: "No Codex quota windows found" };
+      return { error: "No Codex quota windows found", plan };
     }
 
-    return groups;
+    return { groups, plan };
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : "Unknown error",
+      plan: fallbackPlan,
     };
   }
 }
@@ -769,17 +972,90 @@ async function callClaudeUsageEndpoint(
   return null;
 }
 
+async function callClaudeProfileEndpoint(
+  authIndex: string
+): Promise<ApiCallResponse | null> {
+  try {
+    const response = await fetch(`${CLIPROXYAPI_MANAGEMENT_URL}/api-call`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${MANAGEMENT_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      signal: AbortSignal.timeout(30_000),
+      body: JSON.stringify({
+        auth_index: authIndex,
+        method: "GET",
+        url: "https://api.anthropic.com/api/oauth/profile",
+        header: {
+          Authorization: "Bearer $TOKEN$",
+          Accept: "application/json",
+          "anthropic-version": "2023-06-01",
+          "anthropic-beta": "oauth-2025-04-20",
+          "User-Agent": "claude-cli/1.0.83 (external, cli)",
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      await response.body?.cancel();
+      return null;
+    }
+
+    return (await response.json()) as ApiCallResponse;
+  } catch {
+    return null;
+  }
+}
+
+function resolveClaudePlanType(profile: ClaudeProfileResponse | null): string | null {
+  if (!profile) {
+    return null;
+  }
+
+  const hasClaudeMax = parseOptionalBoolean(profile.account?.has_claude_max);
+  if (hasClaudeMax) {
+    return "plan_max";
+  }
+
+  const hasClaudePro = parseOptionalBoolean(profile.account?.has_claude_pro);
+  if (hasClaudePro) {
+    return "plan_pro";
+  }
+
+  if (hasClaudeMax === false && hasClaudePro === false) {
+    return "plan_free";
+  }
+
+  return null;
+}
+
 async function fetchClaudeQuota(
   authIndex: string
-): Promise<QuotaGroup[] | { error: string }> {
+): Promise<QuotaFetchSuccess | QuotaFetchFailure> {
   try {
-    const usageResult = await callClaudeUsageEndpoint(authIndex);
-    const usageStatusCode = usageResult
-      ? Number(usageResult.status_code ?? usageResult.statusCode ?? 0)
+    const [usageResult, profileResult] = await Promise.allSettled([
+      callClaudeUsageEndpoint(authIndex),
+      callClaudeProfileEndpoint(authIndex),
+    ]);
+    const usageResponse = usageResult.status === "fulfilled" ? usageResult.value : null;
+    const usageStatusCode = usageResult.status === "fulfilled" && usageResult.value
+      ? Number(usageResult.value.status_code ?? usageResult.value.statusCode ?? 0)
       : 0;
+    const profileResponse = profileResult.status === "fulfilled" ? profileResult.value : null;
+    const profileStatusCode = profileResponse
+      ? Number(profileResponse.status_code ?? profileResponse.statusCode ?? 0)
+      : 0;
+    const profileBody = profileResponse ? parseApiCallBody(profileResponse) : null;
+    const plan =
+      profileResponse && profileStatusCode >= 200 && profileStatusCode < 300
+        ? resolveClaudePlanType(
+            readOptionalRecord(profileBody) as ClaudeProfileResponse | null
+          )
+        : null;
 
-    if (usageResult && usageStatusCode >= 200 && usageStatusCode < 300) {
-      const usageBody = parseApiCallBody(usageResult);
+    if (usageResponse && usageStatusCode >= 200 && usageStatusCode < 300) {
+      const usageBody = parseApiCallBody(usageResponse);
       if (typeof usageBody === "object" && usageBody !== null) {
         const usageData = usageBody as ClaudeOAuthUsageResponse;
         const usageGroups: QuotaGroup[] = [];
@@ -846,7 +1122,7 @@ async function fetchClaudeQuota(
         }
 
         if (usageGroups.length > 0) {
-          return usageGroups;
+          return { groups: usageGroups, plan };
         }
       }
     }
@@ -880,14 +1156,14 @@ async function fetchClaudeQuota(
 
     if (!response.ok) {
       await response.body?.cancel();
-      return { error: `API call failed: ${response.status}` };
+      return { error: `API call failed: ${response.status}`, plan };
     }
 
     const apiCallResult = (await response.json()) as ApiCallResponse;
     const statusCode = Number(apiCallResult.status_code ?? apiCallResult.statusCode ?? 0);
 
     if (statusCode < 200 || statusCode >= 300) {
-      return { error: `Provider API failed: ${statusCode}` };
+      return { error: `Provider API failed: ${statusCode}`, plan };
     }
 
     const headers = apiCallResult.header ?? apiCallResult.headers;
@@ -932,7 +1208,7 @@ async function fetchClaudeQuota(
       pushUnifiedGroup("seven-day-sonnet", "7d Sonnet", unified7dSonnetUtilization, unified7dSonnetReset);
 
       if (unifiedGroups.length > 0) {
-        return unifiedGroups;
+        return { groups: unifiedGroups, plan };
       }
     }
 
@@ -950,7 +1226,7 @@ async function fetchClaudeQuota(
     const outputReset = getHeaderValue(headers, "anthropic-ratelimit-output-tokens-reset");
 
     if (!requestLimit && !inputLimit && !outputLimit) {
-      return { error: "No Claude quota headers found" };
+      return { error: "No Claude quota headers found", plan };
     }
 
     const groups: QuotaGroup[] = [
@@ -999,13 +1275,14 @@ async function fetchClaudeQuota(
     ].filter((group) => group.remainingFraction > 0 || group.resetTime !== null);
 
     if (groups.length === 0) {
-      return { error: "Claude quota headers unavailable" };
+      return { error: "Claude quota headers unavailable", plan };
     }
 
-    return groups;
+    return { groups, plan };
   } catch (error) {
     return {
       error: error instanceof Error ? error.message : "Unknown error",
+      plan: null,
     };
   }
 }
@@ -1103,6 +1380,7 @@ export async function GET(request: NextRequest) {
               provider: providerForResponse,
               email: displayEmail,
               supported: true,
+              plan: result.plan ?? null,
               error: "Claude OAuth token needs re-authentication (provider returned 401)",
             };
           }
@@ -1112,6 +1390,7 @@ export async function GET(request: NextRequest) {
             provider: providerForResponse,
             email: displayEmail,
             supported: true,
+            plan: result.plan ?? null,
             error: result.error,
           };
         }
@@ -1121,7 +1400,8 @@ export async function GET(request: NextRequest) {
           provider: providerForResponse,
           email: displayEmail,
           supported: true,
-          groups: result,
+          plan: result.plan ?? null,
+          groups: result.groups,
         };
       }
 
@@ -1148,7 +1428,7 @@ export async function GET(request: NextRequest) {
       }
 
       if (providerNorm === "codex") {
-        const result = await fetchCodexQuota(authIndex);
+        const result = await fetchCodexQuota(account);
         
         if ("error" in result) {
           return {
@@ -1156,6 +1436,7 @@ export async function GET(request: NextRequest) {
             provider: providerForResponse,
             email: displayEmail,
             supported: true,
+            plan: result.plan ?? null,
             error: result.error,
           };
         }
@@ -1165,7 +1446,8 @@ export async function GET(request: NextRequest) {
           provider: providerForResponse,
           email: displayEmail,
           supported: true,
-          groups: result,
+          plan: result.plan ?? null,
+          groups: result.groups,
         };
       }
 

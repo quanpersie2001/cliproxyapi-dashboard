@@ -31,6 +31,7 @@ interface QuotaAccount {
   provider: string;
   email?: string | null;
   supported: boolean;
+  plan?: string | null;
   error?: string;
   groups?: QuotaGroup[];
   raw?: unknown;
@@ -209,7 +210,6 @@ export default function QuotaPage() {
   const [quotaData, setQuotaData] = useState<QuotaResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedProvider, setSelectedProvider] = useState<ProviderType>(PROVIDERS.ALL);
-  const [expandedCards, setExpandedCards] = useState<Record<string, boolean>>({});
 
   const fetchQuota = async (signal?: AbortSignal) => {
     setLoading(true);
@@ -271,10 +271,6 @@ export default function QuotaPage() {
     { key: PROVIDERS.COPILOT, label: "Copilot" },
     { key: PROVIDERS.KIMI, label: "Kimi" },
   ] as const;
-
-  const toggleCard = (accountId: string) => {
-    setExpandedCards((prev) => ({ ...prev, [accountId]: !prev[accountId] }));
-  };
 
   return (
     <div className="space-y-4">
@@ -340,8 +336,6 @@ export default function QuotaPage() {
 
           <QuotaDetails
             filteredAccounts={filteredAccounts}
-            expandedCards={expandedCards}
-            onToggleCard={toggleCard}
             loading={loading}
           />
         </>

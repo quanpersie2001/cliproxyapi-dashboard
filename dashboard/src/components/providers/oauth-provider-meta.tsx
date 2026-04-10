@@ -43,7 +43,7 @@ export const OAUTH_PROVIDERS = [
   {
     id: "codex",
     name: "Codex",
-    description: "OpenAI Codex (Plus/Pro subscription)",
+    description: "OpenAI Codex",
     authEndpoint: "/api/management/codex-auth-url?is_webui=true",
     requiresCallback: true,
     asset: "/provider-icons/codex.svg",
@@ -273,7 +273,7 @@ export function OAuthProviderIcon({
   return (
     <span
       className={cn(
-        "flex shrink-0 items-center justify-center rounded-xl border shadow-[var(--shadow-edge)]",
+        "flex shrink-0 items-center justify-center rounded-lg border shadow-[var(--shadow-edge)]",
         size === "sm" ? "size-9" : "size-10",
         className
       )}

@@ -71,7 +71,7 @@ export default function SetupWizardPage() {
   ] as const;
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4">
+    <div className="w-full space-y-4">
       <section className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-base)] p-4">
         <div className="flex items-start justify-between gap-4">
           <div>
