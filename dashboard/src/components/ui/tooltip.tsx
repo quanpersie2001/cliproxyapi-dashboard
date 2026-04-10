@@ -62,7 +62,7 @@ export function HelpTooltip({ content }: HelpTooltipProps) {
     <Tooltip content={content} side="bottom">
       <button
         type="button"
-        className="inline-flex items-center justify-center size-5 min-w-[44px] min-h-[44px] rounded-full bg-[var(--surface-muted)] text-[var(--text-muted)] text-[9px] cursor-help hover:bg-[var(--surface-hover)] hover:text-[var(--text-secondary)] transition-colors duration-150 select-none ml-1 align-middle"
+        className="ml-1 inline-flex size-4 shrink-0 items-center justify-center rounded-full border border-[var(--surface-border)] bg-[var(--surface-muted)] text-[8px] font-semibold leading-none text-[var(--text-muted)] align-middle transition-colors duration-150 select-none cursor-help hover:bg-[var(--surface-hover)] hover:text-[var(--text-secondary)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--brand-primary)]/20"
         aria-label={content}
       >
         ?
