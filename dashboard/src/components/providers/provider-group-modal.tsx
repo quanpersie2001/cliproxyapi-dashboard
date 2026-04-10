@@ -164,6 +164,7 @@ export function ProviderGroupModal({ isOpen, onClose, group, onSuccess }: Provid
           </Button>
           <Button 
             type="submit" 
+            variant="pill"
             disabled={saving || !name.trim()}
           >
             {saving ? "Saving..." : group ? "Save Changes" : "Create Group"}

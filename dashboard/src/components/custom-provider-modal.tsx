@@ -423,7 +423,7 @@ export function CustomProviderModal({ isOpen, onClose, provider, onSuccess }: Cu
         <Button variant="ghost" onClick={onClose} disabled={saving}>
           Cancel
         </Button>
-        <Button onClick={handleSubmit} disabled={saving}>
+        <Button variant="pill" onClick={handleSubmit} disabled={saving}>
           {saving ? (isEdit ? "Updating..." : "Creating...") : (isEdit ? "Update Provider" : "Create Provider")}
         </Button>
       </ModalFooter>

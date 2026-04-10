@@ -64,7 +64,7 @@ export function OAuthImportForm({
             />
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
               <Button
-                variant="secondary"
+                variant="pill"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={status === "uploading"}
               >
@@ -126,7 +126,7 @@ export function OAuthImportForm({
         </Button>
         {status !== "success" && (
           <Button
-            variant="secondary"
+            variant="pill"
             onClick={onSubmit}
             disabled={!jsonContent.trim() || status === "uploading"}
           >

@@ -342,10 +342,10 @@ export function CustomProviderSection({ showToast, onProviderCountChange }: Cust
             <p className="text-xs text-[var(--text-muted)]">OpenAI-compatible endpoints and mappings</p>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="secondary" onClick={() => setShowGroupModal(true)} className="px-2.5 py-1 text-xs">
+            <Button variant="pill" onClick={() => setShowGroupModal(true)} className="px-2.5 py-1 text-xs">
               Manage Groups
             </Button>
-            <Button onClick={() => setShowCustomProviderModal(true)} className="px-2.5 py-1 text-xs">
+            <Button variant="pill" onClick={() => setShowCustomProviderModal(true)} className="px-2.5 py-1 text-xs">
               Add Custom Provider
             </Button>
           </div>
@@ -371,7 +371,7 @@ export function CustomProviderSection({ showToast, onProviderCountChange }: Cust
               <h3 className="text-sm font-semibold text-[var(--text-primary)]">No custom providers configured</h3>
               <p className="text-xs text-[var(--text-muted)]">Add an OpenAI-compatible provider to extend your AI capabilities</p>
             </div>
-            <Button onClick={() => setShowCustomProviderModal(true)} className="px-3 py-1.5 text-xs">
+            <Button variant="pill" onClick={() => setShowCustomProviderModal(true)} className="px-3 py-1.5 text-xs">
               Add Custom Provider
             </Button>
           </div>

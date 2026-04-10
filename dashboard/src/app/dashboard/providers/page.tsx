@@ -251,7 +251,7 @@ export default function ProvidersPage() {
                     </p>
                   </div>
                   <Button
-                    variant="secondary"
+                    variant="pill"
                     className="mt-6"
                     onClick={async () => {
                       try {

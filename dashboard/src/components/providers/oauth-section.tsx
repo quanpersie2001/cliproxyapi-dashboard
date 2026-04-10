@@ -1041,7 +1041,7 @@ export function OAuthSection({
           </Button>
           {oauthModalStatus !== MODAL_STATUS.SUCCESS && selectedOAuthProviderRequiresCallback && (
             <Button
-              variant="secondary"
+              variant="pill"
               onClick={handleSubmitCallback}
               disabled={isOAuthSubmitDisabled}
             >
@@ -1053,7 +1053,7 @@ export function OAuthSection({
             </Button>
           )}
           {oauthModalStatus === MODAL_STATUS.SUCCESS && (
-            <Button variant="secondary" onClick={handleOAuthModalClose}>
+            <Button variant="pill" onClick={handleOAuthModalClose}>
               Done
             </Button>
           )}

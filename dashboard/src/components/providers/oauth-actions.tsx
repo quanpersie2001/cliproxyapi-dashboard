@@ -41,14 +41,14 @@ export function OAuthActions({
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
               <Button
-                variant="secondary"
+                variant="pill"
                 onClick={() => onConnect(provider.id)}
                 className="shrink-0 px-2.5 py-1 text-xs"
               >
                 Connect
               </Button>
               <Button
-                variant="secondary"
+                variant="pill"
                 onClick={() => onImport(provider.id)}
                 className="shrink-0 px-2.5 py-1 text-xs"
               >

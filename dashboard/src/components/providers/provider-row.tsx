@@ -70,7 +70,7 @@ export function ProviderRow({
 
       <div className="flex items-center gap-2 justify-end">
         <Button
-          variant="secondary"
+          variant="pill"
           className="px-2.5 py-1 text-xs"
           onClick={() => onEdit(provider)}
         >

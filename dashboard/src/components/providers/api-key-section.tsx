@@ -246,6 +246,7 @@ export function ApiKeySection({
                     </span>
                     <div className="flex justify-end">
                       <Button
+                        variant="pill"
                         onClick={() => openModal(provider.id)}
                         className="px-2.5 py-1 text-xs"
                         disabled={!currentUser}
@@ -332,7 +333,7 @@ export function ApiKeySection({
           <Button variant="ghost" onClick={closeModal}>
             Cancel
           </Button>
-          <Button onClick={handleAddKey} disabled={saving}>
+          <Button variant="pill" onClick={handleAddKey} disabled={saving}>
             {saving ? "Adding..." : "Add API Key"}
           </Button>
         </ModalFooter>

@@ -5,7 +5,7 @@ interface ButtonProps {
   children: ReactNode;
   onClick?: () => void;
   type?: "button" | "submit" | "reset";
-  variant?: "primary" | "secondary" | "danger" | "ghost";
+  variant?: "primary" | "secondary" | "danger" | "ghost" | "pill";
   disabled?: boolean;
   className?: string;
 }
@@ -30,6 +30,8 @@ export function Button({
         variant === "secondary" && "glass-button-secondary text-[var(--text-primary)]",
         variant === "danger" && "bg-red-500 text-white border-none hover:bg-red-600",
         variant === "ghost" && "glass-button-ghost text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
+        variant === "pill"
+          && "rounded-full border-[var(--surface-border)] bg-[var(--surface-base)] text-[var(--text-primary)] shadow-none transition-[background-color,border-color,color,transform,box-shadow] duration-200 hover:bg-[var(--surface-muted)] hover:border-[var(--surface-border-strong)] active:translate-y-px disabled:hover:bg-[var(--surface-base)] disabled:hover:border-[var(--surface-border)] disabled:active:translate-y-0",
         className
       )}
     >

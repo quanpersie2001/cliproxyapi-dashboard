@@ -136,7 +136,7 @@ export function OAuthCredentialList({
                   <div className="flex shrink-0 items-center gap-2">
                     {currentUser.isAdmin && !account.ownerUsername && (
                       <Button
-                        variant="secondary"
+                        variant="pill"
                         className="px-2.5 py-1 text-xs"
                         disabled={claimingAccountName === account.accountName}
                         onClick={() => onClaim(account.accountName)}
@@ -145,7 +145,7 @@ export function OAuthCredentialList({
                       </Button>
                     )}
                     <Button
-                      variant="secondary"
+                      variant="pill"
                       className="px-2.5 py-1 text-xs"
                       disabled={togglingAccountId === account.id}
                       onClick={() => onToggle(account.id, account.status === "disabled")}
