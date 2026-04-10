@@ -351,7 +351,7 @@ export function OAuthCredentialList({
             return (
               <div
                 key={`${account.id}-${account.accountName}`}
-                className="min-h-[236px] overflow-hidden rounded-xl border border-[var(--surface-border)] bg-[var(--surface-base)] shadow-[var(--shadow-edge)] transition-[border-color,box-shadow] duration-200 hover:border-[var(--surface-border-strong)]"
+                className="min-h-[236px] overflow-hidden rounded-xl border border-[var(--surface-border)] bg-[var(--surface-base)] shadow-[var(--shadow-edge)] hover:border-[var(--surface-border-strong)]"
                 style={{
                   backgroundImage: `radial-gradient(circle at top left, ${providerPresentation.theme.bg} 0%, transparent 58%)`,
                 }}

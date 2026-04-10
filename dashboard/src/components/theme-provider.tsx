@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 
 type Theme = "light" | "dark" | "system";
 
@@ -9,6 +9,8 @@ interface ThemeContextValue {
   setTheme: (theme: Theme) => void;
   resolvedTheme: "light" | "dark";
 }
+
+const VALID_THEMES: Theme[] = ["light", "dark", "system"];
 
 const ThemeContext = createContext<ThemeContextValue>({
   theme: "system",
@@ -21,47 +23,73 @@ function getSystemTheme(): "light" | "dark" {
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
 }
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("system");
-  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
+function readStoredTheme(): Theme | null {
+  if (typeof window === "undefined") return null;
 
-  // Read saved theme on mount
-  useEffect(() => {
-    const saved = localStorage.getItem("theme") as Theme | null;
-    if (saved && ["light", "dark", "system"].includes(saved)) {
-      setThemeState(saved);
+  try {
+    const stored = localStorage.getItem("theme");
+    return stored && VALID_THEMES.includes(stored as Theme) ? (stored as Theme) : null;
+  } catch {
+    return null;
+  }
+}
+
+function getInitialResolvedTheme(): "light" | "dark" {
+  if (typeof document === "undefined") return "light";
+  return document.documentElement.classList.contains("dark") ? "dark" : "light";
+}
+
+export function ThemeProvider({ children }: { children: React.ReactNode }) {
+  const [theme, setThemeState] = useState<Theme>(() => readStoredTheme() ?? "system");
+  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">(getInitialResolvedTheme);
+  const shouldDisableTransitionsRef = useRef(false);
+
+  const applyResolvedTheme = useCallback((resolved: "light" | "dark") => {
+    const root = document.documentElement;
+
+    if (shouldDisableTransitionsRef.current) {
+      root.classList.add("theme-switching");
+    }
+
+    setResolvedTheme((current) => (current === resolved ? current : resolved));
+    root.classList.toggle("dark", resolved === "dark");
+    root.style.colorScheme = resolved;
+
+    if (shouldDisableTransitionsRef.current) {
+      shouldDisableTransitionsRef.current = false;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          root.classList.remove("theme-switching");
+        });
+      });
     }
   }, []);
 
-  // Apply theme to document
   useEffect(() => {
-    const resolved = theme === "system" ? getSystemTheme() : theme;
-    setResolvedTheme(resolved);
+    applyResolvedTheme(theme === "system" ? getSystemTheme() : theme);
+  }, [applyResolvedTheme, theme]);
 
-    const root = document.documentElement;
-    root.classList.toggle("dark", resolved === "dark");
-    root.style.colorScheme = resolved;
-  }, [theme]);
-
-  // Listen for system theme changes
   useEffect(() => {
     if (theme !== "system") return;
 
     const mq = window.matchMedia("(prefers-color-scheme: dark)");
-    const handler = (e: MediaQueryListEvent) => {
-      const resolved = e.matches ? "dark" : "light";
-      setResolvedTheme(resolved);
-      document.documentElement.classList.toggle("dark", resolved === "dark");
-      document.documentElement.style.colorScheme = resolved;
+    const handler = (event: MediaQueryListEvent) => {
+      applyResolvedTheme(event.matches ? "dark" : "light");
     };
 
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
-  }, [theme]);
+  }, [applyResolvedTheme, theme]);
 
   const setTheme = (newTheme: Theme) => {
+    shouldDisableTransitionsRef.current = true;
     setThemeState(newTheme);
-    localStorage.setItem("theme", newTheme);
+
+    try {
+      localStorage.setItem("theme", newTheme);
+    } catch {
+      // Ignore storage write failures.
+    }
   };
 
   return (

@@ -29,7 +29,7 @@ export function OAuthActions({
         type="button"
         onClick={onToggleExpand}
         aria-expanded={expanded}
-        className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left transition-colors hover:bg-[var(--surface-muted)]/60"
+        className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left hover:bg-[var(--surface-muted)]/60"
       >
         <div>
           <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">

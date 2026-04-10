@@ -187,7 +187,7 @@ export default function AdminUsersPage() {
             </thead>
             <tbody>
               {users.map((user) => (
-                <tr key={user.id} className="border-b border-[var(--surface-border)] last:border-b-0 hover:bg-[var(--surface-hover)] transition-colors">
+                <tr key={user.id} className="border-b border-[var(--surface-border)] last:border-b-0 hover:bg-[var(--surface-hover)]">
                   <td className="px-3 py-2 text-xs font-medium text-[var(--text-primary)]">{user.username}</td>
                   <td className="px-3 py-2">
                     <Badge tone={user.isAdmin ? "info" : "neutral"} className="rounded-sm">

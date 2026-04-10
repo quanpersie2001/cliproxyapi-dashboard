@@ -319,7 +319,7 @@ export default function AdminLogsPage() {
                   return (
                   <React.Fragment key={`log-${log.time}-${globalIndex}`}>
                     <tr
-                      className="border-b border-[var(--surface-border)] last:border-b-0 hover:bg-[var(--surface-hover)] transition-colors cursor-pointer"
+                      className="border-b border-[var(--surface-border)] last:border-b-0 hover:bg-[var(--surface-hover)] cursor-pointer"
                       onClick={() => toggleRowExpansion(globalIndex)}
                     >
                       <td className="px-3 py-2">

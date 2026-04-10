@@ -282,6 +282,13 @@ select { color-scheme: light; }
 .avatar-glow { transition: border-color 0.2s ease, box-shadow 0.2s ease; }
 .avatar-glow:hover { border-color: rgba(0, 0, 0, 0.15); box-shadow: var(--shadow-warm); }
 
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+  transition-duration: 0s !important;
+  animation-duration: 0s !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .animate-in, .animate-modal-overlay, .animate-modal-card, .animate-pulse-dot, .animate-panel-slide, .animate-panel-overlay { animation: none !important; }
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }

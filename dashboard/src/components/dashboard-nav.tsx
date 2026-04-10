@@ -243,7 +243,7 @@ export function DashboardNav() {
                           href={item.href}
                           onClick={handleNavClick}
                           className={cn(
-                            "flex items-center gap-2.5 px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200",
+                            "flex items-center gap-2.5 px-3 py-2 text-sm font-medium rounded-md",
                             isCollapsed && "lg:justify-center lg:px-0",
                             isActive
                               ? "glass-nav-item-active text-[var(--text-primary)]"

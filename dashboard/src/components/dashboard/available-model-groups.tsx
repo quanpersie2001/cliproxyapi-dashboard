@@ -211,7 +211,7 @@ export function AvailableModelGroups({
                         <label
                           key={`${group.id}-${model.id}`}
                           title={model.owned_by || undefined}
-                          className={`flex cursor-pointer items-start justify-between gap-3 rounded-xl border px-3 py-3 transition-colors ${
+                          className={`flex cursor-pointer items-start justify-between gap-3 rounded-xl border px-3 py-3 ${
                             enabled
                               ? "border-[var(--surface-border)] bg-[var(--surface-base)] hover:border-[var(--surface-border-strong)]"
                               : "border-[var(--surface-border)] bg-[var(--surface-muted)] text-[var(--text-muted)] hover:border-[var(--surface-border-strong)]"

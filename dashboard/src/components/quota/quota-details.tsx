@@ -240,7 +240,7 @@ export function QuotaDetails({ filteredAccounts, loading }: QuotaDetailsProps) {
               return (
                 <div
                   key={account.auth_index}
-                  className="overflow-hidden rounded-xl border border-[var(--surface-border)] bg-[var(--surface-base)] shadow-[var(--shadow-edge)] transition-[border-color,box-shadow] duration-200 hover:border-[var(--surface-border-strong)]"
+                  className="overflow-hidden rounded-xl border border-[var(--surface-border)] bg-[var(--surface-base)] shadow-[var(--shadow-edge)] hover:border-[var(--surface-border-strong)]"
                   style={{
                     backgroundImage: `radial-gradient(circle at top left, ${providerPresentation.theme.bg} 0%, transparent 58%)`,
                   }}

@@ -119,7 +119,7 @@ export default function SetupWizardPage() {
                 <div key={step.id}>
                   <div
                     className={[
-                      "flex gap-4 rounded-lg p-4 transition-colors",
+                      "flex gap-4 rounded-lg p-4",
                       done
                         ? "bg-emerald-50"
                         : active

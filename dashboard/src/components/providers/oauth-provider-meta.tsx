@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useTheme } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
 
@@ -259,16 +260,18 @@ export function OAuthProviderIcon({
   className?: string;
 }) {
   const { resolvedTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
   const presentation = getOAuthProviderPresentation(provider);
   const asset = "asset" in presentation ? presentation.asset : undefined;
-  const src =
-    typeof asset === "string"
-      ? asset
-      : asset
-        ? resolvedTheme === "dark"
-          ? asset.dark
-          : asset.light
-        : null;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const lightSrc =
+    typeof asset === "string" ? asset : asset ? asset.light : null;
+  const darkSrc = typeof asset === "object" ? asset.dark : null;
+  const iconSizeClass = size === "sm" ? "h-4 w-4" : "h-5 w-5";
 
   return (
     <span
@@ -284,12 +287,29 @@ export function OAuthProviderIcon({
       }}
       aria-hidden="true"
     >
-      {src ? (
-        <img
-          src={src}
-          alt=""
-          className={cn(size === "sm" ? "h-4 w-4" : "h-5 w-5", "object-contain")}
-        />
+      {lightSrc ? (
+        <span className="relative flex items-center justify-center">
+          <img
+            src={lightSrc}
+            alt=""
+            className={cn(
+              iconSizeClass,
+              "object-contain transition-opacity duration-200",
+              darkSrc && mounted && resolvedTheme === "dark" ? "opacity-0" : "opacity-100"
+            )}
+          />
+          {darkSrc ? (
+            <img
+              src={darkSrc}
+              alt=""
+              className={cn(
+                iconSizeClass,
+                "absolute inset-0 object-contain transition-opacity duration-200",
+                mounted && resolvedTheme === "dark" ? "opacity-100" : "opacity-0"
+              )}
+            />
+          ) : null}
+        </span>
       ) : (
         <span className="text-[10px] font-semibold uppercase tracking-[0.08em]">
           {presentation.fallback}
