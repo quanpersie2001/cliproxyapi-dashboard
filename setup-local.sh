@@ -232,7 +232,7 @@ main() {
 
     log_success "CLIProxyAPI Dashboard is running!"
     echo "  Dashboard: http://localhost:3000"
-    echo "  API:       http://localhost:11451"
+    echo "  API:       http://localhost:8317"
     echo ""
     echo "  Stop:  ./setup-local.sh --down"
     echo "  Reset: ./setup-local.sh --reset"

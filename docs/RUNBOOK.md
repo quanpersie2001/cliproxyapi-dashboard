@@ -1,101 +1,135 @@
 # Runbook
 
-## Health Check
+Canonical docs hub: [`docs/README.md`](README.md)
 
-```
-GET /api/health
-```
+## Health Checks
 
-Returns 200 if the dashboard is running. Does not check database connectivity.
-
-## Deployment
-
-### Docker (Production)
+### Dashboard Health
 
 ```bash
-# Deploy the latest published dashboard image
-POST /api/admin/deploy
+curl -s http://127.0.0.1:3000/api/health
+```
 
-# Or on the host:
+Current behavior:
+
+- returns `200` with `status: "ok"` when both PostgreSQL and the proxy are reachable
+- returns `503` with `status: "degraded"` when either dependency is unhealthy
+
+### Stack State
+
+```bash
+cd infrastructure
+./manage.sh ps
+./manage.sh logs dashboard
+./manage.sh logs cliproxyapi
+```
+
+## First Boot
+
+1. Start the stack.
+2. Open the dashboard.
+3. If no users exist yet, the app redirects to `/setup`.
+4. Create the first admin user.
+5. Connect providers, configure proxy settings, and create client API keys.
+
+## Usage Collection
+
+The dashboard persists proxy usage into PostgreSQL through `POST /api/usage/collect`.
+
+Manual trigger from the server:
+
+```bash
+curl -sf -X POST http://127.0.0.1:3000/api/usage/collect \
+  -H "Authorization: Bearer $COLLECTOR_API_KEY"
+```
+
+Notes:
+
+- `install.sh` configures a cron trigger every 5 minutes when `COLLECTOR_API_KEY` exists
+- the collector uses a DB-backed single-flight lease and returns `202` when another run is already active
+- the long-term analytics surface is `GET /api/usage/history`
+
+## Updates
+
+### Update CLIProxyAPI
+
+From the UI:
+
+- Dashboard -> Settings -> Provider / System operations -> update CLIProxyAPI
+
+From the host, update the image and restart the service:
+
+```bash
+cd infrastructure
+./manage.sh pull cliproxyapi
+./manage.sh compose up -d --no-deps --force-recreate cliproxyapi
+```
+
+### Update Dashboard
+
+Preferred path:
+
+- configure the optional webhook documented in [`WEBHOOK-DEPLOY.md`](WEBHOOK-DEPLOY.md)
+- trigger the dashboard deploy flow from the Settings page
+
+Host-only equivalent:
+
+```bash
 cd infrastructure
 ./manage.sh dashboard-update
 ```
 
-### Local Development
+## Database Recovery Tasks
 
-```powershell
-cd dashboard
-.\dev-local.ps1          # Start everything
-.\dev-local.ps1 -Down    # Stop containers
-.\dev-local.ps1 -Reset   # Delete all data and restart
+### Check connectivity
+
+```bash
+cd infrastructure
+./manage.sh compose exec postgres pg_isready -U cliproxyapi
 ```
 
-## Database
+### Open `psql`
 
-### Run Migrations
+```bash
+cd infrastructure
+./manage.sh compose exec postgres psql -U cliproxyapi -d cliproxyapi
+```
+
+### Reset local source-dev database
 
 ```bash
 cd dashboard
-npx prisma migrate deploy
+./dev-local.sh --reset
 ```
 
-### Reset Database (development only)
+## Logs
+
+### Runtime logs
 
 ```bash
-.\dev-local.ps1 -Reset
+cd infrastructure
+./manage.sh logs dashboard
+./manage.sh logs cliproxyapi
+./manage.sh logs postgres
 ```
 
-### Connect to Database
+### Backup logs
 
 ```bash
-# Dev: localhost:5433
-docker exec -it cliproxyapi-dev-postgres psql -U cliproxyapi -d cliproxyapi
+tail -f backups/backup.log
 ```
 
-## Common Issues
+### Deployment webhook logs
 
-### Dashboard won't start
-1. Check Docker is running: `docker info`
-2. Check containers: `docker ps`
-3. Check logs: `docker logs cliproxyapi-dev-postgres`
-4. Verify `.env.local` exists with correct `DATABASE_URL`
+If the webhook flow is installed:
 
-### Database connection errors
-1. Verify PostgreSQL container is running: `docker ps | grep postgres`
-2. Check port 5433 is available
-3. Run `npx prisma migrate deploy` if schema is out of date
-
-### CLIProxyAPI unreachable
-1. Check API container: `docker logs cliproxyapi-dev-api`
-2. Verify port 28317 is accessible: `curl http://localhost:28317/`
-3. Wait for healthcheck (up to 60s on first start)
-
-### Build errors after branch switch
 ```bash
-cd dashboard
-npx prisma generate    # Regenerate Prisma client
-npm install            # Reinstall dependencies
+sudo journalctl -u webhook-deploy -f
+cat /var/log/cliproxyapi/dashboard-deploy.log
 ```
 
-## Updates
+## Common Escalation Paths
 
-### Update Proxy
-```
-Settings → CLIProxyAPI Updates → Update
-# Or: POST /api/update
-```
-
-### Update Dashboard
-```
-Settings → Dashboard Updates → Update
-# Or: POST /api/admin/deploy
-# Or on the host:
-# cd infrastructure && ./manage.sh dashboard-update
-```
-
-## Monitoring
-
-- **Service status**: Dashboard → Monitoring page
-- **Logs**: Dashboard → Monitoring → Live Logs
-- **Usage**: Dashboard → Usage page
-- **Quota**: Dashboard → Quota page
+- If health is degraded because the database is unreachable, check for a `POSTGRES_PASSWORD` mismatch first.
+- If the dashboard is up but provider operations fail, verify `CLIPROXYAPI_MANAGEMENT_URL` and `MANAGEMENT_API_KEY`.
+- If dashboard update checks work but deploy fails, verify `WEBHOOK_HOST`, `DEPLOY_SECRET`, and the host-gateway mapping described in [`WEBHOOK-DEPLOY.md`](WEBHOOK-DEPLOY.md).

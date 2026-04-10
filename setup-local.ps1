@@ -207,7 +207,7 @@ Wait-ForHealth
 
 Write-Success "CLIProxyAPI Dashboard is running!"
 Write-Host "  Dashboard: http://localhost:3000"
-Write-Host "  API:       http://localhost:11451"
+Write-Host "  API:       http://localhost:8317"
 Write-Host ""
 Write-Host "  Stop:  .\setup-local.ps1 -Down"
 Write-Host "  Reset: .\setup-local.ps1 -Reset"

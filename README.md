@@ -1,58 +1,127 @@
-<p align="center">
-  <img src="docs/screenshots/1.png" alt="CLIProxyAPI Dashboard" width="800">
-</p>
+<div align="center">
+  <h1>CLIProxyAPI Dashboard</h1>
+  <p><strong>Proxy-only control plane for <a href="https://github.com/router-for-me/CLIProxyAPIPlus">CLIProxyAPIPlus</a></strong></p>
+  <p>Next.js 16 / React 19 dashboard for provider credentials, proxy runtime settings, usage history, quotas, update workflows, logs, and safe container operations.</p>
 
-<h1 align="center">CLIProxyAPI Dashboard</h1>
+  <p>
+    <a href="https://github.com/itsmylife44/cliproxyapi-dashboard/blob/main/LICENSE"><img alt="MIT License" src="https://img.shields.io/github/license/itsmylife44/cliproxyapi-dashboard?style=for-the-badge" /></a>
+  </p>
 
-<p align="center">
-  <strong>Use Claude Code, Gemini CLI, and Codex as OpenAI-compatible APIs — managed through a modern web dashboard.</strong>
-</p>
+  <p>
+    <img alt="Next.js 16" src="https://img.shields.io/badge/Next.js-16-111111?style=for-the-badge&logo=next.js" />
+    <img alt="React 19" src="https://img.shields.io/badge/React-19-0b1020?style=for-the-badge&logo=react" />
+    <img alt="PostgreSQL 16" src="https://img.shields.io/badge/PostgreSQL-16-1f4b7f?style=for-the-badge&logo=postgresql" />
+    <img alt="Docker Compose" src="https://img.shields.io/badge/Docker-Compose-0d63ed?style=for-the-badge&logo=docker" />
+  </p>
 
-<p align="center">
-  <a href="https://github.com/itsmylife44/cliproxyapi-dashboard/releases"><img src="https://img.shields.io/github/v/release/itsmylife44/cliproxyapi-dashboard" alt="Release"></a>
-  <a href="https://github.com/itsmylife44/cliproxyapi-dashboard/actions/workflows/release.yml"><img src="https://github.com/itsmylife44/cliproxyapi-dashboard/actions/workflows/release.yml/badge.svg" alt="Build"></a>
-  <a href="https://github.com/itsmylife44/cliproxyapi-dashboard/pkgs/container/cliproxyapi-dashboard%2Fdashboard"><img src="https://img.shields.io/badge/Docker-GHCR-blue?logo=docker" alt="Docker"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-green" alt="License: MIT"></a>
-  <a href="https://discord.gg/7SrXxNueGA"><img src="https://img.shields.io/badge/Discord-Join-5865F2?logo=discord&logoColor=white" alt="Discord"></a>
-  <img src="https://img.shields.io/badge/Next.js-16-black?logo=next.js" alt="Next.js 16">
-  <img src="https://img.shields.io/badge/React-19-blue?logo=react" alt="React 19">
-  <img src="https://img.shields.io/badge/TypeScript-5-blue?logo=typescript" alt="TypeScript">
-</p>
+  <p>
+    <a href="#quick-start">Quick Start</a>
+    ·
+    <a href="docs/README.md">Docs</a>
+    ·
+    <a href="docs/ARCHITECTURE.md">Architecture</a>
+    ·
+    <a href="#development-commands">Development</a>
+  </p>
+</div>
 
----
+> [!IMPORTANT]
+> The dashboard intentionally manages the proxy stack only. It is not a general product control plane and the bundled deployment keeps the dashboard and primary proxy API loopback-only by default.
 
-<p align="center">
-  <a href="https://discord.gg/7SrXxNueGA">
-    <img src="https://img.shields.io/badge/Discord%20Community-%235865F2.svg?style=for-the-badge&logo=discord&logoColor=white" alt="Discord">
-  </a>
-</p>
-<p align="center">
-  We have a Discord server — installation help, release announcements, and community chat.<br>
-  <strong><a href="https://discord.gg/7SrXxNueGA">discord.gg/7SrXxNueGA</a></strong>
-</p>
+## At A Glance
 
----
+| Surface | What it covers |
+| --- | --- |
+| Access control | Dashboard users, admin access, session revocation, dashboard API keys |
+| Provider management | Direct keys for Claude, Gemini, OpenAI/Codex, OpenAI-compatible upstreams |
+| OAuth inventory | Claude Code, Gemini CLI, Codex, Antigravity, iFlow, Kimi, Qwen Code, GitHub Copilot, Kiro, Cursor, CodeBuddy |
+| Proxy operations | Routing, retries, logging, streaming, TLS, pprof, payload transforms, OAuth model aliases |
+| Observability | Usage collection, quota views, logs, container state, update workflows |
 
-## What is this?
+## Runtime Architecture
 
-[CLIProxyAPIPlus](https://github.com/router-for-me/CLIProxyAPIPlus) wraps OAuth-based CLI tools (Claude Code, Gemini CLI, Codex, GitHub Copilot, Kiro, Antigravity, Kimi, Qwen) into **OpenAI-compatible APIs**. This dashboard gives you a web UI to manage everything — providers, API keys, configs, logs, and updates — without touching YAML files.
+The bundled deployment is a four-service Docker stack:
+
+| Service | Role |
+| --- | --- |
+| `dashboard` | Next.js app, App Router UI, API routes, JWT auth, Prisma access |
+| `cliproxyapi` | CLIProxyAPIPlus runtime and management API |
+| `postgres` | Persistent store for users, settings, audit logs, usage, and provider metadata |
+| `docker-proxy` | Restricted Docker socket proxy for allowlisted container and image operations |
+
+Operational boundaries:
+
+- `dashboard/`: application code, Prisma schema, local source-dev workflow
+- `infrastructure/`: production compose stack, runtime config, deploy helper, ops scripts
+- `docs/`: canonical documentation set
+- `scripts/`: backup, restore, and rotation helpers
+
+Default bundled endpoints:
+
+- Dashboard: `http://127.0.0.1:3000`
+- Proxy API: `http://127.0.0.1:8317`
+
+OAuth callback ports remain published because upstream login flows require them.
 
 ## Quick Start
 
-> **Local use (macOS/Windows/Linux)**: Only Docker Desktop required.
+| Mode | Use it when | Command |
+| --- | --- | --- |
+| Local appliance | You want the published dashboard image and bundled proxy stack running locally | `./setup-local.sh` |
+| Source development | You want to run the dashboard from the checked-out source tree | `cd dashboard && ./dev-local.sh` |
+| Server install | You want the production stack, service wrapper, and optional ops helpers | `sudo ./install.sh` |
+
+### 1. Local Appliance Setup
 
 ```bash
 git clone https://github.com/itsmylife44/cliproxyapi-dashboard.git
 cd cliproxyapi-dashboard
-./setup-local.sh          # macOS/Linux
-# .\setup-local.ps1       # Windows
+./setup-local.sh
+# Windows: .\setup-local.ps1
 ```
 
-Open **http://localhost:3000** → create admin account → done.
+This creates a root `.env`, generates `config.local.yaml`, and starts the stack from [`docker-compose.local.yml`](docker-compose.local.yml). Then open `http://localhost:3000`, create the first admin user, connect providers, and issue client API keys.
 
-> **Server deployment**: See the full [Installation Guide](docs/INSTALLATION.md).
+Useful commands:
 
-Production operations are exposed through one helper entrypoint:
+```bash
+./setup-local.sh --down
+./setup-local.sh --reset
+```
+
+### 2. Source Development
+
+```bash
+cd dashboard
+./dev-local.sh
+# Windows: .\dev-local.ps1
+```
+
+The source-dev workflow starts PostgreSQL and CLIProxyAPI in Docker, applies Prisma bootstrap and migrations, writes `dashboard/.env.local`, and runs `npm run dev`.
+
+Source-dev endpoints:
+
+- Dashboard: `http://localhost:3000`
+- Proxy API: `http://localhost:28317`
+- PostgreSQL: `localhost:5433`
+
+### 3. Server Install
+
+```bash
+git clone https://github.com/itsmylife44/cliproxyapi-dashboard.git
+cd cliproxyapi-dashboard
+sudo ./install.sh
+```
+
+`install.sh` currently:
+
+- installs Docker Engine and Compose if missing
+- generates stack secrets
+- writes `infrastructure/.env`
+- installs `cliproxyapi-stack.service`
+- optionally configures UFW, backup cron jobs, usage collector cron, and the dashboard deploy webhook
+
+After install:
 
 ```bash
 cd infrastructure
@@ -61,126 +130,53 @@ cd infrastructure
 ./manage.sh logs dashboard
 ```
 
-## Features
-
-- **Visual Configuration** — Manage CLIProxyAPIPlus settings through structured forms, no YAML editing
-- **Multi-Provider OAuth** — Connect Claude, Gemini, Codex, Copilot, Kiro, Antigravity, iFlow, Kimi, and Qwen accounts
-- **Custom Providers** — Add any OpenAI-compatible endpoint (OpenRouter, Ollama, etc.) with model mappings
-- **API Key Management** — Create, revoke, and track API keys with per-user ownership
-- **Real-time Monitoring** — Live log streaming, container health, and service management
-- **Quota Tracking** — Rate limits and usage per provider (Claude, Codex, Kimi, Antigravity)
-- **Usage Analytics** — Request counts, provider breakdown, model stats, error rates
-- **One-Click Updates** — Update both Dashboard (GHCR) and CLIProxyAPIPlus (Docker Hub) from the admin panel
-- **Container Management** — Start, stop, restart containers directly from the UI
-- **Proxy-Only Focus** — The dashboard is scoped to proxy administration only: providers, runtime config, usage, logs, and updates
-
-## Screenshots
-
-<p align="center">
-  <img src="docs/screenshots/1.png" alt="Dashboard" width="700">
-</p>
-
-<p align="center">
-  <img src="docs/screenshots/2.png" alt="Dashboard" width="700">
-</p>
-
-## Architecture
-
-Four Docker services, two isolated networks:
-
-<p align="center">
-  <img src="docs/code-snippets/architecture.png" alt="Architecture" width="700">
-</p>
-
-| Service | Role |
-|---------|------|
-| **Dashboard** | Next.js web app, JWT auth, Docker management via socket proxy |
-| **CLIProxyAPIPlus** | AI proxy server, OAuth callbacks, management API |
-| **Docker Socket Proxy** | Restricted Docker API access (containers/images only) |
-| **PostgreSQL** | Database on isolated internal network |
-
-The bundled stack exposes the dashboard and proxy on local loopback ports. If you need public HTTPS, place your own reverse proxy or ingress in front of it.
-
-## Project Structure
-
-<p align="center">
-  <img src="docs/code-snippets/project-structure.png" alt="Project Structure" width="600">
-</p>
-
-## Tech Stack
-
-| Component | Technology |
-|-----------|-----------|
-| Framework | Next.js 16 (App Router) |
-| UI | React 19 |
-| Styling | Tailwind CSS v4 |
-| Database | PostgreSQL 16 + Prisma 7 |
-| Auth | JWT (jose) + bcrypt |
-| Container Mgmt | Docker CLI via socket proxy |
-
-## Development
-
-```bash
-cd dashboard
-./dev-local.sh              # Start dev environment
-./dev-local.sh --reset      # Reset database
-./dev-local.sh --down       # Stop containers
-```
-
-Or manually:
-
-```bash
-cd dashboard
-npm install
-cp .env.example .env.local  # Edit with your DB credentials
-npx prisma migrate dev
-npm run dev
-```
-
-Dashboard at `http://localhost:3000`.
-
 ## Documentation
 
-| Guide | Description |
-|-------|-------------|
-| **[Installation](docs/INSTALLATION.md)** | Local setup, server deployment, manual installation |
-| **[Configuration](docs/CONFIGURATION.md)** | Environment variables and proxy configuration |
-| **[Troubleshooting](docs/TROUBLESHOOTING.md)** | Common issues and solutions |
-| **[Security](docs/SECURITY.md)** | Best practices for production |
-| **[Backup & Restore](docs/BACKUP.md)** | Automated and manual backups |
-| **[Service Management](docs/SERVICE-MANAGEMENT.md)** | Systemd and Docker Compose commands |
+The canonical documentation hub lives at [`docs/README.md`](docs/README.md).
 
-## Contributing
+| Guide | Purpose |
+| --- | --- |
+| [`docs/README.md`](docs/README.md) | Documentation hub and reading order |
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Runtime topology, module boundaries, API and data overview |
+| [`docs/INSTALLATION.md`](docs/INSTALLATION.md) | Local setup, server install, manual deployment |
+| [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) | Config sources, managed runtime settings, provider surfaces |
+| [`docs/ENV.md`](docs/ENV.md) | Environment variable reference |
+| [`docs/SERVICE-MANAGEMENT.md`](docs/SERVICE-MANAGEMENT.md) | `manage.sh`, compose, systemd, and local helper commands |
+| [`docs/RUNBOOK.md`](docs/RUNBOOK.md) | Operator runbook for health, updates, collector, and recovery |
+| [`docs/BACKUP.md`](docs/BACKUP.md) | Backup and restore scripts, retention model |
+| [`docs/WEBHOOK-DEPLOY.md`](docs/WEBHOOK-DEPLOY.md) | Optional dashboard deployment webhook |
+| [`docs/UFW.md`](docs/UFW.md) | Firewall rules for OAuth callback ports |
+| [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) | Common failure cases and fixes |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Local development and contribution rules |
 
-1. Fork → feature branch → PR
-2. Use [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `chore:`)
-3. Test locally before submitting
+## Development Commands
 
-Release-Please auto-generates releases from commit messages.
+Run from [`dashboard/`](dashboard/):
 
-## Support
+```bash
+npm run dev
+npm run typecheck
+npm run lint
+npm test
+npm run build
+```
 
-- **[Discord](https://discord.gg/7SrXxNueGA)** — Community chat, installation help, announcements
-- **[CLIProxyAPIPlus](https://github.com/router-for-me/CLIProxyAPIPlus)** — Core proxy documentation
-- **[Issues](https://github.com/itsmylife44/cliproxyapi-dashboard/issues)** — Bug reports and feature requests
-- **[Discussions](https://github.com/itsmylife44/cliproxyapi-dashboard/discussions)** — Questions and community
+Implementation notes:
 
-## Star History
+- Prisma client generation is wired into `predev`, `prebuild`, and `pretest`
+- The production image uses [`dashboard/entrypoint.sh`](dashboard/entrypoint.sh) to bootstrap core tables at startup with a PostgreSQL advisory lock
+- `GET /api/usage` remains a compatibility route, but new code should use `GET /api/usage/history`
 
-<a href="https://star-history.com/#itsmylife44/cliproxyapi-dashboard&Date">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=itsmylife44/cliproxyapi-dashboard&type=Date&theme=dark" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=itsmylife44/cliproxyapi-dashboard&type=Date" />
-    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=itsmylife44/cliproxyapi-dashboard&type=Date" />
-  </picture>
-</a>
+## Release Model
+
+Releases are manual via [`release.yml`](.github/workflows/release.yml):
+
+- `workflow_dispatch` only
+- Release Please creates or updates the release PR
+- native `amd64` and `arm64` images are built separately
+- a multi-arch manifest is merged in GHCR
+- `version.json` is updated for dashboard-side update checks
 
 ## License
 
 [MIT](LICENSE)
-
----
-
-<p align="center">
-  Built with ❤️ using Next.js, React, and Tailwind CSS
-</p>
