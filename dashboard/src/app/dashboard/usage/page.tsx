@@ -1,8 +1,7 @@
 import { redirect } from "next/navigation";
-import { UsageAnalytics } from "@/components/usage/usage-analytics";
+import { UsageAnalytics } from "@/features/usage/components/usage-analytics";
 import { verifySession } from "@/lib/auth/session";
-import { getUtcDayRange } from "@/lib/usage/dashboard-window";
-import { getUsageHistorySnapshot } from "@/lib/usage/history";
+import { loadRecentUsageHistorySnapshot } from "@/server/usage/services/get-usage-history-snapshot";
 
 export default async function UsagePage() {
   const session = await verifySession();
@@ -10,14 +9,7 @@ export default async function UsagePage() {
     redirect("/login");
   }
 
-  const usageWindow = getUtcDayRange(7);
-  const usageSnapshot = await getUsageHistorySnapshot({
-    userId: session.userId,
-    fromDate: usageWindow.fromDate,
-    toDate: usageWindow.toDate,
-    fromParam: usageWindow.fromParam,
-    toParam: usageWindow.toParam,
-  });
+  const usageSnapshot = await loadRecentUsageHistorySnapshot(session.userId, 7);
 
   return (
     <div className="space-y-6">

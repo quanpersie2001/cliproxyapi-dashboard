@@ -18,9 +18,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@/components/ui/modal";
-import { UsageCharts } from "@/components/usage/usage-charts";
-import { UsageRequestEvents } from "@/components/usage/usage-request-events";
-import { UsageTable } from "@/components/usage/usage-table";
+import { UsageCharts } from "@/features/usage/components/usage-charts";
+import { UsageRequestEvents } from "@/features/usage/components/usage-request-events";
+import { UsageTable } from "@/features/usage/components/usage-table";
 import {
   AXIS_TICK_STYLE,
   CHART_COLORS,

@@ -10,6 +10,11 @@ export const metadata: Metadata = {
     template: "%s | CLIProxyAPI",
   },
   description: "Management dashboard for CLIProxyAPI",
+  icons: {
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    shortcut: [{ url: "/icon.svg", type: "image/svg+xml" }],
+    apple: [{ url: "/icon.svg", type: "image/svg+xml" }],
+  },
   other: {
     "theme-color": "#f5f5f5",
   },

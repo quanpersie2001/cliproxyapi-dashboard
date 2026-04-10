@@ -1,49 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifySession } from "@/lib/auth/session";
 import { Errors } from "@/lib/errors";
+import { loadUsageHistorySnapshot } from "@/server/usage/services/get-usage-history-snapshot";
 import {
-  getUsageHistorySnapshot,
-  isValidUsageHistoryDateParam,
-} from "@/lib/usage/history";
-
-type UsageWindow = "7h" | "24h" | "7d" | "all";
-
-function isUsageWindow(value: string | null): value is UsageWindow {
-  return value === "7h" || value === "24h" || value === "7d" || value === "all";
-}
-
-function buildWindowRange(window: UsageWindow): {
-  fromDate: Date;
-  toDate: Date;
-  fromParam: string;
-  toParam: string;
-} {
-  const now = new Date();
-  const toDate = new Date(now);
-  let fromDate: Date;
-
-  switch (window) {
-    case "7h":
-      fromDate = new Date(now.getTime() - 7 * 60 * 60 * 1000);
-      break;
-    case "24h":
-      fromDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-      break;
-    case "7d":
-      fromDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      break;
-    case "all":
-      fromDate = new Date("2020-01-01T00:00:00.000Z");
-      break;
-  }
-
-  return {
-    fromDate,
-    toDate,
-    fromParam: fromDate.toISOString().slice(0, 10),
-    toParam: toDate.toISOString().slice(0, 10),
-  };
-}
+  buildExplicitUsageRange,
+  buildUsageWindowRange,
+  isUsageWindow,
+} from "@/server/usage/services/resolve-usage-range";
 
 export async function GET(request: NextRequest) {
   const session = await verifySession();
@@ -56,10 +19,10 @@ export async function GET(request: NextRequest) {
   const fromParam = searchParams.get("from");
   const toParam = searchParams.get("to");
 
-  if (isUsageWindow(windowParam)) {
-    try {
-      const range = buildWindowRange(windowParam);
-      const snapshot = await getUsageHistorySnapshot({
+  try {
+    if (isUsageWindow(windowParam)) {
+      const range = buildUsageWindowRange(windowParam);
+      const snapshot = await loadUsageHistorySnapshot({
         userId: session.userId,
         fromDate: range.fromDate,
         toDate: range.toDate,
@@ -68,33 +31,25 @@ export async function GET(request: NextRequest) {
       });
 
       return NextResponse.json(snapshot);
-    } catch {
-      return Errors.internal("Failed to fetch usage history");
     }
-  }
 
-  if (!fromParam || !toParam) {
-    return Errors.missingFields(["from", "to"]);
-  }
+    const explicitRange = buildExplicitUsageRange(fromParam, toParam);
+    if (!explicitRange.ok) {
+      if (explicitRange.error === "missing_fields") {
+        return Errors.missingFields(["from", "to"]);
+      }
+      if (explicitRange.error === "invalid_format") {
+        return Errors.validation("Invalid date format. Use YYYY-MM-DD.");
+      }
+      return Errors.validation("from date must be before to date");
+    }
 
-  if (!isValidUsageHistoryDateParam(fromParam) || !isValidUsageHistoryDateParam(toParam)) {
-    return Errors.validation("Invalid date format. Use YYYY-MM-DD.");
-  }
-
-  const fromDate = new Date(`${fromParam}T00:00:00.000Z`);
-  const toDate = new Date(`${toParam}T23:59:59.999Z`);
-
-  if (fromDate > toDate) {
-    return Errors.validation("from date must be before to date");
-  }
-
-  try {
-    const snapshot = await getUsageHistorySnapshot({
+    const snapshot = await loadUsageHistorySnapshot({
       userId: session.userId,
-      fromDate,
-      toDate,
-      fromParam,
-      toParam,
+      fromDate: explicitRange.range.fromDate,
+      toDate: explicitRange.range.toDate,
+      fromParam: explicitRange.range.fromParam,
+      toParam: explicitRange.range.toParam,
     });
 
     return NextResponse.json(snapshot);

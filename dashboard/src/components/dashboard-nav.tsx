@@ -193,7 +193,7 @@ export function DashboardNav() {
           <div className={cn("flex", isCollapsed ? "flex-col items-center gap-2" : "items-center justify-between")}> 
             <div className={cn("flex items-center gap-3", isCollapsed && "lg:flex-col lg:gap-1")}> 
             <Image
-              src="/icon.png"
+              src="/icon.svg"
               alt="CLIProxy Logo"
               width={isCollapsed ? 38 : 32}
               height={isCollapsed ? 38 : 32}
