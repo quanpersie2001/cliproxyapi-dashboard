@@ -24,6 +24,7 @@ model User {
   providerOAuth   ProviderOAuthOwnership[]
   customProviders CustomProvider[]
   providerGroups  ProviderGroup[]
+  modelPreference ModelPreference?
   auditLogs       AuditLog[]
   usageRecords    UsageRecord[]
 
@@ -82,6 +83,19 @@ model SystemSetting {
   value String
 
   @@map("system_settings")
+}
+
+model ModelPreference {
+  id             String   @id @default(cuid())
+  userId         String   @unique
+  excludedModels String[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("model_preferences")
 }
 
 model CustomProvider {

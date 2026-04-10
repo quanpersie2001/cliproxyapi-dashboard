@@ -4,7 +4,6 @@
 ## External Services
 - **CLIProxyAPI** (:8317) — AI proxy backend, proxied via /api/management/[...path]
 - **PostgreSQL** (:5432/5433) — primary data store via Prisma ORM
-- **Telegram API** — quota alert notifications (lib/telegram.ts)
 - **Docker Engine** — container management via /api/containers/*
 
 ## Runtime Dependencies

@@ -1,7 +1,7 @@
 /**
  * Next.js Instrumentation entrypoint — works in both Node.js and Edge runtimes.
  *
- * Node.js-specific logic (quota alert scheduler) is isolated in
+ * Node.js-specific background tasks are isolated in
  * instrumentation-node.ts and conditionally imported to avoid
  * Edge Runtime warnings about node:fs, node:path, etc.
  *

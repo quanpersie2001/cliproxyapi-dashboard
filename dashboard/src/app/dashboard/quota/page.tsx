@@ -10,7 +10,6 @@ const QuotaChart = dynamic(
   { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-lg bg-[var(--surface-muted)]" /> }
 );
 import { QuotaDetails } from "@/components/quota/quota-details";
-import { QuotaAlerts } from "@/components/quota/quota-alerts";
 
 interface QuotaModel {
   id: string;
@@ -347,8 +346,6 @@ export default function QuotaPage() {
           />
         </>
       )}
-
-      <QuotaAlerts />
     </div>
   );
 }

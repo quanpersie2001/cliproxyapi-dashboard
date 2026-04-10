@@ -426,9 +426,9 @@ function SummaryPanel({
   className?: string;
 }) {
   return (
-    <section className={cn("dashboard-panel-surface p-4", className)}>
-      <div className="flex items-start justify-between gap-3">
-        <div>
+    <section className={cn("dashboard-panel-surface min-w-0 p-4", className)}>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
           <div className="dashboard-kicker">{title}</div>
           {description ? (
             <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
@@ -436,7 +436,7 @@ function SummaryPanel({
             </p>
           ) : null}
         </div>
-        {badge ? <div className="shrink-0">{badge}</div> : null}
+        {badge ? <div className="self-start sm:shrink-0">{badge}</div> : null}
       </div>
       <div className="mt-4">{children}</div>
     </section>
@@ -702,13 +702,13 @@ export function UsageAnalytics({
             const modelSuccessRate = total > 0 ? (model.successCount / total) * 100 : 0;
 
             return (
-              <div key={model.model} className="flex items-center justify-between gap-4 py-3 first:pt-0 last:pb-0">
-                <div className="min-w-0">
-                  <div className="truncate font-mono text-[12px] text-[var(--text-primary)]">{model.model}</div>
+              <div key={model.model} className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0 flex-1">
+                  <div className="break-all font-mono text-[12px] text-[var(--text-primary)] sm:truncate">{model.model}</div>
                   <div className="mt-1 text-xs text-[var(--text-muted)]">{formatCompact(model.tokens)} tokens</div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="text-right">
+                <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:shrink-0 sm:justify-start">
+                  <div className="text-left sm:text-right">
                     <div className="text-sm font-medium tabular-nums text-[var(--text-primary)]">{model.requests.toLocaleString()}</div>
                     <div className="mt-1 text-[11px] text-[var(--text-muted)]">requests</div>
                   </div>
@@ -734,8 +734,8 @@ export function UsageAnalytics({
       description={`Success heatmap in ${snapshot.data.serviceHealth.blockSizeMinutes}-minute blocks.`}
       badge={<Badge tone={serviceHealthBadgeTone} size="xs">{hasHealthTraffic ? formatPercent(serviceHealthRate) : "No traffic"}</Badge>}
     >
-      <div className="overflow-x-auto">
-        <div className="min-w-[640px] space-y-1.5">
+      <div className="-mx-1 overflow-x-auto px-1 pb-1">
+        <div className="min-w-[560px] space-y-1.5 sm:min-w-[640px]">
           {serviceHealthRows.map((row, rowIndex) => (
             <div
               key={`health-row-${rowIndex}`}
@@ -756,7 +756,7 @@ export function UsageAnalytics({
           ))}
         </div>
       </div>
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-[11px] text-[var(--text-muted)]">
+      <div className="mt-4 flex flex-col gap-2 text-[11px] text-[var(--text-muted)] sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
         <span>{snapshot.data.serviceHealth.totalSuccess.toLocaleString()} success</span>
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-block h-2.5 w-2.5 rounded-[3px] bg-[var(--surface-muted)]" />
@@ -1112,10 +1112,10 @@ export function UsageAnalytics({
         truncated={snapshot.data.truncated}
       />
 
-      <section className="grid gap-4 xl:grid-cols-2">
-        <div className="dashboard-panel-surface p-4">
+      <section className="space-y-4">
+        <div className="dashboard-panel-surface min-w-0 p-4">
           <h2 className="text-sm font-semibold text-[var(--text-primary)]">API Details</h2>
-          <div className="mt-4 overflow-auto">
+          <div className="mt-4 overflow-x-auto pb-1">
             <table className="w-full min-w-[720px] text-sm">
               <thead>
                 <tr className="border-b border-[var(--surface-border)]">
@@ -1143,9 +1143,9 @@ export function UsageAnalytics({
           </div>
         </div>
 
-        <div className="dashboard-panel-surface p-4">
+        <div className="dashboard-panel-surface min-w-0 p-4">
           <h2 className="text-sm font-semibold text-[var(--text-primary)]">Model Stats</h2>
-          <div className="mt-4 overflow-auto">
+          <div className="mt-4 overflow-x-auto pb-1">
             <table className="w-full min-w-[640px] text-sm">
               <thead>
                 <tr className="border-b border-[var(--surface-border)]">

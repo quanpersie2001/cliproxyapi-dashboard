@@ -69,28 +69,10 @@ cd infrastructure
 - **API Key Management** — Create, revoke, and track API keys with per-user ownership
 - **Real-time Monitoring** — Live log streaming, container health, and service management
 - **Quota Tracking** — Rate limits and usage per provider (Claude, Codex, Kimi, Antigravity)
-- **Telegram Quota Alerts** — Automatic notifications when OAuth quota drops below threshold (configurable per-provider, 1-hour cooldown)
 - **Usage Analytics** — Request counts, provider breakdown, model stats, error rates
 - **One-Click Updates** — Update both Dashboard (GHCR) and CLIProxyAPIPlus (Docker Hub) from the admin panel
 - **Container Management** — Start, stop, restart containers directly from the UI
 - **Proxy-Only Focus** — The dashboard is scoped to proxy administration only: providers, runtime config, usage, logs, and updates
-
-## Telegram Quota Alerts
-
-Get notified on Telegram when your OAuth provider quota is running low.
-
-**Setup** (Admin → Settings → Telegram Alerts):
-
-1. Create a Telegram bot via [@BotFather](https://t.me/BotFather) and copy the bot token
-2. Get your chat ID (send a message to the bot, then check `https://api.telegram.org/bot<TOKEN>/getUpdates`)
-3. In the dashboard, go to **Admin → Settings → Telegram** and enter:
-   - Bot token
-   - Chat ID
-   - Quota threshold (e.g. 20% remaining)
-   - Which providers to monitor (Claude, Codex, Kimi, Antigravity)
-4. Enable alerts — the scheduler checks every 5 minutes with a 1-hour cooldown between notifications
-
-Use the **Test Message** button to verify your configuration before enabling.
 
 ## Screenshots
 

@@ -14,7 +14,6 @@ export const API_ENDPOINTS = {
     USERS: "/api/admin/users",
     SETTINGS: "/api/admin/settings",
     LOGS: "/api/admin/logs",
-    TELEGRAM: "/api/admin/telegram",
     REVOKE_SESSIONS: "/api/admin/revoke-sessions",
   },
   UPDATE: {
@@ -24,7 +23,6 @@ export const API_ENDPOINTS = {
   },
   QUOTA: {
     BASE: "/api/quota",
-    CHECK_ALERTS: "/api/quota/check-alerts",
   },
   USAGE: {
     COLLECT: "/api/usage/collect",
@@ -48,6 +46,7 @@ export const API_ENDPOINTS = {
     BASE: "/api/provider-groups",
     REORDER: "/api/provider-groups/reorder",
   },
+  MODEL_PREFERENCES: "/api/model-preferences",
   MANAGEMENT: {
     CONFIG: "/api/management/config",
     CONFIG_YAML: "/api/management/config.yaml",

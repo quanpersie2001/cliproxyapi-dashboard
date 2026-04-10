@@ -28,7 +28,7 @@
 - `ProvidersPage`: provider API keys, OAuth accounts, custom providers
 - `ApiKeysPage`: dashboard-issued client credentials
 - `UsagePage`: request analytics and history
-- `QuotaPage`: provider quota insights and Telegram alerts
+- `QuotaPage`: provider quota insights and remaining capacity windows
 - `ProxyConfigPage`: runtime config fields backed by the management API
 - `SettingsPage`: password, updates, provider limits, session revoke
 - `MonitoringPage`: service status and logs
@@ -39,7 +39,7 @@
 - `DashboardNav`: sidebar navigation
 - `DashboardHeader`: status and user header
 - `components/providers/*`: provider-management UI
-- `components/quota/*`: quota charts and alert controls
+- `components/quota/*`: quota charts and account details
 - `components/setup/*`: setup wizard
 - `components/ui/*`: buttons, cards, dialogs, inputs, toasts
 

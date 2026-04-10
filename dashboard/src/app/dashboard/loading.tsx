@@ -49,6 +49,49 @@ export default function DashboardLoading() {
       </section>
 
       <section className="dashboard-panel-surface p-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="space-y-2">
+            <div className="h-3 w-24 animate-pulse rounded bg-[var(--surface-muted)]" />
+            <div className="h-6 w-48 animate-pulse rounded bg-[var(--surface-muted)]" />
+            <div className="h-4 w-96 animate-pulse rounded bg-[var(--surface-muted)]" />
+            <div className="h-4 w-72 animate-pulse rounded bg-[var(--surface-muted)]" />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <div className="h-7 w-24 animate-pulse rounded-full bg-[var(--surface-muted)]" />
+            <div className="h-7 w-24 animate-pulse rounded-full bg-[var(--surface-muted)]" />
+            <div className="h-8 w-24 animate-pulse rounded-full bg-[var(--surface-muted)]" />
+            <div className="h-8 w-24 animate-pulse rounded-full bg-[var(--surface-muted)]" />
+          </div>
+        </div>
+
+        <div className="mt-4 space-y-3">
+          {Array.from({ length: 3 }).map((_, groupIdx) => (
+            <div key={`catalog-group-${groupIdx}`} className="dashboard-card-surface p-3">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="h-4 w-24 animate-pulse rounded bg-[var(--surface-border)]" />
+                </div>
+                <div className="h-7 w-7 animate-pulse rounded-md bg-[var(--surface-muted)]" />
+              </div>
+              <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                {Array.from({ length: 6 }).map((__, tagIdx) => (
+                  <div
+                    key={`catalog-tag-${groupIdx}-${tagIdx}`}
+                    className="rounded-xl border border-[var(--surface-border)] bg-[var(--surface-base)] px-3 py-3"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="h-4 w-full animate-pulse rounded bg-[var(--surface-muted)]" />
+                      <div className="size-4 animate-pulse rounded bg-[var(--surface-muted)]" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section className="dashboard-panel-surface p-4">
         <div className="flex items-center justify-between gap-3">
           <div className="space-y-2">
             <div className="h-6 w-40 animate-pulse rounded bg-[var(--surface-muted)]" />

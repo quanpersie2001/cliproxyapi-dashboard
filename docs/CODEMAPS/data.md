@@ -36,7 +36,7 @@ CollectorState
 - `ProviderGroup`: grouping and ordering for custom providers
 - `UsageRecord`: persistent usage history collected from the proxy
 - `AuditLog`: security and admin trail
-- `SystemSetting`: global dashboard settings such as quotas and Telegram config
+- `SystemSetting`: global dashboard settings such as provider quotas and limits
 - `CollectorState`: usage-collector bookkeeping
 
 ## Notes

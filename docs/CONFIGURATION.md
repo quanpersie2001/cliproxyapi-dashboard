@@ -66,7 +66,6 @@ The **Settings** and **Admin** areas manage dashboard-local behavior such as:
 - password changes
 - session revocation
 - max provider keys per user
-- Telegram alert configuration
 - dashboard and proxy update operations
 
 ## Provider Management

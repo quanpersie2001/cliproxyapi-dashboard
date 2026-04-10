@@ -15,7 +15,6 @@
 - `GET|DELETE /api/admin/logs`
 - `GET|POST /api/admin/deploy`
 - `POST /api/admin/revoke-sessions`
-- `GET|PUT|POST /api/admin/telegram`
 
 ## Providers
 
@@ -46,7 +45,6 @@
 ## Quota And Usage
 
 - `GET /api/quota`
-- `POST /api/quota/check-alerts`
 - `POST /api/usage/collect`
 - `GET /api/usage/history`
 

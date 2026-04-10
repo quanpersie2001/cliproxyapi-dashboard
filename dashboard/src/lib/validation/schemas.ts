@@ -5,6 +5,12 @@ import {
 } from "@/lib/auth/validation";
 import { ROUTING_STRATEGIES } from "@/lib/routing-strategy";
 
+export const ModelPreferencesSchema = z.object({
+  excludedModels: z
+    .array(z.string().min(1).max(200))
+    .max(500, "excludedModels array cannot exceed 500 items"),
+});
+
 export const ContainerActionSchema = z.object({
   action: z.enum(["start", "stop", "restart"], {
     message: "Invalid action. Allowed: start, stop, restart",
@@ -46,10 +52,6 @@ export const ChangePasswordSchema = z.object({
 
 const SETTINGS_ALLOWLIST = new Set([
   "max_provider_keys_per_user",
-  "telegram_bot_token",
-  "telegram_chat_id",
-  "telegram_alerts_enabled",
-  "telegram_alert_providers",
 ]);
 
 export const AdminSettingSchema = z.object({

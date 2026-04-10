@@ -1,10 +1,17 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { AvailableModelGroups } from "@/components/dashboard/available-model-groups";
 import { Badge } from "@/components/ui/badge";
 import { UsageAnalytics } from "@/components/usage/usage-analytics";
 import { verifySession } from "@/lib/auth/session";
 import { prisma } from "@/lib/db";
+import {
+  fetchAvailableAuthFileModels,
+  fetchAvailableProxyModels,
+  groupProxyModelsByProvider,
+} from "@/lib/proxy-models";
+import { loadExcludedModelsForUser } from "@/lib/model-preferences";
 import { getUtcDayRange } from "@/lib/usage/dashboard-window";
 import { getUsageHistorySnapshot } from "@/lib/usage/history";
 
@@ -122,7 +129,7 @@ function OverviewPanel({
   footer,
 }: OverviewPanelProps) {
   return (
-    <section className="dashboard-card-surface dashboard-card-surface--muted p-3">
+    <section className="dashboard-card-surface dashboard-card-surface--muted min-w-0 p-3">
       <div className="dashboard-kicker">{kicker}</div>
       <h2 className="mt-2 text-sm font-semibold text-[var(--text-primary)]">{title}</h2>
       <p className="mt-1 text-xs leading-5 text-[var(--text-muted)]">{description}</p>
@@ -158,14 +165,17 @@ export default async function DashboardOverviewPage() {
     providerKeyCount,
     oauthAccountCount,
     customProviderCount,
+    initialExcludedModels,
     usageRecordCount,
     managementHealthy,
     usageSnapshot,
+    modelCatalogSnapshot,
   ] = await Promise.all([
     prisma.userApiKey.count({ where: { userId: session.userId } }),
     prisma.providerKeyOwnership.count({ where: { userId: session.userId } }),
     prisma.providerOAuthOwnership.count({ where: { userId: session.userId } }),
     prisma.customProvider.count({ where: { userId: session.userId } }),
+    loadExcludedModelsForUser(session.userId),
     prisma.usageRecord.count({ where: { userId: session.userId } }),
     getManagementHealthy(),
     getUsageHistorySnapshot({
@@ -175,6 +185,58 @@ export default async function DashboardOverviewPage() {
       fromParam: usageWindow.fromParam,
       toParam: usageWindow.toParam,
     }),
+    (async () => {
+      const [authFileCatalog, discoveryKey, customProviders] = await Promise.all([
+        fetchAvailableAuthFileModels(),
+        prisma.userApiKey.findFirst({
+          where: { userId: session.userId },
+          orderBy: { createdAt: "asc" },
+          select: { key: true, name: true },
+        }),
+        prisma.customProvider.findMany({
+          where: { userId: session.userId },
+          select: {
+            name: true,
+            providerId: true,
+            models: {
+              select: {
+                alias: true,
+              },
+            },
+          },
+          orderBy: { sortOrder: "asc" },
+        }),
+      ]);
+
+      const proxyModels = discoveryKey
+        ? await fetchAvailableProxyModels(discoveryKey.key)
+        : [];
+      const customProviderModels = customProviders.flatMap((provider) =>
+        provider.models
+          .map((model) => model.alias.trim())
+          .filter(Boolean)
+          .map((alias) => ({
+            id: alias,
+            owned_by: provider.name.trim() || provider.providerId.trim() || "Custom Provider",
+          })),
+      );
+
+      return {
+        activeAuthFiles: authFileCatalog.activeAuthFiles,
+        authFileModels: authFileCatalog.models,
+        activeCustomProviders: customProviders
+          .map((provider) => provider.name.trim() || provider.providerId.trim())
+          .filter(Boolean),
+        customProviderModels,
+        discoveryKey,
+        proxyModels,
+        models: [
+          ...authFileCatalog.models,
+          ...customProviderModels,
+          ...proxyModels,
+        ],
+      };
+    })(),
   ]);
 
   const proxyStatusLabel = managementHealthy ? "Proxy healthy" : "Proxy degraded";
@@ -185,6 +247,23 @@ export default async function DashboardOverviewPage() {
   const topModel = usageSnapshot.data.modelBreakdown[0];
   const trackedModels = usageSnapshot.data.modelBreakdown.length;
   const collectorLastSynced = formatRelativeTime(usageSnapshot.data.collectorStatus.lastCollectedAt);
+  const modelCatalogGroups = groupProxyModelsByProvider(modelCatalogSnapshot.models);
+  const uniqueModelCount = new Set(modelCatalogSnapshot.models.map((model) => model.id)).size;
+  const modelCatalogSourceNote = modelCatalogSnapshot.models.length > 0
+    ? [
+        modelCatalogSnapshot.authFileModels.length > 0
+          ? `${modelCatalogSnapshot.authFileModels.length.toLocaleString()} from OAuth files`
+          : null,
+        modelCatalogSnapshot.customProviderModels.length > 0
+          ? `${modelCatalogSnapshot.customProviderModels.length.toLocaleString()} from custom providers`
+          : null,
+        modelCatalogSnapshot.proxyModels.length > 0
+          ? `${modelCatalogSnapshot.proxyModels.length.toLocaleString()} from proxy /v1/models`
+          : null,
+      ]
+        .filter(Boolean)
+        .join(" · ")
+    : "Add an OAuth file or dashboard API key to populate the catalog";
 
   return (
     <div className="space-y-6">
@@ -250,7 +329,7 @@ export default async function DashboardOverviewPage() {
             title="Keys and provider ownership"
             description="Credential coverage and upstream connectivity grouped together."
           >
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid gap-2 sm:grid-cols-2">
               <CompactDetailMetric
                 label="Dashboard keys"
                 value={apiKeyCount.toString()}
@@ -279,7 +358,7 @@ export default async function DashboardOverviewPage() {
             title="Persisted history snapshot"
             description="A compact read of dataset size, model coverage, and collector freshness."
           >
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid gap-2 sm:grid-cols-2">
               <CompactDetailMetric
                 label="Usage records"
                 value={formatCompactNumber(usageRecordCount)}
@@ -303,6 +382,48 @@ export default async function DashboardOverviewPage() {
             </div>
           </OverviewPanel>
         </div>
+      </section>
+
+      <section className="dashboard-panel-surface p-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div className="max-w-3xl">
+            <div className="dashboard-kicker">Model catalog</div>
+            <h2 className="mt-2 text-lg font-semibold tracking-tight text-[var(--text-primary)]">
+              Available models
+            </h2>
+            <p className="mt-1 text-sm leading-6 text-[var(--text-secondary)]">
+              Live model list grouped and presented in the same spirit as the reference system page.
+            </p>
+            <p className="mt-2 text-xs leading-5 text-[var(--text-muted)]">
+              {modelCatalogSourceNote}
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge tone="neutral" size="xs">
+              {uniqueModelCount.toLocaleString()} models
+            </Badge>
+            <Badge tone="neutral" size="xs">
+              {modelCatalogGroups.length.toLocaleString()} providers
+            </Badge>
+            <QuickLink href="/dashboard/providers" label="Providers" className="px-3 py-1.5 text-xs" />
+            <QuickLink href="/dashboard/api-keys" label="API keys" className="px-3 py-1.5 text-xs" />
+          </div>
+        </div>
+
+        {modelCatalogGroups.length === 0 ? (
+          <div className="mt-4">
+            <p className="text-sm text-[var(--text-muted)]">
+              No models are currently discoverable through OAuth files or the proxy.
+            </p>
+          </div>
+        ) : (
+          <div className="mt-4">
+            <AvailableModelGroups
+              groups={modelCatalogGroups}
+              initialExcludedModels={initialExcludedModels}
+            />
+          </div>
+        )}
       </section>
 
       <section id="usage-analytics" className="scroll-mt-6">
