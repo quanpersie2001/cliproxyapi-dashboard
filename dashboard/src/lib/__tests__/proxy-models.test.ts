@@ -64,4 +64,25 @@ describe("groupProxyModelsByProvider", () => {
       ["OpenAI/Codex", 1],
     ]);
   });
+
+  it("merges provider labels that differ only by owned_by casing", () => {
+    const groups = groupProxyModelsByProvider([
+      { id: "glm-4.5", owned_by: "zai" },
+      { id: "glm-4.5-air", owned_by: "ZAI" },
+    ]);
+
+    expect(groups.map((group) => [group.label, group.items.map((item) => item.id)])).toEqual([
+      ["ZAI", ["glm-4.5", "glm-4.5-air"]],
+    ]);
+  });
+
+  it("assigns unique ids when distinct provider labels collapse to the same slug", () => {
+    const groups = groupProxyModelsByProvider([
+      { id: "alpha-1", owned_by: "Alpha+Beta" },
+      { id: "alpha-2", owned_by: "Alpha Beta" },
+    ]);
+
+    expect(groups.map((group) => group.label)).toEqual(["Alpha Beta", "Alpha+Beta"]);
+    expect(new Set(groups.map((group) => group.id)).size).toBe(groups.length);
+  });
 });

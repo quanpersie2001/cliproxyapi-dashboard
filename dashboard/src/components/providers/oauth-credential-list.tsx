@@ -3,6 +3,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { OwnerBadge, type CurrentUserLike } from "@/components/providers/api-key-section";
+import { getOAuthProviderPresentation, OAuthProviderIcon } from "@/components/providers/oauth-provider-meta";
 
 interface OAuthAccountWithOwnership {
   id: string;
@@ -116,54 +117,64 @@ export function OAuthCredentialList({
         </div>
       ) : (
         <div className="divide-y divide-[var(--surface-border)] rounded-md border border-[var(--surface-border)] bg-[var(--surface-base)]">
-          {accounts.map((account) => (
-            <div key={account.id} className="group p-3">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1 space-y-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-semibold text-[var(--text-primary)]">{account.provider}</span>
-                    {currentUser && (
-                      <OwnerBadge ownerUsername={account.ownerUsername} isOwn={account.isOwn} />
-                    )}
-                    <OAuthStatusBadge status={account.status} statusMessage={account.statusMessage} unavailable={account.unavailable} />
+          {accounts.map((account) => {
+            const providerPresentation = getOAuthProviderPresentation(account.provider);
+
+            return (
+              <div key={account.id} className="group p-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="flex min-w-0 flex-1 items-start gap-3">
+                    <OAuthProviderIcon provider={account.provider} size="sm" className="mt-0.5" />
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-sm font-semibold text-[var(--text-primary)]">
+                          {providerPresentation.name}
+                        </span>
+                        {currentUser && (
+                          <OwnerBadge ownerUsername={account.ownerUsername} isOwn={account.isOwn} />
+                        )}
+                        <OAuthStatusBadge status={account.status} statusMessage={account.statusMessage} unavailable={account.unavailable} />
+                      </div>
+                      {account.accountEmail && (
+                        <p className="truncate text-xs text-[var(--text-secondary)]">{account.accountEmail}</p>
+                      )}
+                      <p className="truncate text-xs font-mono text-[var(--text-muted)]">{account.accountName}</p>
+                    </div>
                   </div>
-                  {account.accountEmail && (
-                    <p className="truncate text-xs text-[var(--text-secondary)]">{account.accountEmail}</p>
-                  )}
-                  <p className="truncate text-xs font-mono text-[var(--text-muted)]">{account.accountName}</p>
-                </div>
-                {currentUser && (account.isOwn || currentUser.isAdmin) && (
-                  <div className="flex shrink-0 items-center gap-2">
-                    {currentUser.isAdmin && !account.ownerUsername && (
+
+                  {currentUser && (account.isOwn || currentUser.isAdmin) && (
+                    <div className="flex shrink-0 flex-wrap items-center gap-2">
+                      {currentUser.isAdmin && !account.ownerUsername && (
+                        <Button
+                          variant="pill"
+                          className="px-2.5 py-1 text-xs"
+                          disabled={claimingAccountName === account.accountName}
+                          onClick={() => onClaim(account.accountName)}
+                        >
+                          {claimingAccountName === account.accountName ? "..." : "Claim"}
+                        </Button>
+                      )}
                       <Button
                         variant="pill"
                         className="px-2.5 py-1 text-xs"
-                        disabled={claimingAccountName === account.accountName}
-                        onClick={() => onClaim(account.accountName)}
+                        disabled={togglingAccountId === account.id}
+                        onClick={() => onToggle(account.id, account.status === "disabled")}
                       >
-                        {claimingAccountName === account.accountName ? "..." : "Claim"}
+                        {togglingAccountId === account.id ? "..." : account.status === "disabled" ? "Enable" : "Disable"}
                       </Button>
-                    )}
-                    <Button
-                      variant="pill"
-                      className="px-2.5 py-1 text-xs"
-                      disabled={togglingAccountId === account.id}
-                      onClick={() => onToggle(account.id, account.status === "disabled")}
-                    >
-                      {togglingAccountId === account.id ? "..." : account.status === "disabled" ? "Enable" : "Disable"}
-                    </Button>
-                    <Button
-                      variant="danger"
-                      className="px-2.5 py-1 text-xs"
-                      onClick={() => onDelete(account.id)}
-                    >
-                      Disconnect
-                    </Button>
-                  </div>
-                )}
+                      <Button
+                        variant="danger"
+                        className="px-2.5 py-1 text-xs"
+                        onClick={() => onDelete(account.id)}
+                      >
+                        Disconnect
+                      </Button>
+                    </div>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </>

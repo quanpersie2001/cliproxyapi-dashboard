@@ -191,7 +191,7 @@ export default function ProvidersPage() {
         </div>
       ) : (
         <>
-          <section className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-base)] p-6 space-y-6">
+          <section className="space-y-3 rounded-lg border border-[var(--surface-border)] bg-[var(--surface-base)] p-4">
             <ApiKeySection
               showToast={showToast}
               currentUser={currentUser}
@@ -199,23 +199,23 @@ export default function ProvidersPage() {
               maxKeysPerUser={maxKeysPerUser}
               refreshProviders={refreshProviders}
             />
+          </section>
 
-            <div className="border-t border-[var(--surface-border)] pt-6">
-              <OAuthSection
-                showToast={showToast}
-                currentUser={currentUser}
-                refreshProviders={refreshProviders}
-                onAccountCountChange={setOauthAccountCount}
-                incognitoBrowserEnabled={incognitoBrowserEnabled}
-              />
-            </div>
+          <section className="space-y-3 rounded-lg border border-[var(--surface-border)] bg-[var(--surface-base)] p-4">
+            <OAuthSection
+              showToast={showToast}
+              currentUser={currentUser}
+              refreshProviders={refreshProviders}
+              onAccountCountChange={setOauthAccountCount}
+              incognitoBrowserEnabled={incognitoBrowserEnabled}
+            />
+          </section>
 
-            <div className="border-t border-[var(--surface-border)] pt-6">
-              <CustomProviderSection
-                showToast={showToast}
-                onProviderCountChange={setCustomProviderCount}
-              />
-            </div>
+          <section className="space-y-3 rounded-lg border border-[var(--surface-border)] bg-[var(--surface-base)] p-4">
+            <CustomProviderSection
+              showToast={showToast}
+              onProviderCountChange={setCustomProviderCount}
+            />
           </section>
 
           {currentUser?.isAdmin && (

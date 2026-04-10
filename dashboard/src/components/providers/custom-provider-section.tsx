@@ -338,7 +338,7 @@ export function CustomProviderSection({ showToast, onProviderCountChange }: Cust
       <div id="provider-custom" className="space-y-3">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Custom Providers</h2>
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">Custom Providers (OpenAI Compatible)</h2>
             <p className="text-xs text-[var(--text-muted)]">OpenAI-compatible endpoints and mappings</p>
           </div>
           <div className="flex items-center gap-2">

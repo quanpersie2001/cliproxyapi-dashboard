@@ -12,6 +12,11 @@ import type { CurrentUserLike } from "@/components/providers/api-key-section";
 import { OAuthCredentialList, type OAuthAccountWithOwnership } from "@/components/providers/oauth-credential-list";
 import { OAuthImportForm } from "@/components/providers/oauth-import-form";
 import { OAuthActions } from "@/components/providers/oauth-actions";
+import {
+  getOAuthProviderById,
+  OAUTH_PROVIDERS,
+  type OAuthProviderId,
+} from "@/components/providers/oauth-provider-meta";
 import { getStateAccentBorderStyle, getStateToneStyle } from "@/components/ui/state-styles";
 
 type ShowToast = ReturnType<typeof useToast>["showToast"];
@@ -24,88 +29,6 @@ interface OAuthSectionProps {
   incognitoBrowserEnabled?: boolean;
 }
 
-const OAUTH_PROVIDERS = [
-  {
-    id: "claude" as const,
-    name: "Claude Code",
-    description: "Anthropic Claude (Pro/Max subscription)",
-    authEndpoint: "/api/management/anthropic-auth-url?is_webui=true",
-    requiresCallback: true,
-  },
-  {
-    id: "gemini-cli" as const,
-    name: "Gemini CLI",
-    description: "Google Gemini (via Google OAuth)",
-    authEndpoint: "/api/management/gemini-cli-auth-url?project_id=ALL&is_webui=true",
-    requiresCallback: true,
-  },
-  {
-    id: "codex" as const,
-    name: "Codex",
-    description: "OpenAI Codex (Plus/Pro subscription)",
-    authEndpoint: "/api/management/codex-auth-url?is_webui=true",
-    requiresCallback: true,
-  },
-  {
-    id: "antigravity" as const,
-    name: "Antigravity",
-    description: "Google Antigravity (via Google OAuth)",
-    authEndpoint: "/api/management/antigravity-auth-url?is_webui=true",
-    requiresCallback: true,
-  },
-  {
-    id: "iflow" as const,
-    name: "iFlow",
-    description: "iFlytek iFlow (via OAuth)",
-    authEndpoint: "/api/management/iflow-auth-url?is_webui=true",
-    requiresCallback: true,
-  },
-  {
-    id: "kimi" as const,
-    name: "Kimi",
-    description: "Moonshot AI Kimi (device OAuth)",
-    authEndpoint: "/api/management/kimi-auth-url?is_webui=true",
-    requiresCallback: false,
-  },
-  {
-    id: "qwen" as const,
-    name: "Qwen Code",
-    description: "Alibaba Qwen Code (device OAuth)",
-    authEndpoint: "/api/management/qwen-auth-url?is_webui=true",
-    requiresCallback: false,
-  },
-  {
-    id: "copilot" as const,
-    name: "GitHub Copilot",
-    description: "GitHub Copilot (via GitHub device OAuth)",
-    authEndpoint: "/api/management/github-auth-url?is_webui=true",
-    requiresCallback: false,
-  },
-  {
-    id: "kiro" as const,
-    name: "Kiro",
-    description: "AWS CodeWhisperer / Kiro (device OAuth)",
-    authEndpoint: "/api/management/kiro-auth-url?is_webui=true",
-    requiresCallback: false,
-  },
-  {
-    id: "cursor" as const,
-    name: "Cursor",
-    description: "Cursor IDE (via PKCE OAuth)",
-    authEndpoint: "/api/management/cursor-auth-url?is_webui=true",
-    requiresCallback: false,
-  },
-  {
-    id: "codebuddy" as const,
-    name: "CodeBuddy",
-    description: "Tencent CodeBuddy (via browser OAuth)",
-    authEndpoint: "/api/management/codebuddy-auth-url?is_webui=true",
-    requiresCallback: false,
-  },
-] as const;
-
-type OAuthProvider = (typeof OAUTH_PROVIDERS)[number];
-export type OAuthProviderId = OAuthProvider["id"];
 const OAUTH_STATUS_POLL_INTERVAL_MS = 5000;
 const OAUTH_STATUS_POLL_INTERVAL_HIDDEN_MS = 10000;
 
@@ -150,9 +73,6 @@ interface OAuthCallbackResponse {
   status?: number;
   error?: string;
 }
-
-const getOAuthProviderById = (id: OAuthProviderId | null) =>
-  OAUTH_PROVIDERS.find((provider) => provider.id === id) || null;
 
 function isTabVisible(): boolean {
   if (typeof document === "undefined") return true;
@@ -227,6 +147,8 @@ export function OAuthSection({
   const [importFileName, setImportFileName] = useState("");
   const [importStatus, setImportStatus] = useState<"idle" | "validating" | "uploading" | "success" | "error">("idle");
   const [importErrorMessage, setImportErrorMessage] = useState<string | null>(null);
+  const [isConnectActionsExpanded, setIsConnectActionsExpanded] = useState(true);
+  const connectActionsInitializedRef = useRef(false);
 
   const selectedOAuthProvider = getOAuthProviderById(selectedOAuthProviderId);
   const selectedOAuthProviderRequiresCallback = selectedOAuthProvider?.requiresCallback ?? true;
@@ -780,6 +702,15 @@ export function OAuthSection({
     };
   }, [loadAccounts, stopNoCallbackClaimPolling, stopPolling]);
 
+  useEffect(() => {
+    if (oauthAccountsLoading || connectActionsInitializedRef.current) {
+      return;
+    }
+
+    setIsConnectActionsExpanded(accounts.length === 0);
+    connectActionsInitializedRef.current = true;
+  }, [accounts.length, oauthAccountsLoading]);
+
   const isOAuthSubmitDisabled =
     oauthModalStatus === MODAL_STATUS.LOADING ||
     oauthModalStatus === MODAL_STATUS.SUBMITTING ||
@@ -814,15 +745,15 @@ export function OAuthSection({
             onClaim={claimOAuthAccount}
           />
 
-          <div className="rounded-sm border border-[var(--surface-border)] bg-[var(--surface-base)] p-3 text-xs text-[var(--text-muted)]">
-            <strong className="text-[var(--text-primary)]">Note:</strong>{" "}
-            {incognitoBrowserEnabled
-              ? "Incognito mode is enabled. Browsers do not let the dashboard force-open a private window, so you will open the authorization URL manually."
-              : "OAuth flows open in a popup window. Make sure pop-ups are allowed in your browser."}
-          </div>
-
           <OAuthActions
             providers={OAUTH_PROVIDERS}
+            expanded={isConnectActionsExpanded}
+            note={
+              incognitoBrowserEnabled
+                ? "Incognito mode is enabled. Browsers do not let the dashboard force-open a private window, so you will open the authorization URL manually."
+                : "OAuth flows open in a popup window. Make sure pop-ups are allowed in your browser."
+            }
+            onToggleExpand={() => setIsConnectActionsExpanded((current) => !current)}
             onConnect={handleOAuthConnect}
             onImport={openImportModal}
           />

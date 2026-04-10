@@ -13,6 +13,7 @@ const OWNED_BY_DISPLAY: Record<string, string> = {
   kiro: "Kiro",
   iflow: "iFlow",
   qwen: "Qwen",
+  zai: "ZAI",
 };
 
 /** Display order for known providers. Unknown providers sort after these. */
@@ -37,19 +38,40 @@ export interface ModelGroup {
   models: string[];
 }
 
+function formatUnknownOwnedByDisplay(ownedBy: string): string {
+  const trimmed = ownedBy.trim();
+  if (!trimmed) {
+    return "";
+  }
+
+  const hasMixedCase = /[a-z]/.test(trimmed) && /[A-Z]/.test(trimmed);
+  if (hasMixedCase) {
+    return trimmed.replace(/[_-]+/g, " ");
+  }
+
+  return trimmed
+    .toLowerCase()
+    .split(/[-_\s]+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+}
+
 /**
  * Resolve owned_by to a display-friendly provider name.
  * Used by buildSourceMap in page.tsx.
  */
 export function resolveOwnedByDisplay(ownedBy: string): string {
-  if (OWNED_BY_DISPLAY[ownedBy]) {
-    return OWNED_BY_DISPLAY[ownedBy];
+  const normalizedOwnedBy = ownedBy.trim().toLowerCase();
+  if (!normalizedOwnedBy) {
+    return "";
   }
 
-  return ownedBy
-    .split(/[-_]/)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
+  if (OWNED_BY_DISPLAY[normalizedOwnedBy]) {
+    return OWNED_BY_DISPLAY[normalizedOwnedBy];
+  }
+
+  return formatUnknownOwnedByDisplay(ownedBy);
 }
 
 /**

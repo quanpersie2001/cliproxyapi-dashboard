@@ -167,6 +167,24 @@ function resolveProviderLabel(model: ProxyModel): string {
   return detectModelProvider(model.id);
 }
 
+function buildUniqueProviderGroupId(provider: string, usedIds: Set<string>): string {
+  const baseId = provider
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || "provider";
+
+  let candidateId = baseId;
+  let duplicateIndex = 2;
+
+  while (usedIds.has(candidateId)) {
+    candidateId = `${baseId}-${duplicateIndex}`;
+    duplicateIndex += 1;
+  }
+
+  usedIds.add(candidateId);
+  return candidateId;
+}
+
 export function groupProxyModelsByProvider(models: ProxyModel[]): ProxyModelGroup[] {
   const grouped = new Map<string, Map<string, ProxyModel>>();
 
@@ -185,6 +203,7 @@ export function groupProxyModelsByProvider(models: ProxyModel[]): ProxyModelGrou
       .filter((provider) => !MODEL_PROVIDER_ORDER.includes(provider as (typeof MODEL_PROVIDER_ORDER)[number]))
       .sort((left, right) => left.localeCompare(right)),
   ];
+  const usedGroupIds = new Set<string>();
 
   return orderedProviders.flatMap((provider) => {
     const providerModels = grouped.get(provider);
@@ -193,7 +212,7 @@ export function groupProxyModelsByProvider(models: ProxyModel[]): ProxyModelGrou
     }
 
     return [{
-      id: provider.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "") || "provider",
+      id: buildUniqueProviderGroupId(provider, usedGroupIds),
       label: provider,
       items: Array.from(providerModels.values()).sort((left, right) => left.id.localeCompare(right.id)),
     }];

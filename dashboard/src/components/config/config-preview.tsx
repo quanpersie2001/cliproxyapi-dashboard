@@ -12,7 +12,7 @@ export default function ConfigPreview({ rawJson }: ConfigPreviewProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   return (
-    <section className="space-y-3 rounded-lg border border-rose-200/70 bg-rose-50/70 p-4 dark:border-rose-500/20 dark:bg-rose-500/10">
+    <section className="space-y-3 rounded-lg border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] p-4">
       <div className="flex flex-col items-start justify-between gap-2 sm:flex-row sm:items-center">
         <SectionHeader title="Advanced: Raw JSON Editor" />
         <Button variant="ghost" onClick={() => setShowAdvanced((current) => !current)} className="text-xs">
@@ -22,7 +22,7 @@ export default function ConfigPreview({ rawJson }: ConfigPreviewProps) {
 
       {showAdvanced ? (
         <div className="space-y-4">
-          <div className="rounded-md border border-rose-200/80 bg-rose-50/80 p-3 text-sm text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200">
+          <div className="rounded-md border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] p-3 text-sm text-[var(--state-danger-text)]">
             <strong>Warning:</strong>{" "}
             <span>
               This section shows the complete configuration including fields managed on other pages.
