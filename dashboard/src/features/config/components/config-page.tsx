@@ -9,13 +9,17 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { mergeConfigYaml } from "@/lib/config-yaml";
+import {
+  readOAuthModelAliases,
+  stampOAuthModelAliasIds,
+  stripOAuthModelAliasIds,
+} from "@/lib/oauth-model-aliases";
 import { DEFAULT_ROUTING_STRATEGY, isRoutingStrategy } from "@/lib/routing-strategy";
 import type { RoutingStrategy } from "@/features/config/types";
 import type {
   AmpcodeConfig,
   ClaudeHeaderDefaults,
   Config,
-  OAuthModelAliasEntry,
   PayloadConfig,
   PprofConfig,
   QuotaExceededConfig,
@@ -110,31 +114,6 @@ function readObject(value: unknown): Record<string, unknown> {
 
 function readRoutingStrategy(value: unknown, fallback: RoutingStrategy): RoutingStrategy {
   return isRoutingStrategy(value) ? value : fallback;
-}
-
-function readOAuthModelAliases(
-  value: unknown
-): Record<string, OAuthModelAliasEntry[]> {
-  const aliases = readObject(value);
-  const next: Record<string, OAuthModelAliasEntry[]> = {};
-
-  for (const [provider, entries] of Object.entries(aliases)) {
-    if (!Array.isArray(entries)) {
-      continue;
-    }
-
-    next[provider] = entries
-      .filter(isPlainObject)
-      .map((entry) => ({
-        name: readString(entry.name, ""),
-        alias: readString(entry.alias, ""),
-        fork: typeof entry.fork === "boolean" ? entry.fork : undefined,
-        _id: readString(entry._id, ""),
-      }))
-      .map((entry) => (entry._id ? entry : { ...entry, _id: undefined }));
-  }
-
-  return next;
 }
 
 function toConfig(data: Record<string, unknown>): Config {
@@ -253,7 +232,7 @@ function toConfig(data: Record<string, unknown>): Config {
       "override-raw": payload["override-raw"] ?? DEFAULT_CONFIG.payload["override-raw"],
       filter: payload.filter ?? DEFAULT_CONFIG.payload.filter,
     },
-    "oauth-model-alias": readOAuthModelAliases(data["oauth-model-alias"]),
+    "oauth-model-alias": stampOAuthModelAliasIds(readOAuthModelAliases(data["oauth-model-alias"])),
   };
 }
 
@@ -261,50 +240,11 @@ function sameConfig<T>(a: T, b: T): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
-let idCounter = 0;
-function nextStableId(): string {
-  return `oauth-alias-${Date.now()}-${++idCounter}`;
-}
-
-function stampOAuthIds(cfg: Config): Config {
-  const aliases = cfg["oauth-model-alias"];
-  if (!aliases || Object.keys(aliases).length === 0) {
-    return cfg;
-  }
-
-  const stamped: Record<string, OAuthModelAliasEntry[]> = {};
-  let changed = false;
-
-  for (const [provider, entries] of Object.entries(aliases)) {
-    stamped[provider] = entries.map((entry) => {
-      if (entry._id) {
-        return entry;
-      }
-
-      changed = true;
-      return { ...entry, _id: nextStableId() };
-    });
-  }
-
-  return changed ? { ...cfg, "oauth-model-alias": stamped } : cfg;
-}
-
-function stripOAuthIds(cfg: Config): Config {
-  const aliases = cfg["oauth-model-alias"];
-  if (!aliases || Object.keys(aliases).length === 0) {
-    return cfg;
-  }
-
-  const cleaned: Record<string, OAuthModelAliasEntry[]> = {};
-  for (const [provider, entries] of Object.entries(aliases)) {
-    cleaned[provider] = entries.map((entry) => {
-      const { _id, ...rest } = entry;
-      void _id;
-      return rest;
-    });
-  }
-
-  return { ...cfg, "oauth-model-alias": cleaned };
+function toRawPreviewConfig(config: Config): Config {
+  return {
+    ...config,
+    "oauth-model-alias": stripOAuthModelAliasIds(config["oauth-model-alias"]),
+  };
 }
 
 export function ConfigPage() {
@@ -313,7 +253,6 @@ export function ConfigPage() {
   const [rawJson, setRawJson] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [expandedProviders, setExpandedProviders] = useState<Record<string, boolean>>({});
   const [showProxyWarning, setShowProxyWarning] = useState(false);
   const [resettingProxy, setResettingProxy] = useState(false);
   const { showToast } = useToast();
@@ -348,10 +287,10 @@ export function ConfigPage() {
         }
 
         const data = (await response.json()) as Record<string, unknown>;
-        const nextConfig = stampOAuthIds(toConfig(data));
+        const nextConfig = toConfig(data);
         setConfig(nextConfig);
         setOriginalConfig(nextConfig);
-        setRawJson(JSON.stringify(stripOAuthIds(nextConfig), null, 2));
+        setRawJson(JSON.stringify(toRawPreviewConfig(nextConfig), null, 2));
         setLoading(false);
         return;
       } catch {
@@ -526,7 +465,7 @@ export function ConfigPage() {
         if (!sameConfig(originalConfig[key], config[key])) {
           yamlChanges[key] =
             key === "oauth-model-alias"
-              ? stripOAuthIds(config)["oauth-model-alias"]
+              ? stripOAuthModelAliasIds(config["oauth-model-alias"])
               : config[key];
         }
       }
@@ -579,7 +518,7 @@ export function ConfigPage() {
       } else {
         showToast(`Proxy settings saved (${successCount} field${successCount > 1 ? "s" : ""} updated)`, "success");
         setOriginalConfig(config);
-        setRawJson(JSON.stringify(stripOAuthIds(config), null, 2));
+        setRawJson(JSON.stringify(toRawPreviewConfig(config), null, 2));
         shouldRefresh = true;
       }
     } catch (error) {
@@ -619,7 +558,7 @@ export function ConfigPage() {
     }
 
     setConfig(originalConfig);
-    setRawJson(JSON.stringify(stripOAuthIds(originalConfig), null, 2));
+    setRawJson(JSON.stringify(toRawPreviewConfig(originalConfig), null, 2));
     showToast("Changes discarded", "info");
   };
 
@@ -758,70 +697,6 @@ export function ConfigPage() {
     });
   };
 
-  const toggleProviderExpanded = (provider: string) => {
-    setExpandedProviders((current) => ({
-      ...current,
-      [provider]: !current[provider],
-    }));
-  };
-
-  const updateOAuthAliasEntry = (
-    provider: string,
-    index: number,
-    field: keyof OAuthModelAliasEntry,
-    value: string | boolean
-  ) => {
-    if (!config) {
-      return;
-    }
-
-    const aliases = config["oauth-model-alias"];
-    const entries = [...(aliases[provider] ?? [])];
-    entries[index] = { ...entries[index], [field]: value };
-    setConfig({
-      ...config,
-      "oauth-model-alias": {
-        ...aliases,
-        [provider]: entries,
-      },
-    });
-  };
-
-  const addOAuthAliasEntry = (provider: string) => {
-    if (!config) {
-      return;
-    }
-
-    const aliases = config["oauth-model-alias"];
-    const entries = [
-      ...(aliases[provider] ?? []),
-      { name: "", alias: "", _id: nextStableId() },
-    ];
-    setConfig({
-      ...config,
-      "oauth-model-alias": {
-        ...aliases,
-        [provider]: entries,
-      },
-    });
-  };
-
-  const removeOAuthAliasEntry = (provider: string, index: number) => {
-    if (!config) {
-      return;
-    }
-
-    const aliases = config["oauth-model-alias"];
-    const entries = (aliases[provider] ?? []).filter((_, currentIndex) => currentIndex !== index);
-    setConfig({
-      ...config,
-      "oauth-model-alias": {
-        ...aliases,
-        [provider]: entries,
-      },
-    });
-  };
-
   if (loading) {
     return (
       <div className="space-y-4">
@@ -929,7 +804,6 @@ export function ConfigPage() {
 
       <AgentConfigEditor
         config={config}
-        expandedProviders={expandedProviders}
         updateConfig={updateConfig}
         updateStreamingConfig={updateStreamingConfig}
         updateQuotaConfig={updateQuotaConfig}
@@ -939,10 +813,6 @@ export function ConfigPage() {
         updateClaudeHeaderDefaults={updateClaudeHeaderDefaults}
         updateAmpcodeConfig={updateAmpcodeConfig}
         updatePayloadConfig={updatePayloadConfig}
-        toggleProviderExpanded={toggleProviderExpanded}
-        updateOAuthAliasEntry={updateOAuthAliasEntry}
-        addOAuthAliasEntry={addOAuthAliasEntry}
-        removeOAuthAliasEntry={removeOAuthAliasEntry}
       />
 
       <ConfigPreview rawJson={rawJson} />

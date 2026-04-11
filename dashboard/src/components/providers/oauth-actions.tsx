@@ -9,7 +9,10 @@ import { cn } from "@/lib/utils";
 interface OAuthActionsProps {
   providers: readonly OAuthProviderEntry[];
   expanded: boolean;
+  collapsible?: boolean;
   note: string;
+  showHeader?: boolean;
+  showNote?: boolean;
   onToggleExpand: () => void;
   onConnect: (providerId: OAuthProviderId) => void;
   onImport: (providerId: OAuthProviderId) => void;
@@ -18,60 +21,82 @@ interface OAuthActionsProps {
 export function OAuthActions({
   providers,
   expanded,
+  collapsible = true,
   note,
+  showHeader = true,
+  showNote = true,
   onToggleExpand,
   onConnect,
   onImport,
 }: OAuthActionsProps) {
   return (
     <div className="overflow-hidden rounded-md border border-[var(--surface-border)] bg-[var(--surface-base)]">
-      <button
-        type="button"
-        onClick={onToggleExpand}
-        aria-expanded={expanded}
-        className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left hover:bg-[var(--surface-muted)]/60"
-      >
-        <div>
-          <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
-            Connect New Account
-          </h3>
-          <p className="mt-1 text-xs text-[var(--text-muted)]">
-            {providers.length} OAuth providers available
-          </p>
-        </div>
+      {showHeader && collapsible ? (
+        <button
+          type="button"
+          onClick={onToggleExpand}
+          aria-expanded={expanded}
+          className="flex w-full items-center justify-between gap-3 px-3 py-3 text-left hover:bg-[var(--surface-muted)]/60"
+        >
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+              Connect New Account
+            </h3>
+            <p className="mt-1 text-xs text-[var(--text-muted)]">
+              {providers.length} OAuth providers available
+            </p>
+          </div>
 
-        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            <span className="rounded-full border border-[var(--surface-border)] bg-[var(--surface-muted)] px-2 py-0.5 text-[11px] font-medium text-[var(--text-secondary)]">
+              {providers.length}
+            </span>
+            <span
+              className={cn(
+                "flex size-8 items-center justify-center rounded-lg border border-[var(--surface-border)] bg-[var(--surface-muted)] text-[var(--text-muted)] transition-transform",
+                expanded && "rotate-180"
+              )}
+              aria-hidden="true"
+            >
+              <svg viewBox="0 0 16 16" fill="none" className="size-3.5">
+                <path
+                  d="M4 6.25L8 10.25L12 6.25"
+                  stroke="currentColor"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+          </div>
+        </button>
+      ) : showHeader ? (
+        <div className="flex items-center justify-between gap-3 px-3 py-3">
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+              Connect New Account
+            </h3>
+            <p className="mt-1 text-xs text-[var(--text-muted)]">
+              {providers.length} OAuth providers available
+            </p>
+          </div>
+
           <span className="rounded-full border border-[var(--surface-border)] bg-[var(--surface-muted)] px-2 py-0.5 text-[11px] font-medium text-[var(--text-secondary)]">
             {providers.length}
           </span>
-          <span
-            className={cn(
-              "flex size-8 items-center justify-center rounded-lg border border-[var(--surface-border)] bg-[var(--surface-muted)] text-[var(--text-muted)] transition-transform",
-              expanded && "rotate-180"
-            )}
-            aria-hidden="true"
-          >
-            <svg viewBox="0 0 16 16" fill="none" className="size-3.5">
-              <path
-                d="M4 6.25L8 10.25L12 6.25"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </span>
         </div>
-      </button>
+      ) : null}
 
-      {expanded ? (
-        <div className="border-t border-[var(--surface-border)]">
-          <div
-            className="m-3 rounded-md border p-3 text-sm"
-            style={getStateToneStyle("warning")}
-          >
-            <strong className="text-[var(--text-primary)]">Note:</strong> {note}
-          </div>
+      {!collapsible || expanded ? (
+        <div className={cn(collapsible && showHeader && "border-t border-[var(--surface-border)]")}>
+          {showNote ? (
+            <div
+              className="m-3 rounded-md border p-3 text-sm"
+              style={getStateToneStyle("warning")}
+            >
+              <strong className="text-[var(--text-primary)]">Note:</strong> {note}
+            </div>
+          ) : null}
 
           {providers.map((provider, index) => (
             <div

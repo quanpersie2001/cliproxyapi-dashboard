@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,10 +46,18 @@ interface OAuthSectionProps {
   refreshProviders: () => Promise<void>;
   onAccountCountChange: (count: number) => void;
   incognitoBrowserEnabled?: boolean;
+  showHeader?: boolean;
+  showAccountList?: boolean;
+  showConnectActions?: boolean;
+  connectEntryHref?: string;
+  modelAliasHref?: string;
+  connectActionsCollapsible?: boolean;
+  connectActionsIntroOutside?: boolean;
 }
 
 const OAUTH_STATUS_POLL_INTERVAL_MS = 5000;
 const OAUTH_STATUS_POLL_INTERVAL_HIDDEN_MS = 10000;
+const OAUTH_ACCOUNT_PAGE_SIZE = 12;
 
 const MODAL_STATUS = {
   IDLE: "idle",
@@ -145,6 +154,13 @@ export function OAuthSection({
   refreshProviders,
   onAccountCountChange,
   incognitoBrowserEnabled = false,
+  showHeader = true,
+  showAccountList = true,
+  showConnectActions = true,
+  connectEntryHref = "/dashboard/providers/oauth/connect",
+  modelAliasHref = "/dashboard/providers/oauth/model-alias",
+  connectActionsCollapsible = true,
+  connectActionsIntroOutside = false,
 }: OAuthSectionProps) {
   const [isOAuthModalOpen, setIsOAuthModalOpen] = useState(false);
   const [oauthModalStatus, setOauthModalStatus] = useState<ModalStatus>(MODAL_STATUS.IDLE);
@@ -180,6 +196,7 @@ export function OAuthSection({
   const connectActionsInitializedRef = useRef(false);
   const [accountStats, setAccountStats] = useState<Record<string, OAuthAccountUsageStats>>({});
   const [accountStatsLoading, setAccountStatsLoading] = useState(true);
+  const [accountPage, setAccountPage] = useState(1);
   const [modelsModalAccount, setModelsModalAccount] = useState<OAuthAccountWithOwnership | null>(null);
   const [modelsLoading, setModelsLoading] = useState(false);
   const [modelsErrorMessage, setModelsErrorMessage] = useState<string | null>(null);
@@ -193,6 +210,15 @@ export function OAuthSection({
 
   const selectedOAuthProvider = getOAuthProviderById(selectedOAuthProviderId);
   const selectedOAuthProviderRequiresCallback = selectedOAuthProvider?.requiresCallback ?? true;
+  const totalAccountPages = Math.max(1, Math.ceil(accounts.length / OAUTH_ACCOUNT_PAGE_SIZE));
+  const normalizedAccountPage = Math.min(accountPage, totalAccountPages);
+  const connectActionsNote = incognitoBrowserEnabled
+    ? "Incognito mode is enabled. Browsers do not let the dashboard force-open a private window, so you will open the authorization URL manually."
+    : "OAuth flows open in a popup window. Make sure pop-ups are allowed in your browser.";
+  const paginatedAccounts = accounts.slice(
+    (normalizedAccountPage - 1) * OAUTH_ACCOUNT_PAGE_SIZE,
+    normalizedAccountPage * OAUTH_ACCOUNT_PAGE_SIZE
+  );
 
   const stopPolling = useCallback(() => {
     if (pollingIntervalRef.current !== null) {
@@ -211,6 +237,12 @@ export function OAuthSection({
   }, []);
 
   const loadAccounts = useCallback(async () => {
+    if (!showAccountList) {
+      setAccounts([]);
+      setOauthAccountsLoading(false);
+      return;
+    }
+
     setOauthAccountsLoading(true);
     try {
       const res = await fetch(API_ENDPOINTS.PROVIDERS.OAUTH);
@@ -230,9 +262,15 @@ export function OAuthSection({
       showToast("Network error", "error");
       setOauthErrorMessage("Network error while loading accounts.");
     }
-  }, [onAccountCountChange, showToast]);
+  }, [onAccountCountChange, showAccountList, showToast]);
 
   const loadAccountStats = useCallback(async () => {
+    if (!showAccountList) {
+      setAccountStats({});
+      setAccountStatsLoading(false);
+      return;
+    }
+
     setAccountStatsLoading(true);
     try {
       const res = await fetch(`${API_ENDPOINTS.USAGE.HISTORY}?window=7d`);
@@ -267,7 +305,7 @@ export function OAuthSection({
     } finally {
       setAccountStatsLoading(false);
     }
-  }, []);
+  }, [showAccountList]);
 
   const toggleOAuthAccount = async (accountId: string, currentlyDisabled: boolean) => {
     setTogglingAccountId(accountId);
@@ -966,6 +1004,15 @@ export function OAuthSection({
   };
 
   useEffect(() => {
+    if (!showAccountList) {
+      setAccounts([]);
+      setOauthAccountsLoading(false);
+      return () => {
+        stopPolling();
+        stopNoCallbackClaimPolling();
+      };
+    }
+
     const timeoutId = window.setTimeout(() => {
       void loadAccounts();
     }, 0);
@@ -975,9 +1022,15 @@ export function OAuthSection({
       stopPolling();
       stopNoCallbackClaimPolling();
     };
-  }, [loadAccounts, stopNoCallbackClaimPolling, stopPolling]);
+  }, [loadAccounts, showAccountList, stopNoCallbackClaimPolling, stopPolling]);
 
   useEffect(() => {
+    if (!showAccountList) {
+      setAccountStats({});
+      setAccountStatsLoading(false);
+      return;
+    }
+
     const timeoutId = window.setTimeout(() => {
       void loadAccountStats();
     }, 0);
@@ -985,16 +1038,25 @@ export function OAuthSection({
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [loadAccountStats]);
+  }, [loadAccountStats, showAccountList]);
 
   useEffect(() => {
-    if (oauthAccountsLoading || connectActionsInitializedRef.current) {
+    if (!showConnectActions || oauthAccountsLoading || connectActionsInitializedRef.current) {
       return;
     }
 
     setIsConnectActionsExpanded(accounts.length === 0);
     connectActionsInitializedRef.current = true;
-  }, [accounts.length, oauthAccountsLoading]);
+  }, [accounts.length, oauthAccountsLoading, showConnectActions]);
+
+  useEffect(() => {
+    if (!showAccountList) {
+      setAccountPage(1);
+      return;
+    }
+
+    setAccountPage((current) => Math.min(current, totalAccountPages));
+  }, [showAccountList, totalAccountPages]);
 
   const isOAuthSubmitDisabled =
     oauthModalStatus === MODAL_STATUS.LOADING ||
@@ -1016,46 +1078,134 @@ export function OAuthSection({
   return (
     <>
       <div id="provider-oauth" className="space-y-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-sm font-semibold text-[var(--text-primary)]">OAuth Accounts</h2>
-            <p className="text-xs text-[var(--text-muted)]">OAuth auth files managed by the proxy</p>
+        {showHeader ? (
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-sm font-semibold text-[var(--text-primary)]">OAuth</h2>
+              <p className="text-xs text-[var(--text-muted)]">OAuth auth files managed by the proxy</p>
+            </div>
+            {showAccountList ? (
+              <div className="flex flex-wrap items-center gap-2">
+                <Link
+                  href={connectEntryHref}
+                  className="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium transition-[background-color,border-color,color,transform] duration-200 active:translate-y-px"
+                  style={{
+                    borderColor: "var(--badge-info-border)",
+                    backgroundColor: "var(--badge-info-bg)",
+                    color: "var(--badge-info-text)",
+                  }}
+                >
+                  Connect new account
+                </Link>
+                {currentUser?.isAdmin ? (
+                  <Link
+                    href={modelAliasHref}
+                    className="inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium transition-[background-color,border-color,color,transform] duration-200 active:translate-y-px"
+                    style={{
+                      borderColor: "var(--badge-warning-border)",
+                      backgroundColor: "var(--badge-warning-bg)",
+                      color: "var(--badge-warning-text)",
+                    }}
+                  >
+                    Model Alias
+                  </Link>
+                ) : null}
+              </div>
+            ) : null}
           </div>
-          <span className="text-xs font-medium text-[var(--text-muted)]">{accounts.length} connected</span>
-        </div>
+        ) : null}
 
         <div className="space-y-3">
-          <OAuthCredentialList
-            accounts={accounts}
-            loading={oauthAccountsLoading}
-            statsLoading={accountStatsLoading}
-            accountStats={accountStats}
-            currentUser={currentUser}
-            togglingAccountId={togglingAccountId}
-            claimingAccountName={claimingAccountName}
-            downloadingAccountName={downloadingAccountName}
-            inspectingModelsAccountName={modelsLoading ? modelsModalAccount?.accountName ?? null : null}
-            inspectingSettingsAccountName={settingsLoading ? settingsAccount?.accountName ?? null : null}
-            onToggle={toggleOAuthAccount}
-            onDelete={confirmDeleteOAuth}
-            onClaim={claimOAuthAccount}
-            onOpenModels={openModelsModal}
-            onDownload={downloadOAuthAccount}
-            onOpenSettings={openSettingsModal}
-          />
+          {showAccountList ? (
+            <>
+              <div>
+                <OAuthCredentialList
+                  accounts={paginatedAccounts}
+                  loading={oauthAccountsLoading}
+                  statsLoading={accountStatsLoading}
+                  accountStats={accountStats}
+                  currentUser={currentUser}
+                  togglingAccountId={togglingAccountId}
+                  claimingAccountName={claimingAccountName}
+                  downloadingAccountName={downloadingAccountName}
+                  inspectingModelsAccountName={modelsLoading ? modelsModalAccount?.accountName ?? null : null}
+                  inspectingSettingsAccountName={settingsLoading ? settingsAccount?.accountName ?? null : null}
+                  onToggle={toggleOAuthAccount}
+                  onDelete={confirmDeleteOAuth}
+                  onClaim={claimOAuthAccount}
+                  onOpenModels={openModelsModal}
+                  onDownload={downloadOAuthAccount}
+                  onOpenSettings={openSettingsModal}
+                />
+              </div>
 
-          <OAuthActions
-            providers={OAUTH_PROVIDERS}
-            expanded={isConnectActionsExpanded}
-            note={
-              incognitoBrowserEnabled
-                ? "Incognito mode is enabled. Browsers do not let the dashboard force-open a private window, so you will open the authorization URL manually."
-                : "OAuth flows open in a popup window. Make sure pop-ups are allowed in your browser."
-            }
-            onToggleExpand={() => setIsConnectActionsExpanded((current) => !current)}
-            onConnect={handleOAuthConnect}
-            onImport={openImportModal}
-          />
+              {!oauthAccountsLoading && accounts.length > 0 ? (
+                <div className="flex items-center justify-between border-t border-[var(--surface-border)] px-3 py-2">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setAccountPage((current) => Math.max(1, current - 1))}
+                    disabled={normalizedAccountPage === 1}
+                    className="px-2.5 py-1 text-xs"
+                  >
+                    Previous
+                  </Button>
+                  <span className="text-xs text-[var(--text-muted)]">
+                    Page {normalizedAccountPage} of {totalAccountPages}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    onClick={() => setAccountPage((current) => Math.min(totalAccountPages, current + 1))}
+                    disabled={normalizedAccountPage === totalAccountPages}
+                    className="px-2.5 py-1 text-xs"
+                  >
+                    Next
+                  </Button>
+                </div>
+              ) : null}
+            </>
+          ) : null}
+
+          {showConnectActions ? (
+            <div className="space-y-3">
+              {connectActionsIntroOutside ? (
+                <>
+                  <div className="flex items-center justify-between gap-3 px-1">
+                    <div>
+                      <h3 className="text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+                        Connect New Account
+                      </h3>
+                      <p className="mt-1 text-xs text-[var(--text-muted)]">
+                        {OAUTH_PROVIDERS.length} OAuth providers available
+                      </p>
+                    </div>
+
+                    <span className="rounded-full border border-[var(--surface-border)] bg-[var(--surface-muted)] px-2 py-0.5 text-[11px] font-medium text-[var(--text-secondary)]">
+                      {OAUTH_PROVIDERS.length}
+                    </span>
+                  </div>
+
+                  <div
+                    className="rounded-md border p-3 text-sm"
+                    style={getStateToneStyle("warning")}
+                  >
+                    <strong className="text-[var(--text-primary)]">Note:</strong> {connectActionsNote}
+                  </div>
+                </>
+              ) : null}
+
+              <OAuthActions
+                providers={OAUTH_PROVIDERS}
+                expanded={isConnectActionsExpanded}
+                collapsible={connectActionsCollapsible}
+                note={connectActionsNote}
+                showHeader={!connectActionsIntroOutside}
+                showNote={!connectActionsIntroOutside}
+                onToggleExpand={() => setIsConnectActionsExpanded((current) => !current)}
+                onConnect={handleOAuthConnect}
+                onImport={openImportModal}
+              />
+            </div>
+          ) : null}
         </div>
       </div>
 

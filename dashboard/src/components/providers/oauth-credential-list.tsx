@@ -337,7 +337,7 @@ export function OAuthCredentialList({
         </div>
       ) : accounts.length === 0 ? (
         <div className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-base)] p-4 text-sm text-[var(--text-muted)]">
-          No OAuth accounts connected yet. Connect or import your first auth file below.
+          No OAuth accounts connected yet. Use Connect new account to add or import your first auth file.
         </div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">

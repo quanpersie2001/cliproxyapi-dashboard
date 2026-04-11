@@ -84,6 +84,8 @@ export const API_ENDPOINTS = {
     // OAuth
     OAUTH_EXCLUDED_MODELS: "/api/management/oauth-excluded-models",
     OAUTH_MODEL_ALIAS: "/api/management/oauth-model-alias",
+    MODEL_DEFINITIONS: (provider: string) =>
+      `/api/management/model-definitions/${encodeURIComponent(provider)}`,
 
     // Auth files
     AUTH_FILES: "/api/management/auth-files",

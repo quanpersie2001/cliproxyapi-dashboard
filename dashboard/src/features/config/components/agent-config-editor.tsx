@@ -11,7 +11,6 @@ import type {
   AmpcodeConfig,
   ClaudeHeaderDefaults,
   Config,
-  OAuthModelAliasEntry,
   PayloadConfig,
   PprofConfig,
   QuotaExceededConfig,
@@ -22,7 +21,6 @@ import type {
 
 interface AgentConfigEditorProps {
   config: Config;
-  expandedProviders: Record<string, boolean>;
   updateConfig: <K extends keyof Config>(key: K, value: Config[K]) => void;
   updateStreamingConfig: (key: keyof StreamingConfig, value: number) => void;
   updateQuotaConfig: (key: keyof QuotaExceededConfig, value: boolean) => void;
@@ -32,15 +30,6 @@ interface AgentConfigEditorProps {
   updateClaudeHeaderDefaults: (key: keyof ClaudeHeaderDefaults, value: string) => void;
   updateAmpcodeConfig: (key: keyof AmpcodeConfig, value: string | boolean | unknown) => void;
   updatePayloadConfig: (key: keyof PayloadConfig, value: unknown) => void;
-  toggleProviderExpanded: (provider: string) => void;
-  updateOAuthAliasEntry: (
-    provider: string,
-    index: number,
-    field: keyof OAuthModelAliasEntry,
-    value: string | boolean
-  ) => void;
-  addOAuthAliasEntry: (provider: string) => void;
-  removeOAuthAliasEntry: (provider: string, index: number) => void;
 }
 
 type PanelKey =
@@ -53,7 +42,6 @@ type PanelKey =
   | "claudeHeaders"
   | "ampcode"
   | "pprof"
-  | "oauthAliases"
   | "payload";
 
 const DEFAULT_PANEL_STATE: Record<PanelKey, boolean> = {
@@ -66,7 +54,6 @@ const DEFAULT_PANEL_STATE: Record<PanelKey, boolean> = {
   claudeHeaders: false,
   ampcode: false,
   pprof: false,
-  oauthAliases: false,
   payload: false,
 };
 
@@ -136,26 +123,6 @@ function NumberInput({
   );
 }
 
-function CompactInput({
-  value,
-  onChange,
-  placeholder,
-}: {
-  value: string;
-  onChange: (value: string) => void;
-  placeholder: string;
-}) {
-  return (
-    <input
-      type="text"
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      placeholder={placeholder}
-      className="w-full rounded-md border border-[var(--surface-border)] bg-[var(--surface-muted)] px-2 py-1 text-xs font-mono text-[var(--text-primary)] focus:border-[var(--surface-border-strong)] focus:outline-none focus:ring-1 focus:ring-blue-400/30"
-    />
-  );
-}
-
 function routingStrategyLabel(strategy: string): string {
   switch (strategy) {
     case "round-robin":
@@ -169,7 +136,6 @@ function routingStrategyLabel(strategy: string): string {
 
 export default function AgentConfigEditor({
   config,
-  expandedProviders,
   updateConfig,
   updateStreamingConfig,
   updateQuotaConfig,
@@ -179,10 +145,6 @@ export default function AgentConfigEditor({
   updateClaudeHeaderDefaults,
   updateAmpcodeConfig,
   updatePayloadConfig,
-  toggleProviderExpanded,
-  updateOAuthAliasEntry,
-  addOAuthAliasEntry,
-  removeOAuthAliasEntry,
 }: AgentConfigEditorProps) {
   const [expandedPanels, setExpandedPanels] = useState<Record<PanelKey, boolean>>(DEFAULT_PANEL_STATE);
 
@@ -554,94 +516,6 @@ export default function AgentConfigEditor({
               className="font-mono"
             />
           </ConfigField>
-        </div>
-      </Panel>
-
-      <Panel
-        panelKey="oauthAliases"
-        title="OAuth Model Aliases"
-        expanded={expandedPanels.oauthAliases}
-        onToggle={togglePanelExpanded}
-      >
-        <p className="text-xs text-[var(--text-muted)]">
-          Override model names for OAuth providers. Each provider has its own list of model name
-          mappings.
-        </p>
-        <div className="space-y-3">
-          {Object.keys(config["oauth-model-alias"]).length === 0 ? (
-            <p className="text-xs italic text-[var(--text-muted)]">No OAuth model aliases configured.</p>
-          ) : null}
-
-          {Object.entries(config["oauth-model-alias"]).map(([provider, entries]) => (
-            <div key={provider} className="rounded-md border border-[var(--surface-border)] bg-[var(--surface-base)]">
-              <button
-                type="button"
-                onClick={() => toggleProviderExpanded(provider)}
-                className="flex w-full items-center justify-between px-4 py-3 text-left text-sm font-semibold text-[var(--text-primary)] transition-colors hover:bg-[var(--surface-muted)]"
-              >
-                <span>{provider}</span>
-                <span className="text-xs text-[var(--text-muted)]">
-                  {entries.length} {entries.length === 1 ? "alias" : "aliases"}
-                  <span className="ml-2">{expandedProviders[provider] ? "\u25B2" : "\u25BC"}</span>
-                </span>
-              </button>
-
-              {expandedProviders[provider] ? (
-                <div className="space-y-3 border-t border-[var(--surface-border)] p-4">
-                  {entries.length > 0 ? (
-                    <div className="grid grid-cols-[1fr_1fr_auto_auto] gap-2 border-b border-[var(--surface-border)]/50 pb-1 text-xs font-semibold uppercase tracking-wide text-[var(--text-muted)]">
-                      <span>Name</span>
-                      <span>Alias</span>
-                      <span>Fork</span>
-                      <span />
-                    </div>
-                  ) : null}
-
-                  {entries.map((entry, index) => (
-                    <div key={entry._id ?? index} className="grid grid-cols-[1fr_1fr_auto_auto] items-center gap-2">
-                      <CompactInput
-                        value={entry.name}
-                        onChange={(value) => updateOAuthAliasEntry(provider, index, "name", value)}
-                        placeholder="model-name"
-                      />
-                      <CompactInput
-                        value={entry.alias}
-                        onChange={(value) => updateOAuthAliasEntry(provider, index, "alias", value)}
-                        placeholder="alias-name"
-                      />
-                      <input
-                        type="checkbox"
-                        checked={entry.fork ?? false}
-                        onChange={(event) => updateOAuthAliasEntry(provider, index, "fork", event.target.checked)}
-                        className="size-4 rounded accent-emerald-500"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removeOAuthAliasEntry(provider, index)}
-                        className="flex size-7 items-center justify-center rounded-md text-[var(--text-muted)] transition-colors hover:bg-rose-50 hover:text-rose-500 dark:hover:bg-rose-500/10"
-                        title="Remove entry"
-                      >
-                        <svg viewBox="0 0 16 16" fill="currentColor" className="size-3.5" aria-hidden="true">
-                          <path d="M3.72 3.72a.75.75 0 0 1 1.06 0L8 6.94l3.22-3.22a.749.749 0 0 1 1.275.326.749.749 0 0 1-.215.734L9.06 8l3.22 3.22a.749.749 0 0 1-.326 1.275.749.749 0 0 1-.734-.215L8 9.06l-3.22 3.22a.751.751 0 0 1-1.042-.018.751.751 0 0 1-.018-1.042L6.94 8 3.72 4.78a.75.75 0 0 1 0-1.06Z" />
-                        </svg>
-                      </button>
-                    </div>
-                  ))}
-
-                  <button
-                    type="button"
-                    onClick={() => addOAuthAliasEntry(provider)}
-                    className="mt-1 flex items-center gap-1.5 rounded-md border border-dashed border-[var(--surface-border)] px-3 py-1.5 text-xs text-[var(--text-muted)] transition-colors hover:border-blue-400/50 hover:text-blue-500"
-                  >
-                    <svg viewBox="0 0 16 16" fill="currentColor" className="size-3" aria-hidden="true">
-                      <path d="M7.75 2a.75.75 0 0 1 .75.75V7h4.25a.75.75 0 0 1 0 1.5H8.5v4.25a.75.75 0 0 1-1.5 0V8.5H2.75a.75.75 0 0 1 0-1.5H7V2.75A.75.75 0 0 1 7.75 2Z" />
-                    </svg>
-                    Add entry
-                  </button>
-                </div>
-              ) : null}
-            </div>
-          ))}
         </div>
       </Panel>
 

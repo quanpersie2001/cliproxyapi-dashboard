@@ -37,11 +37,13 @@ export function Toggle({
 }
 
 export function Select({
+  id,
   value,
   onChange,
   options,
   disabled = false,
 }: {
+  id?: string;
   value: string;
   onChange: (value: string) => void;
   options: Array<{ value: string; label: string }>;
@@ -49,6 +51,7 @@ export function Select({
 }) {
   return (
     <select
+      id={id}
       value={value}
       onChange={(event) => onChange(event.target.value)}
       disabled={disabled}

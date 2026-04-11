@@ -171,7 +171,7 @@ export function ProvidersPage() {
           <p className="mt-0.5 text-xs font-semibold text-[var(--text-primary)]">{activeApiProviders}/{API_KEY_PROVIDERS.length}</p>
         </div>
         <div className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-base)] px-2.5 py-2">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">OAuth Accounts</p>
+          <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[var(--text-muted)]">OAuth</p>
           <p className="mt-0.5 text-xs font-semibold text-[var(--text-primary)]">{oauthAccountCount} connected</p>
         </div>
         <div className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-base)] px-2.5 py-2">
@@ -208,6 +208,7 @@ export function ProvidersPage() {
               refreshProviders={refreshProviders}
               onAccountCountChange={setOauthAccountCount}
               incognitoBrowserEnabled={incognitoBrowserEnabled}
+              showConnectActions={false}
             />
           </section>
 
