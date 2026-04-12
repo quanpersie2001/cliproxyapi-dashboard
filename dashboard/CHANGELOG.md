@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.0...dashboard-v0.2.1) (2026-04-12)
+
+
+### Features
+
+* **install:** support one-file bootstrap without repo clone ([37ce5ba](https://github.com/quanpersie2001/cliproxyapi-dashboard/commit/37ce5ba7a365b3f92c68e96c01b8d7093c9dbc28))
+
 ## [0.2.0](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.1.1...dashboard-v0.2.0) (2026-04-12)
 
 
