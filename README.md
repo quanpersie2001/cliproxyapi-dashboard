@@ -120,6 +120,8 @@ The same `install.sh` file works in both modes:
 
 When run as a one-file bootstrap, it downloads the bundled deployment files into `/opt/cliproxyapi-dashboard` by default, preserves existing runtime state files when re-run, and then continues the interactive installer.
 
+The installer accepts either full URLs like `https://dash.example.com` or bare hostnames like `dash.example.com`, and normalizes them automatically.
+
 To install into a different path:
 
 ```bash

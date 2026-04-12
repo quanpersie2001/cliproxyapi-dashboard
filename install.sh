@@ -21,7 +21,6 @@ ARCHIVE_URL="https://codeload.github.com/${CLIPROXYAPI_DASHBOARD_REPO}/tar.gz/${
 TMP_BUNDLE_DIR=""
 PRESERVE_DIR=""
 LOCAL_BUNDLE_DIR=""
-INSTALL_DIR=""
 
 log_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
@@ -37,6 +36,16 @@ log_warning() {
 
 log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
+}
+
+print_section() {
+    echo ""
+    echo -e "${BLUE}=== $1 ===${NC}"
+    echo ""
+}
+
+print_key_value() {
+    printf "  %-22s %s\n" "$1" "$2"
 }
 
 prompt_user() {
@@ -58,6 +67,147 @@ prompt_user() {
     fi
 
     printf -v "$__var_name" '%s' "$__response"
+}
+
+trim_whitespace() {
+    local value="$1"
+    value="${value#"${value%%[![:space:]]*}"}"
+    value="${value%"${value##*[![:space:]]}"}"
+    printf '%s' "$value"
+}
+
+is_local_endpoint() {
+    local value="$1"
+    [[ "$value" =~ ^(localhost|127\.[0-9]+\.[0-9]+\.[0-9]+|0\.0\.0\.0|\[[0-9A-Fa-f:]+\])([:/]|$) ]]
+}
+
+normalize_public_url() {
+    local value="$1"
+    value="$(trim_whitespace "$value")"
+
+    if [ -z "$value" ]; then
+        printf '%s' ""
+        return
+    fi
+
+    if [[ ! "$value" =~ ^https?:// ]]; then
+        if is_local_endpoint "$value"; then
+            value="http://${value}"
+        else
+            value="https://${value}"
+        fi
+    fi
+
+    while [[ "$value" =~ ^https?://.+/$ ]]; do
+        value="${value%/}"
+    done
+
+    printf '%s' "$value"
+}
+
+validate_public_url() {
+    local value="$1"
+    [[ "$value" =~ ^https?://[^[:space:]]+$ ]]
+}
+
+prompt_public_url() {
+    local __var_name="$1"
+    local __label="$2"
+    local __default="$3"
+    local __raw=""
+    local __normalized=""
+
+    while true; do
+        prompt_user __raw "${__label} [default: ${__default}]: " "$__default"
+        __normalized="$(normalize_public_url "$__raw")"
+
+        if ! validate_public_url "$__normalized"; then
+            log_error "${__label} must be a valid http(s) URL or hostname without spaces."
+            continue
+        fi
+
+        if [ "$__raw" != "$__normalized" ]; then
+            log_info "Using ${__normalized}"
+        fi
+
+        printf -v "$__var_name" '%s' "$__normalized"
+        return
+    done
+}
+
+prompt_yes_no() {
+    local __var_name="$1"
+    local __message="$2"
+    local __default="${3:-0}"
+    local __hint="[y/N]"
+    local __response=""
+
+    if [ "$__default" = "1" ]; then
+        __hint="[Y/n]"
+    fi
+
+    while true; do
+        prompt_user __response "${__message} ${__hint}: "
+        __response="$(trim_whitespace "$__response")"
+        __response="${__response,,}"
+
+        case "$__response" in
+            "")
+                printf -v "$__var_name" '%s' "$__default"
+                return
+                ;;
+            y|yes)
+                printf -v "$__var_name" '1'
+                return
+                ;;
+            n|no)
+                printf -v "$__var_name" '0'
+                return
+                ;;
+            *)
+                log_error "Please enter y or n."
+                ;;
+        esac
+    done
+}
+
+backup_interval_label() {
+    case "$1" in
+        daily)
+            printf '%s' "Daily (keep last 7)"
+            ;;
+        weekly)
+            printf '%s' "Weekly (keep last 4)"
+            ;;
+        *)
+            printf '%s' "Disabled"
+            ;;
+    esac
+}
+
+enabled_label() {
+    if [ "${1:-0}" = "1" ]; then
+        printf '%s' "Enabled"
+    else
+        printf '%s' "Disabled"
+    fi
+}
+
+ensure_cron_available() {
+    if command -v crontab &> /dev/null; then
+        return
+    fi
+
+    log_info "Installing cron..."
+    apt-get update
+    apt-get install -y cron
+    systemctl enable cron >/dev/null 2>&1 || true
+    systemctl start cron >/dev/null 2>&1 || true
+}
+
+ensure_runtime_dirs() {
+    mkdir -p "$INSTALL_DIR/backups"
+    mkdir -p "$INSTALL_DIR/infrastructure/config"
 }
 
 cleanup_bootstrap() {
@@ -330,7 +480,7 @@ ensure_docker_running() {
 }
 
 configure_ufw() {
-    if [[ ! "$CONFIGURE_UFW" =~ ^[Yy]$ ]]; then
+    if [ "${CONFIGURE_UFW:-0}" -ne 1 ]; then
         log_info "Skipping UFW configuration"
         return
     fi
@@ -367,8 +517,8 @@ create_env_file() {
 
     if [ -f "$env_file" ]; then
         log_warning ".env file already exists"
-        prompt_user OVERWRITE_ENV "Overwrite .env file? [y/N]: "
-        if [[ ! "$OVERWRITE_ENV" =~ ^[Yy]$ ]]; then
+        prompt_yes_no OVERWRITE_ENV "Overwrite .env file?" 0
+        if [ "$OVERWRITE_ENV" -ne 1 ]; then
             skip_env=1
         fi
     fi
@@ -415,6 +565,7 @@ setup_backup_scripts() {
         exit 1
     fi
 
+    ensure_cron_available
     chmod +x "$manage_script"
 
     log_success "Backup commands are ready via infrastructure/manage.sh"
@@ -453,6 +604,9 @@ setup_usage_collector() {
     local cron_schedule="*/5 * * * *"
     local cron_cmd="curl -sf -X POST ${collector_url}/api/usage/collect -H 'Authorization: Bearer ${COLLECTOR_API_KEY}' -o /dev/null"
 
+    ensure_cron_available
+    ensure_command curl curl
+
     if crontab -l 2>/dev/null | grep -q "/api/usage/collect"; then
         log_warning "Usage collector cron job already exists"
         return
@@ -468,8 +622,8 @@ setup_usage_collector() {
 }
 
 install_webhook_service() {
-    prompt_user INSTALL_WEBHOOK "Install webhook deploy service? [y/N]: "
-    if [[ ! "$INSTALL_WEBHOOK" =~ ^[Yy]$ ]]; then
+    prompt_yes_no INSTALL_WEBHOOK "Install webhook deploy service?" 0
+    if [ "$INSTALL_WEBHOOK" -ne 1 ]; then
         log_info "Skipping webhook installation"
         return
     fi
@@ -483,6 +637,7 @@ install_webhook_service() {
     deploy_secret="$(openssl rand -hex 32)"
 
     mkdir -p /etc/webhook
+    mkdir -p /var/log/cliproxyapi
     sed \
         -e "s|{{DEPLOY_SECRET}}|${deploy_secret}|g" \
         -e "s|{{INSTALL_DIR}}|${INSTALL_DIR}|g" \
@@ -563,6 +718,8 @@ if [ "${CLIPROXYAPI_INSTALL_SKIP_BOOTSTRAP:-0}" != "1" ]; then
     fi
 fi
 
+ensure_runtime_dirs
+
 log_info "Installation directory: $INSTALL_DIR"
 
 if [ -f /etc/os-release ]; then
@@ -592,32 +749,28 @@ if [ -z "$DISTRO_CODENAME" ]; then
     exit 1
 fi
 
-log_info "Detected distribution: $DISTRO_ID ($DISTRO_CODENAME)"
+print_section "Install Context"
+print_key_value "Installation dir" "$INSTALL_DIR"
+print_key_value "Repository" "$CLIPROXYAPI_DASHBOARD_REPO"
+print_key_value "Ref" "$CLIPROXYAPI_DASHBOARD_REF"
+print_key_value "Distribution" "$DISTRO_ID ($DISTRO_CODENAME)"
+
+print_section "Configuration"
+echo "Enter a full URL or just a hostname. Bare hostnames will be normalized automatically."
 echo ""
 
-log_info "=== Configuration ==="
-echo ""
+prompt_public_url DASHBOARD_URL "Public dashboard URL" "http://localhost:3000"
+prompt_public_url API_URL "Public API URL" "http://localhost:8317"
 
-prompt_user DASHBOARD_URL "Public dashboard URL [default: http://localhost:3000]: " "http://localhost:3000"
+prompt_yes_no OAUTH_ENABLED "Enable OAuth callback ports in the firewall?" 0
+prompt_yes_no CONFIGURE_UFW "Configure UFW firewall now?" 0
 
-prompt_user API_URL "Public API URL [default: http://localhost:8317]: " "http://localhost:8317"
-
-prompt_user OAUTH_ENABLED_INPUT "Enable OAuth callback ports in the firewall? [y/N]: "
-if [[ "$OAUTH_ENABLED_INPUT" =~ ^[Yy]$ ]]; then
-    OAUTH_ENABLED=1
-else
-    OAUTH_ENABLED=0
-fi
-
-prompt_user CONFIGURE_UFW "Configure UFW firewall now? [y/N]: "
-
-echo ""
-log_info "Select backup interval:"
+print_section "Backup Schedule"
 echo "  1) Daily backups (keep last 7)"
 echo "  2) Weekly backups (keep last 4)"
 echo "  3) No automated backups"
 while true; do
-    prompt_user BACKUP_CHOICE "Enter choice [1-3]: "
+    prompt_user BACKUP_CHOICE "Choose backup interval [1-3]: "
     case "$BACKUP_CHOICE" in
         1)
             BACKUP_INTERVAL="daily"
@@ -642,22 +795,20 @@ done
 
 echo ""
 log_info "Configuration summary:"
-log_info "  Dashboard URL: $DASHBOARD_URL"
-log_info "  API URL: $API_URL"
-log_info "  OAuth callback ports: $([ "$OAUTH_ENABLED" -eq 1 ] && echo 'open' || echo 'closed')"
-log_info "  UFW configuration: $([[ "$CONFIGURE_UFW" =~ ^[Yy]$ ]] && echo 'enabled' || echo 'skipped')"
-log_info "  Backup interval: $BACKUP_INTERVAL"
+print_key_value "Dashboard URL" "$DASHBOARD_URL"
+print_key_value "API URL" "$API_URL"
+print_key_value "OAuth callback ports" "$(enabled_label "$OAUTH_ENABLED")"
+print_key_value "UFW configuration" "$(enabled_label "$CONFIGURE_UFW")"
+print_key_value "Backup interval" "$(backup_interval_label "$BACKUP_INTERVAL")"
 echo ""
 
-prompt_user CONFIRM "Continue with installation? [y/N]: "
-if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
+prompt_yes_no CONFIRM "Continue with installation?" 0
+if [ "$CONFIRM" -ne 1 ]; then
     log_warning "Installation cancelled"
     exit 0
 fi
 
-echo ""
-log_info "=== Preflight Checks ==="
-echo ""
+print_section "Preflight Checks"
 
 REQUIRED_PORTS=(3000 8317)
 if [ "$OAUTH_ENABLED" -eq 1 ]; then
@@ -680,23 +831,20 @@ CONTAINER_CONFLICTS=$(check_container_conflicts || true)
 if [ -n "$CONTAINER_CONFLICTS" ]; then
     log_warning "Existing Docker containers found:"
     echo "$CONTAINER_CONFLICTS"
-    prompt_user CONTINUE_CONFLICTS "Continue anyway? [y/N]: "
-    if [[ ! "$CONTINUE_CONFLICTS" =~ ^[Yy]$ ]]; then
+    prompt_yes_no CONTINUE_CONFLICTS "Continue anyway?" 0
+    if [ "$CONTINUE_CONFLICTS" -ne 1 ]; then
         exit 1
     fi
 fi
 
-echo ""
-log_info "=== Docker Installation ==="
-echo ""
+print_section "Docker Installation"
 
 install_docker
 ensure_docker_running
 
-echo ""
-log_info "=== Secret Generation ==="
-echo ""
+print_section "Secret Generation"
 
+ensure_command openssl openssl
 JWT_SECRET="$(openssl rand -base64 32)"
 MANAGEMENT_API_KEY="$(openssl rand -hex 32)"
 POSTGRES_PASSWORD="$(openssl rand -hex 32)"
@@ -705,39 +853,27 @@ PROVIDER_ENCRYPTION_KEY="$(openssl rand -hex 32)"
 
 log_success "Secrets generated"
 
-echo ""
-log_info "=== Firewall Configuration ==="
-echo ""
+print_section "Firewall Configuration"
 
 configure_ufw
 
-echo ""
-log_info "=== Environment Configuration ==="
-echo ""
+print_section "Environment Configuration"
 
 create_env_file
 
-echo ""
-log_info "=== Backup Setup ==="
-echo ""
+print_section "Backup Setup"
 
 setup_backup_scripts
 
-echo ""
-log_info "=== Usage Collector ==="
-echo ""
+print_section "Usage Collector"
 
 setup_usage_collector
 
-echo ""
-log_info "=== Optional Webhook ==="
-echo ""
+print_section "Optional Webhook"
 
 install_webhook_service
 
-echo ""
-log_info "=== Installation Complete ==="
-echo ""
+print_section "Installation Complete"
 log_success "CLIProxyAPI Dashboard stack installation completed successfully"
 echo ""
 echo "Next steps:"

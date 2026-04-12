@@ -156,6 +156,12 @@ Default install location:
 
 - `/opt/cliproxyapi-dashboard`
 
+URL prompt behavior:
+
+- you can enter a full URL such as `https://dash.example.com`
+- or enter only a hostname such as `dash.example.com`; the installer will normalize it to `https://dash.example.com`
+- local addresses such as `localhost:3000` are normalized to `http://localhost:3000`
+
 Optional overrides:
 
 - `INSTALL_DIR=/srv/cliproxyapi-dashboard` to change the target directory
