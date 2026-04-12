@@ -1,6 +1,6 @@
 {
-  "version": "0.2.1",
-  "tag": "dashboard-v0.2.1",
-  "releaseUrl": "https://github.com/quanpersie2001/cliproxyapi-dashboard/releases/tag/dashboard-v0.2.1",
-  "releaseNotes": "## [0.2.1](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.0...dashboard-v0.2.1) (2026-04-12)\n\n\n### Features\n\n* **install:** support one-file bootstrap without repo clone ([37ce5ba](https://github.com/quanpersie2001/cliproxyapi-dashboard/commit/37ce5ba7a365b3f92c68e96c01b8d7093c9dbc28))"
+  "version": "0.2.2",
+  "tag": "dashboard-v0.2.2",
+  "releaseUrl": "https://github.com/quanpersie2001/cliproxyapi-dashboard/releases/tag/dashboard-v0.2.2",
+  "releaseNotes": "## [0.2.2](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.1...dashboard-v0.2.2) (2026-04-12)\n\n\n### Bug Fixes\n\n* **docker:** include full Prisma runtime in dashboard image ([fb4532f](https://github.com/quanpersie2001/cliproxyapi-dashboard/commit/fb4532fd4d9a8aace9650196e6158f2e8f092221))"
 }
