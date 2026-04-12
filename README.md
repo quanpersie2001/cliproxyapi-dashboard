@@ -118,7 +118,13 @@ The same `install.sh` file works in both modes:
 - from a repo checkout: `sudo ./install.sh`
 - as a one-file bootstrap: `curl .../install.sh | sudo bash`
 
-When run as a one-file bootstrap, it downloads the bundled deployment files into `/opt/cliproxyapi-dashboard` by default, preserves existing runtime state files when re-run, and then continues the interactive installer.
+When run as a one-file bootstrap, it installs a minimal production bundle into `/opt/cliproxyapi-dashboard` by default, preserves existing runtime state files when re-run, and then continues the interactive installer.
+
+The installed tree is intentionally small:
+
+- `install.sh`
+- `infrastructure/`
+- generated runtime files such as `infrastructure/.env`, `infrastructure/docker-compose.override.yml`, and `backups/`
 
 The installer accepts either full URLs like `https://dash.example.com` or bare hostnames like `dash.example.com`, and normalizes them automatically.
 

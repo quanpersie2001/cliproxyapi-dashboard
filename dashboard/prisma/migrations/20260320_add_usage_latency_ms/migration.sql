@@ -1,2 +1,0 @@
-ALTER TABLE "usage_records"
-ADD COLUMN "latencyMs" INTEGER NOT NULL DEFAULT 0;

@@ -204,8 +204,8 @@ CollectorState
 
 ## Runtime Notes
 
-- The production dashboard image runs [`../dashboard/entrypoint.sh`](../dashboard/entrypoint.sh), which bootstraps and patches core tables with a PostgreSQL advisory lock.
-- Source development still uses Prisma bootstrap plus `prisma migrate deploy`.
+- The production dashboard image runs [`../dashboard/entrypoint.sh`](../dashboard/entrypoint.sh), which applies the baseline Prisma migration chain with `prisma migrate deploy` before starting the server.
+- Source development uses the same baseline migration chain with `prisma migrate deploy`.
 - The bundled stack does not include a public reverse proxy or TLS termination layer.
 - The bundled deployment assumes a single dashboard instance.
 - `providerMutex` in [`../dashboard/src/lib/providers/management-api.ts`](../dashboard/src/lib/providers/management-api.ts) is process-local only.

@@ -22,7 +22,6 @@ $EnvLocalFile = Join-Path $ScriptDir ".env.local"
 # Container names
 $PostgresContainer = "cliproxyapi-dev-postgres"
 $ApiContainer = "cliproxyapi-dev-api"
-$KnownBootstrapDriftMigration = "20260329_add_custom_provider_encrypted_key"
 
 function Write-Info($Message) {
     Write-Host "  i  $Message" -ForegroundColor Cyan
@@ -38,35 +37,6 @@ function Write-Warn($Message) {
 
 function Write-Err($Message) {
     Write-Host "  x  $Message" -ForegroundColor Red
-}
-
-function Get-MigrationDirs {
-    Get-ChildItem -Path (Join-Path $ScriptDir "prisma/migrations") -Directory |
-        Sort-Object Name |
-        ForEach-Object { $_.Name }
-}
-
-function Resolve-AllMigrationsApplied {
-    foreach ($migration in Get-MigrationDirs) {
-        npx prisma migrate resolve --applied $migration 2>&1 | Out-Null
-    }
-}
-
-function Repair-KnownLocalMigrationDrift {
-    $failedMigration = docker exec $PostgresContainer psql -U cliproxyapi -d cliproxyapi -tAc "SELECT migration_name FROM _prisma_migrations WHERE finished_at IS NULL AND rolled_back_at IS NULL ORDER BY started_at DESC LIMIT 1" 2>$null
-    $failedMigration = ($failedMigration | Out-String).Trim()
-
-    if ($failedMigration -ne $KnownBootstrapDriftMigration) {
-        return
-    }
-
-    $hasColumn = docker exec $PostgresContainer psql -U cliproxyapi -d cliproxyapi -tAc "SELECT 1 FROM information_schema.columns WHERE table_name = 'custom_providers' AND column_name = 'apiKeyEncrypted' LIMIT 1" 2>$null
-    $hasColumn = ($hasColumn | Out-String).Trim()
-
-    if ($hasColumn -eq "1") {
-        Write-Warn "Recovering local migration state for $failedMigration"
-        npx prisma migrate resolve --applied $failedMigration 2>&1 | Out-Null
-    }
 }
 
 function Assert-DockerAvailable {
@@ -146,19 +116,9 @@ function Invoke-Migrations {
 
     $env:DATABASE_URL = "postgresql://cliproxyapi:devpassword@localhost:5433/cliproxyapi"
 
-    # Bootstrap: push full schema if fresh database
-    $null = docker exec $PostgresContainer psql -U cliproxyapi -d cliproxyapi -tAc "SELECT 1 FROM _prisma_migrations LIMIT 1" 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        Write-Info "Fresh database detected, bootstrapping schema via prisma db push..."
-        npx prisma db push --accept-data-loss
-        Resolve-AllMigrationsApplied
-    }
-
-    Repair-KnownLocalMigrationDrift
-
     npx prisma migrate deploy
     if ($LASTEXITCODE -ne 0) {
-        Write-Err "Failed to run migrations"
+        Write-Err "Failed to run migrations. If your local database predates the baseline migration, reset it with .\\dev-local.ps1 -Reset"
         exit 1
     }
     Write-OK "Migrations applied"

@@ -94,7 +94,7 @@ cd dashboard
 ./dev-local.sh --reset
 ```
 
-The source-dev script already contains recovery logic for the known local migration drift `20260329_add_custom_provider_encrypted_key`.
+If your local PostgreSQL volume predates the current baseline migration, reset the local stack instead.
 
 ### Build errors after switching branches
 

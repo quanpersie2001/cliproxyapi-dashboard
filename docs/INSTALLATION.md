@@ -106,8 +106,6 @@ What the source-dev script does:
 - starts [`../dashboard/docker-compose.dev.yml`](../dashboard/docker-compose.dev.yml)
 - waits for PostgreSQL and CLIProxyAPI
 - creates `dashboard/config.dev.yaml` from [`../dashboard/config.dev.yaml.example`](../dashboard/config.dev.yaml.example) when needed
-- bootstraps fresh databases with `prisma db push` when needed
-- repairs the known local migration drift for `20260329_add_custom_provider_encrypted_key`
 - runs `prisma migrate deploy`
 - generates the Prisma client
 - writes `dashboard/.env.local`
@@ -137,7 +135,7 @@ cd dashboard
 
 ## Option 3: Server Install
 
-[`../install.sh`](../install.sh) is the single server installer for Ubuntu/Debian hosts with root access. It can run directly from a repo checkout, or as a one-file bootstrap that downloads the bundled deployment files into `INSTALL_DIR` before continuing.
+[`../install.sh`](../install.sh) is the single server installer for Ubuntu/Debian hosts with root access. It can run directly from a repo checkout, or as a one-file bootstrap that installs a minimal production bundle into `INSTALL_DIR` before continuing.
 
 ### Prerequisites
 
@@ -183,12 +181,18 @@ sudo ./install.sh
 The installer currently:
 
 1. Detects Ubuntu/Debian and installs Docker Engine + Compose if needed.
-2. Ensures the deployment bundle exists in `INSTALL_DIR` by using the local checkout or downloading it when needed.
+2. Ensures the minimal deployment bundle exists in `INSTALL_DIR` by using the local checkout or downloading it when needed.
 3. Prompts for public dashboard and API URLs.
 4. Optionally configures firewall rules for OAuth callback ports.
 5. Generates `JWT_SECRET`, `MANAGEMENT_API_KEY`, `POSTGRES_PASSWORD`, `COLLECTOR_API_KEY`, and `PROVIDER_ENCRYPTION_KEY`.
 6. Writes `infrastructure/.env`.
 7. Optionally installs backup cron jobs, the usage collector cron, and the dashboard deploy webhook.
+
+Installed files are intentionally limited to:
+
+- `install.sh`
+- `infrastructure/`
+- generated runtime files such as `infrastructure/.env`, `infrastructure/docker-compose.override.yml`, and `backups/`
 
 After install:
 

@@ -2,8 +2,9 @@
 #
 # CLIProxyAPI Dashboard installation script
 # Can run from a repo checkout or as a standalone bootstrap.
-# Ensures the bundled deployment files exist in INSTALL_DIR, installs Docker,
-# writes infrastructure/.env, and optionally configures backups, UFW, and the deploy webhook.
+# Ensures the minimal production deployment bundle exists in INSTALL_DIR,
+# installs Docker, writes infrastructure/.env, and optionally configures
+# backups, UFW, and the deploy webhook.
 #
 
 set -euo pipefail
@@ -21,6 +22,28 @@ ARCHIVE_URL="https://codeload.github.com/${CLIPROXYAPI_DASHBOARD_REPO}/tar.gz/${
 TMP_BUNDLE_DIR=""
 PRESERVE_DIR=""
 LOCAL_BUNDLE_DIR=""
+MINIMAL_BUNDLE_PATHS=("install.sh" "infrastructure")
+LEGACY_BUNDLE_PATHS=(
+    ".agents"
+    ".claude"
+    ".env.example"
+    ".github"
+    ".gitignore"
+    ".release-please-manifest.json"
+    "AGENTS.md"
+    "CONTRIBUTING.md"
+    "LICENSE"
+    "README.md"
+    "dashboard"
+    "docker-compose.local.yml"
+    "docs"
+    "references"
+    "release-please-config.json"
+    "setup-local.ps1"
+    "setup-local.sh"
+    "skills-lock.json"
+    "version.json"
+)
 
 log_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
@@ -345,23 +368,45 @@ restore_existing_files() {
 
 sync_bundle_from_directory() {
     local source_dir="$1"
+    local bundle_path=""
 
     mkdir -p "$INSTALL_DIR"
-    tar -C "$source_dir" \
-        --exclude='./.git' \
-        --exclude='./.next' \
-        --exclude='./node_modules' \
-        --exclude='./dashboard/.next' \
-        --exclude='./dashboard/node_modules' \
-        --exclude='./dashboard/coverage' \
-        -cf - . | tar -C "$INSTALL_DIR" -xf -
+
+    for bundle_path in "${MINIMAL_BUNDLE_PATHS[@]}"; do
+        if [ ! -e "${source_dir}/${bundle_path}" ]; then
+            log_error "Required bundle path is missing: ${bundle_path}"
+            exit 1
+        fi
+    done
+
+    tar -C "$source_dir" -cf - "${MINIMAL_BUNDLE_PATHS[@]}" | tar -C "$INSTALL_DIR" -xf -
 }
 
 extract_bundle_from_archive() {
     local archive_path="$1"
+    local extracted_root="${TMP_BUNDLE_DIR}/extracted"
+    local extracted_bundle_dir=""
 
-    mkdir -p "$INSTALL_DIR"
-    tar -xzf "$archive_path" -C "$INSTALL_DIR" --strip-components=1
+    mkdir -p "$extracted_root"
+    tar -xzf "$archive_path" -C "$extracted_root"
+
+    extracted_bundle_dir="$(find "$extracted_root" -mindepth 1 -maxdepth 1 -type d | head -n 1)"
+    if [ -z "$extracted_bundle_dir" ]; then
+        log_error "Unable to locate extracted install bundle contents."
+        exit 1
+    fi
+
+    sync_bundle_from_directory "$extracted_bundle_dir"
+}
+
+cleanup_legacy_bundle_paths() {
+    local legacy_path=""
+
+    for legacy_path in "${LEGACY_BUNDLE_PATHS[@]}"; do
+        if [ -e "${INSTALL_DIR}/${legacy_path}" ]; then
+            rm -rf "${INSTALL_DIR:?}/${legacy_path}"
+        fi
+    done
 }
 
 prepare_install_bundle() {
@@ -379,8 +424,10 @@ prepare_install_bundle() {
         preserve_existing_files
     fi
 
+    cleanup_legacy_bundle_paths
+
     if [ -n "$LOCAL_BUNDLE_DIR" ]; then
-        log_info "Copying bundled deployment files into $INSTALL_DIR"
+        log_info "Copying minimal deployment bundle into $INSTALL_DIR"
         sync_bundle_from_directory "$LOCAL_BUNDLE_DIR"
     else
         archive_path="${TMP_BUNDLE_DIR}/cliproxyapi-dashboard.tar.gz"

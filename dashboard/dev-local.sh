@@ -21,7 +21,6 @@ ENV_LOCAL_FILE="$SCRIPT_DIR/.env.local"
 # Container names
 POSTGRES_CONTAINER="cliproxyapi-dev-postgres"
 API_CONTAINER="cliproxyapi-dev-api"
-KNOWN_BOOTSTRAP_DRIFT_MIGRATION="20260329_add_custom_provider_encrypted_key"
 
 # Function to print colored status messages
 log_info() {
@@ -38,41 +37,6 @@ log_error() {
 
 log_warning() {
     echo -e "${YELLOW}⚠${NC}  $1"
-}
-
-get_migration_dirs() {
-    find "$SCRIPT_DIR/prisma/migrations" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; | sort
-}
-
-mark_all_migrations_applied() {
-    while IFS= read -r migration; do
-        npx prisma migrate resolve --applied "$migration" >/dev/null 2>&1 || true
-    done < <(get_migration_dirs)
-}
-
-repair_known_local_migration_drift() {
-    local failed_migration
-    failed_migration="$(
-        docker exec "$POSTGRES_CONTAINER" psql -U cliproxyapi -d cliproxyapi -tAc \
-            "SELECT migration_name FROM _prisma_migrations WHERE finished_at IS NULL AND rolled_back_at IS NULL ORDER BY started_at DESC LIMIT 1" \
-            2>/dev/null | tr -d '[:space:]'
-    )"
-
-    if [ "$failed_migration" != "$KNOWN_BOOTSTRAP_DRIFT_MIGRATION" ]; then
-        return 0
-    fi
-
-    local has_column
-    has_column="$(
-        docker exec "$POSTGRES_CONTAINER" psql -U cliproxyapi -d cliproxyapi -tAc \
-            "SELECT 1 FROM information_schema.columns WHERE table_name = 'custom_providers' AND column_name = 'apiKeyEncrypted' LIMIT 1" \
-            2>/dev/null | tr -d '[:space:]'
-    )"
-
-    if [ "$has_column" = "1" ]; then
-        log_warning "Recovering local migration state for ${failed_migration}"
-        npx prisma migrate resolve --applied "$failed_migration" >/dev/null 2>&1 || true
-    fi
 }
 
 # Function to check if Docker daemon is running
@@ -158,20 +122,10 @@ run_migrations() {
     # Export DATABASE_URL for Prisma
     export DATABASE_URL="postgresql://cliproxyapi:devpassword@localhost:5433/cliproxyapi"
     
-    # Bootstrap: push full schema to ensure all tables exist, then mark migrations applied.
-    # This is needed because the project started with db push before adopting migrations.
-    if ! docker exec "$POSTGRES_CONTAINER" psql -U cliproxyapi -d cliproxyapi -tAc "SELECT 1 FROM _prisma_migrations LIMIT 1" >/dev/null 2>&1; then
-        log_info "Fresh database detected, bootstrapping schema via prisma db push..."
-        npx prisma db push --accept-data-loss >/dev/null 2>&1
-        mark_all_migrations_applied
-    fi
-
-    repair_known_local_migration_drift
-    
     if npx prisma migrate deploy; then
         log_success "Migrations applied"
     else
-        log_error "Failed to run migrations"
+        log_error "Failed to run migrations. If your local database predates the baseline migration, reset it with ./dev-local.sh --reset"
         exit 1
     fi
 }
