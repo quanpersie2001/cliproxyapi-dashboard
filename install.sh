@@ -52,21 +52,21 @@ prompt_user() {
     local __var_name="$1"
     local __message="$2"
     local __default="${3-__NO_DEFAULT__}"
-    local __response=""
+    local __input_value=""
 
     if [ -r /dev/tty ]; then
         printf "%s" "$__message" > /dev/tty
-        IFS= read -r __response < /dev/tty || __response=""
+        IFS= read -r __input_value < /dev/tty || __input_value=""
     else
         printf "%s" "$__message"
-        IFS= read -r __response || __response=""
+        IFS= read -r __input_value || __input_value=""
     fi
 
-    if [ "$__default" != "__NO_DEFAULT__" ] && [ -z "$__response" ]; then
-        __response="$__default"
+    if [ "$__default" != "__NO_DEFAULT__" ] && [ -z "$__input_value" ]; then
+        __input_value="$__default"
     fi
 
-    printf -v "$__var_name" '%s' "$__response"
+    printf -v "$__var_name" '%s' "$__input_value"
 }
 
 trim_whitespace() {
