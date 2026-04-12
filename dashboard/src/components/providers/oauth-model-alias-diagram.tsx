@@ -268,6 +268,7 @@ export function OAuthModelAliasDiagram({ items }: { items: OAuthAliasDiagramItem
 
   useEffect(() => {
     const nextProviderIds = providerNodesBase.map((providerNode) => providerNode.provider);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- keep drag order aligned with incoming providers
     setProviderOrder((current) => {
       const next = mergeOrder(current, nextProviderIds);
       return arraysEqual(current, next) ? current : next;
@@ -275,6 +276,7 @@ export function OAuthModelAliasDiagram({ items }: { items: OAuthAliasDiagramItem
   }, [providerNodesBase]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- keep nested source order aligned with incoming providers
     setSourceOrderByProvider((current) => {
       let changed = Object.keys(current).length !== providerNodesBase.length;
       const next: Record<string, string[]> = {};
@@ -294,6 +296,7 @@ export function OAuthModelAliasDiagram({ items }: { items: OAuthAliasDiagramItem
   }, [providerNodesBase]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- keep alias order aligned with derived defaults
     setAliasOrder((current) => {
       const next = mergeOrder(current, defaultAliasOrder);
       return arraysEqual(current, next) ? current : next;

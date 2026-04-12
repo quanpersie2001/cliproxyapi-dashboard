@@ -1,10 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   DEFAULT_ROUTING_STRATEGY,
   isRoutingStrategy,
   ROUTING_STRATEGIES,
 } from "@/lib/routing-strategy";
 import { ManagementRoutingStrategySchema } from "@/lib/validation/schemas";
+
+vi.mock("server-only", () => ({}));
 
 describe("routing strategies", () => {
   it("only allows strategies supported by CLIProxyAPI", () => {

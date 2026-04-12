@@ -66,6 +66,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sync resolved theme with DOM theme state
     applyResolvedTheme(theme === "system" ? getSystemTheme() : theme);
   }, [applyResolvedTheme, theme]);
 

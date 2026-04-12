@@ -265,6 +265,7 @@ export function OAuthProviderIcon({
   const asset = "asset" in presentation ? presentation.asset : undefined;
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- hydration flag only
     setMounted(true);
   }, []);
 

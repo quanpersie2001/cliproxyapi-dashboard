@@ -168,13 +168,14 @@ Implementation notes:
 
 ## Release Model
 
-Releases are manual via [`release.yml`](.github/workflows/release.yml):
+The release flow is split into three stages:
 
-- `workflow_dispatch` only
-- Release Please creates or updates the release PR
-- native `amd64` and `arm64` images are built separately
-- a multi-arch manifest is merged in GHCR
-- `version.json` is updated for dashboard-side update checks
+- [`ci.yml`](.github/workflows/ci.yml) runs on pull requests and `main` pushes to gate changes with lint, typecheck, tests, app build, and a Docker build smoke test
+- [`release.yml`](.github/workflows/release.yml) is a manual `workflow_dispatch` that only creates or updates the Release Please PR
+- [`publish.yml`](.github/workflows/publish.yml) publishes images only from `dashboard-v*` tags, builds `amd64` and `arm64` separately, merges a multi-arch manifest in GHCR, and updates `version.json`
+- manual `publish.yml` runs can rebuild an existing tag for recovery, but they do not move `latest` or rewrite `version.json`
+
+To let Release Please-created tags trigger [`publish.yml`](.github/workflows/publish.yml), configure a `RELEASE_PLEASE_TOKEN` secret backed by a PAT or GitHub App token. If that secret is absent, Release Please falls back to `GITHUB_TOKEN`, which can still manage the release PR but will not fan out to downstream tag workflows.
 
 ## License
 
