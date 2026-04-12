@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.1...dashboard-v0.2.2) (2026-04-12)
+
+
+### Bug Fixes
+
+* **docker:** include full Prisma runtime in dashboard image ([fb4532f](https://github.com/quanpersie2001/cliproxyapi-dashboard/commit/fb4532fd4d9a8aace9650196e6158f2e8f092221))
+
 ## [0.2.1](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.0...dashboard-v0.2.1) (2026-04-12)
 
 
