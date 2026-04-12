@@ -80,8 +80,8 @@ Also verify any touched runtime scripts with a syntax check when relevant.
 Releases are manual:
 
 - trigger [`release.yml`](.github/workflows/release.yml) with `workflow_dispatch`
-- Release Please manages the release PR/tag flow
-- dashboard images are built natively for `amd64` and `arm64`
+- Release Please manages the release PR/tag flow and auto-dispatches [`publish.yml`](.github/workflows/publish.yml) when tag-push fan-out is unavailable
+- dashboard images are built natively for `amd64` on `ubuntu-latest` and `arm64` on `ubuntu-24.04-arm`
 - `version.json` is refreshed for dashboard-side update checks
 
 ## Documentation Expectations

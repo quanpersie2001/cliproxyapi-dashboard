@@ -10,6 +10,16 @@ on:
         description: "Existing dashboard tag to rebuild (for example: dashboard-v0.1.69)"
         required: true
         type: string
+      publish_latest:
+        description: "Also publish the latest tag"
+        required: false
+        default: false
+        type: boolean
+      update_version_json:
+        description: "Also refresh version.json on main"
+        required: false
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -36,11 +46,23 @@ jobs:
       - name: Resolve release metadata
         id: meta
         shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_TAG_NAME: ${{ inputs.tag_name }}
+          INPUT_PUBLISH_LATEST: ${{ inputs.publish_latest }}
+          INPUT_UPDATE_VERSION_JSON: ${{ inputs.update_version_json }}
         run: |
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            TAG="${{ inputs.tag_name }}"
-            PUBLISH_LATEST=false
-            UPDATE_VERSION_JSON=false
+          normalize_bool() {
+            case "$1" in
+              true|True|TRUE|1|yes|YES|on|ON) echo "true" ;;
+              *) echo "false" ;;
+            esac
+          }
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            TAG="$INPUT_TAG_NAME"
+            PUBLISH_LATEST="$(normalize_bool "$INPUT_PUBLISH_LATEST")"
+            UPDATE_VERSION_JSON="$(normalize_bool "$INPUT_UPDATE_VERSION_JSON")"
           else
             TAG="${GITHUB_REF_NAME}"
             PUBLISH_LATEST=true
@@ -67,7 +89,7 @@ jobs:
       matrix:
         include:
           - platform: linux/amd64
-            runner: self-hosted
+            runner: ubuntu-latest
             suffix: amd64
           - platform: linux/arm64
             runner: ubuntu-24.04-arm

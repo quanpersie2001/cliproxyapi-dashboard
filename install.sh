@@ -1,8 +1,9 @@
 #!/bin/bash
 #
 # CLIProxyAPI Dashboard installation script
-# Installs Docker, writes infrastructure/.env,
-# and optionally configures backups, UFW, and the deploy webhook.
+# Can run from a repo checkout or as a standalone bootstrap.
+# Ensures the bundled deployment files exist in INSTALL_DIR, installs Docker,
+# writes infrastructure/.env, and optionally configures backups, UFW, and the deploy webhook.
 #
 
 set -euo pipefail
@@ -12,6 +13,15 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m'
+
+DEFAULT_INSTALL_DIR="/opt/cliproxyapi-dashboard"
+CLIPROXYAPI_DASHBOARD_REPO="${CLIPROXYAPI_DASHBOARD_REPO:-quanpersie2001/cliproxyapi-dashboard}"
+CLIPROXYAPI_DASHBOARD_REF="${CLIPROXYAPI_DASHBOARD_REF:-main}"
+ARCHIVE_URL="https://codeload.github.com/${CLIPROXYAPI_DASHBOARD_REPO}/tar.gz/${CLIPROXYAPI_DASHBOARD_REF}"
+TMP_BUNDLE_DIR=""
+PRESERVE_DIR=""
+LOCAL_BUNDLE_DIR=""
+INSTALL_DIR=""
 
 log_info() {
     echo -e "${BLUE}[INFO]${NC} $1"
@@ -27,6 +37,216 @@ log_warning() {
 
 log_error() {
     echo -e "${RED}[ERROR]${NC} $1"
+}
+
+prompt_user() {
+    local __var_name="$1"
+    local __message="$2"
+    local __default="${3-__NO_DEFAULT__}"
+    local __response=""
+
+    if [ -r /dev/tty ]; then
+        printf "%s" "$__message" > /dev/tty
+        IFS= read -r __response < /dev/tty || __response=""
+    else
+        printf "%s" "$__message"
+        IFS= read -r __response || __response=""
+    fi
+
+    if [ "$__default" != "__NO_DEFAULT__" ] && [ -z "$__response" ]; then
+        __response="$__default"
+    fi
+
+    printf -v "$__var_name" '%s' "$__response"
+}
+
+cleanup_bootstrap() {
+    if [ -n "${TMP_BUNDLE_DIR}" ] && [ -d "${TMP_BUNDLE_DIR}" ]; then
+        rm -rf "${TMP_BUNDLE_DIR}"
+    fi
+}
+
+require_root() {
+    if [ "$EUID" -ne 0 ]; then
+        log_error "This script must be run as root"
+        log_error "Example: curl -fsSL https://raw.githubusercontent.com/${CLIPROXYAPI_DASHBOARD_REPO}/main/install.sh | sudo bash"
+        exit 1
+    fi
+}
+
+ensure_supported_platform() {
+    if ! command -v apt-get &> /dev/null; then
+        log_error "This script only supports Ubuntu/Debian systems"
+        exit 1
+    fi
+}
+
+ensure_command() {
+    local command_name="$1"
+    local package_name="${2:-$1}"
+
+    if command -v "$command_name" &> /dev/null; then
+        return
+    fi
+
+    log_info "Installing missing dependency: ${package_name}"
+    apt-get update
+    apt-get install -y "${package_name}"
+}
+
+resolve_script_dir() {
+    local source_path="${BASH_SOURCE[0]:-}"
+
+    if [ -n "$source_path" ] && [ -e "$source_path" ]; then
+        (
+            cd "$(dirname "$source_path")" >/dev/null 2>&1
+            pwd
+        )
+        return
+    fi
+
+    printf '%s\n' ""
+}
+
+bundle_dir_ready() {
+    local candidate_dir="$1"
+
+    [ -n "$candidate_dir" ] &&
+    [ -d "$candidate_dir" ] &&
+    [ -f "$candidate_dir/install.sh" ] &&
+    [ -f "$candidate_dir/infrastructure/docker-compose.yml" ] &&
+    [ -f "$candidate_dir/infrastructure/manage.sh" ]
+}
+
+dir_has_entries() {
+    local target_dir="$1"
+
+    [ -d "$target_dir" ] && find "$target_dir" -mindepth 1 -maxdepth 1 -print -quit 2>/dev/null | grep -q .
+}
+
+looks_like_existing_install() {
+    bundle_dir_ready "$INSTALL_DIR"
+}
+
+validate_install_dir() {
+    if [ -e "$INSTALL_DIR" ] && [ ! -d "$INSTALL_DIR" ]; then
+        log_error "INSTALL_DIR exists but is not a directory: $INSTALL_DIR"
+        exit 1
+    fi
+
+    if dir_has_entries "$INSTALL_DIR" && ! looks_like_existing_install; then
+        log_error "INSTALL_DIR is not empty and does not look like a previous CLIProxyAPI Dashboard install: $INSTALL_DIR"
+        log_error "Choose an empty directory, or point INSTALL_DIR at an existing CLIProxyAPI Dashboard install."
+        exit 1
+    fi
+}
+
+download_archive() {
+    local archive_path="$1"
+
+    log_info "Downloading ${CLIPROXYAPI_DASHBOARD_REPO}@${CLIPROXYAPI_DASHBOARD_REF}"
+
+    if command -v curl &> /dev/null; then
+        curl -fsSL "$ARCHIVE_URL" -o "$archive_path"
+        return
+    fi
+
+    if command -v wget &> /dev/null; then
+        wget -qO "$archive_path" "$ARCHIVE_URL"
+        return
+    fi
+
+    log_error "Neither curl nor wget is available for downloading the install bundle."
+    exit 1
+}
+
+preserve_existing_files() {
+    PRESERVE_DIR="${TMP_BUNDLE_DIR}/preserve"
+    mkdir -p "$PRESERVE_DIR"
+
+    for relative_path in \
+        "infrastructure/.env" \
+        "infrastructure/config/config.yaml" \
+        "infrastructure/docker-compose.override.yml"
+    do
+        if [ -e "${INSTALL_DIR}/${relative_path}" ]; then
+            mkdir -p "${PRESERVE_DIR}/$(dirname "${relative_path}")"
+            cp -a "${INSTALL_DIR}/${relative_path}" "${PRESERVE_DIR}/${relative_path}"
+        fi
+    done
+}
+
+restore_existing_files() {
+    if [ -z "$PRESERVE_DIR" ] || [ ! -d "$PRESERVE_DIR" ]; then
+        return
+    fi
+
+    for relative_path in \
+        "infrastructure/.env" \
+        "infrastructure/config/config.yaml" \
+        "infrastructure/docker-compose.override.yml"
+    do
+        if [ -e "${PRESERVE_DIR}/${relative_path}" ]; then
+            mkdir -p "${INSTALL_DIR}/$(dirname "${relative_path}")"
+            cp -a "${PRESERVE_DIR}/${relative_path}" "${INSTALL_DIR}/${relative_path}"
+        fi
+    done
+}
+
+sync_bundle_from_directory() {
+    local source_dir="$1"
+
+    mkdir -p "$INSTALL_DIR"
+    tar -C "$source_dir" \
+        --exclude='./.git' \
+        --exclude='./.next' \
+        --exclude='./node_modules' \
+        --exclude='./dashboard/.next' \
+        --exclude='./dashboard/node_modules' \
+        --exclude='./dashboard/coverage' \
+        -cf - . | tar -C "$INSTALL_DIR" -xf -
+}
+
+extract_bundle_from_archive() {
+    local archive_path="$1"
+
+    mkdir -p "$INSTALL_DIR"
+    tar -xzf "$archive_path" -C "$INSTALL_DIR" --strip-components=1
+}
+
+prepare_install_bundle() {
+    local archive_path=""
+
+    if [ -n "$LOCAL_BUNDLE_DIR" ] && [ "$INSTALL_DIR" = "$LOCAL_BUNDLE_DIR" ]; then
+        return
+    fi
+
+    TMP_BUNDLE_DIR="$(mktemp -d)"
+
+    if looks_like_existing_install; then
+        log_warning "Existing CLIProxyAPI Dashboard install detected at $INSTALL_DIR"
+        log_warning "Refreshing bundled scripts while preserving runtime state files."
+        preserve_existing_files
+    fi
+
+    if [ -n "$LOCAL_BUNDLE_DIR" ]; then
+        log_info "Copying bundled deployment files into $INSTALL_DIR"
+        sync_bundle_from_directory "$LOCAL_BUNDLE_DIR"
+    else
+        archive_path="${TMP_BUNDLE_DIR}/cliproxyapi-dashboard.tar.gz"
+        ensure_command tar tar
+        download_archive "$archive_path"
+        extract_bundle_from_archive "$archive_path"
+    fi
+
+    restore_existing_files
+
+    chmod +x "$INSTALL_DIR/install.sh"
+    chmod +x "$INSTALL_DIR/infrastructure/manage.sh"
+
+    if [ -f "$INSTALL_DIR/infrastructure/internal/dashboard-deploy.sh" ]; then
+        chmod +x "$INSTALL_DIR/infrastructure/internal/dashboard-deploy.sh"
+    fi
 }
 
 check_port_conflict() {
@@ -147,7 +367,7 @@ create_env_file() {
 
     if [ -f "$env_file" ]; then
         log_warning ".env file already exists"
-        read -p "Overwrite .env file? [y/N]: " OVERWRITE_ENV
+        prompt_user OVERWRITE_ENV "Overwrite .env file? [y/N]: "
         if [[ ! "$OVERWRITE_ENV" =~ ^[Yy]$ ]]; then
             skip_env=1
         fi
@@ -248,7 +468,7 @@ setup_usage_collector() {
 }
 
 install_webhook_service() {
-    read -p "Install webhook deploy service? [y/N]: " INSTALL_WEBHOOK
+    prompt_user INSTALL_WEBHOOK "Install webhook deploy service? [y/N]: "
     if [[ ! "$INSTALL_WEBHOOK" =~ ^[Yy]$ ]]; then
         log_info "Skipping webhook installation"
         return
@@ -316,18 +536,34 @@ EOF
     log_success "Webhook deploy service installed"
 }
 
-if [ "$EUID" -ne 0 ]; then
-    log_error "This script must be run as root"
-    exit 1
+trap cleanup_bootstrap EXIT
+
+require_root
+ensure_supported_platform
+
+SCRIPT_DIR="$(resolve_script_dir)"
+if bundle_dir_ready "$SCRIPT_DIR"; then
+    LOCAL_BUNDLE_DIR="$SCRIPT_DIR"
 fi
 
-INSTALL_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+INSTALL_DIR="${INSTALL_DIR:-${LOCAL_BUNDLE_DIR:-$DEFAULT_INSTALL_DIR}}"
+validate_install_dir
+
+if [ "${CLIPROXYAPI_INSTALL_SKIP_BOOTSTRAP:-0}" != "1" ]; then
+    prepare_install_bundle
+
+    if [ -f "$INSTALL_DIR/install.sh" ] && { [ -z "$LOCAL_BUNDLE_DIR" ] || [ "$INSTALL_DIR" != "$LOCAL_BUNDLE_DIR" ]; }; then
+        log_info "Switching to bundled installer in $INSTALL_DIR"
+        exec env \
+            INSTALL_DIR="$INSTALL_DIR" \
+            CLIPROXYAPI_DASHBOARD_REPO="$CLIPROXYAPI_DASHBOARD_REPO" \
+            CLIPROXYAPI_DASHBOARD_REF="$CLIPROXYAPI_DASHBOARD_REF" \
+            CLIPROXYAPI_INSTALL_SKIP_BOOTSTRAP=1 \
+            bash "$INSTALL_DIR/install.sh"
+    fi
+fi
+
 log_info "Installation directory: $INSTALL_DIR"
-
-if ! command -v apt-get &> /dev/null; then
-    log_error "This script only supports Ubuntu/Debian systems"
-    exit 1
-fi
 
 if [ -f /etc/os-release ]; then
     . /etc/os-release
@@ -362,20 +598,18 @@ echo ""
 log_info "=== Configuration ==="
 echo ""
 
-read -p "Public dashboard URL [default: http://localhost:3000]: " DASHBOARD_URL
-DASHBOARD_URL="${DASHBOARD_URL:-http://localhost:3000}"
+prompt_user DASHBOARD_URL "Public dashboard URL [default: http://localhost:3000]: " "http://localhost:3000"
 
-read -p "Public API URL [default: http://localhost:8317]: " API_URL
-API_URL="${API_URL:-http://localhost:8317}"
+prompt_user API_URL "Public API URL [default: http://localhost:8317]: " "http://localhost:8317"
 
-read -p "Enable OAuth callback ports in the firewall? [y/N]: " OAUTH_ENABLED_INPUT
+prompt_user OAUTH_ENABLED_INPUT "Enable OAuth callback ports in the firewall? [y/N]: "
 if [[ "$OAUTH_ENABLED_INPUT" =~ ^[Yy]$ ]]; then
     OAUTH_ENABLED=1
 else
     OAUTH_ENABLED=0
 fi
 
-read -p "Configure UFW firewall now? [y/N]: " CONFIGURE_UFW
+prompt_user CONFIGURE_UFW "Configure UFW firewall now? [y/N]: "
 
 echo ""
 log_info "Select backup interval:"
@@ -383,7 +617,7 @@ echo "  1) Daily backups (keep last 7)"
 echo "  2) Weekly backups (keep last 4)"
 echo "  3) No automated backups"
 while true; do
-    read -p "Enter choice [1-3]: " BACKUP_CHOICE
+    prompt_user BACKUP_CHOICE "Enter choice [1-3]: "
     case "$BACKUP_CHOICE" in
         1)
             BACKUP_INTERVAL="daily"
@@ -415,7 +649,7 @@ log_info "  UFW configuration: $([[ "$CONFIGURE_UFW" =~ ^[Yy]$ ]] && echo 'enabl
 log_info "  Backup interval: $BACKUP_INTERVAL"
 echo ""
 
-read -p "Continue with installation? [y/N]: " CONFIRM
+prompt_user CONFIRM "Continue with installation? [y/N]: "
 if [[ ! "$CONFIRM" =~ ^[Yy]$ ]]; then
     log_warning "Installation cancelled"
     exit 0
@@ -446,7 +680,7 @@ CONTAINER_CONFLICTS=$(check_container_conflicts || true)
 if [ -n "$CONTAINER_CONFLICTS" ]; then
     log_warning "Existing Docker containers found:"
     echo "$CONTAINER_CONFLICTS"
-    read -p "Continue anyway? [y/N]: " CONTINUE_CONFLICTS
+    prompt_user CONTINUE_CONFLICTS "Continue anyway? [y/N]: "
     if [[ ! "$CONTINUE_CONFLICTS" =~ ^[Yy]$ ]]; then
         exit 1
     fi

@@ -45,7 +45,7 @@
 | --- | --- | --- |
 | Local appliance | You want the published dashboard image and bundled proxy stack running locally | `./setup-local.sh` |
 | Source development | You want to run the dashboard from the checked-out source tree | `cd dashboard && ./dev-local.sh` |
-| Server install | You want the bundled production compose stack on Ubuntu/Debian | `sudo ./install.sh` |
+| Server install | You want the bundled production compose stack on Ubuntu/Debian | `curl -fsSL .../install.sh | sudo bash` |
 
 ## Runtime Topology
 
@@ -110,12 +110,23 @@ Source-dev endpoints:
 ### 3. Server Install
 
 ```bash
-git clone https://github.com/quanpersie2001/cliproxyapi-dashboard.git
-cd cliproxyapi-dashboard
-sudo ./install.sh
+curl -fsSL https://raw.githubusercontent.com/quanpersie2001/cliproxyapi-dashboard/main/install.sh | sudo bash
 ```
 
-`install.sh` currently:
+The same `install.sh` file works in both modes:
+
+- from a repo checkout: `sudo ./install.sh`
+- as a one-file bootstrap: `curl .../install.sh | sudo bash`
+
+When run as a one-file bootstrap, it downloads the bundled deployment files into `/opt/cliproxyapi-dashboard` by default, preserves existing runtime state files when re-run, and then continues the interactive installer.
+
+To install into a different path:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/quanpersie2001/cliproxyapi-dashboard/main/install.sh | sudo env INSTALL_DIR=/srv/cliproxyapi-dashboard bash
+```
+
+The bundled installer currently:
 
 - installs Docker Engine and Compose if missing
 - generates stack secrets
@@ -172,10 +183,9 @@ The release flow is split into three stages:
 
 - [`ci.yml`](.github/workflows/ci.yml) runs on pull requests and `main` pushes to gate changes with lint, typecheck, tests, app build, and a Docker build smoke test
 - [`release.yml`](.github/workflows/release.yml) is a manual `workflow_dispatch` that only creates or updates the Release Please PR
-- [`publish.yml`](.github/workflows/publish.yml) publishes images only from `dashboard-v*` tags, builds `amd64` and `arm64` separately, merges a multi-arch manifest in GHCR, and updates `version.json`
+- [`publish.yml`](.github/workflows/publish.yml) publishes images from `dashboard-v*` tags or an explicit workflow dispatch, builds `amd64` on `ubuntu-latest` and `arm64` on `ubuntu-24.04-arm`, merges a multi-arch manifest in GHCR, and updates `version.json`
 - manual `publish.yml` runs can rebuild an existing tag for recovery, but they do not move `latest` or rewrite `version.json`
-
-To let Release Please-created tags trigger [`publish.yml`](.github/workflows/publish.yml), configure a `RELEASE_PLEASE_TOKEN` secret backed by a PAT or GitHub App token. If that secret is absent, Release Please falls back to `GITHUB_TOKEN`, which can still manage the release PR but will not fan out to downstream tag workflows.
+- [`release.yml`](.github/workflows/release.yml) dispatches [`publish.yml`](.github/workflows/publish.yml) automatically after a release is created when `RELEASE_PLEASE_TOKEN` is absent; if the secret is configured, the normal tag-push trigger handles publish instead
 
 ## License
 

@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: write
   contents: write
   pull-requests: write
 
@@ -14,16 +15,22 @@ concurrency:
 jobs:
   release-please:
     runs-on: ubuntu-latest
+    outputs:
+      has_release_please_token: ${{ steps.resolve.outputs.has_release_please_token }}
+      release_created: ${{ steps.resolve.outputs.release_created }}
+      tag_name: ${{ steps.resolve.outputs.tag_name }}
+      version: ${{ steps.resolve.outputs.version }}
     steps:
       - name: Warn when downstream tag workflows are disabled
         env:
           HAS_RELEASE_PLEASE_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN != '' }}
         run: |
           if [ "$HAS_RELEASE_PLEASE_TOKEN" != "true" ]; then
-            echo "::warning::RELEASE_PLEASE_TOKEN is not configured. Release Please can still open and merge release PRs, but tag-push workflows such as publish.yml will not fan out when the release is created with GITHUB_TOKEN."
+            echo "::warning::RELEASE_PLEASE_TOKEN is not configured. Release Please will create the tag with GITHUB_TOKEN, so publish.yml will be started via workflow_dispatch instead of tag-push fan-out."
           fi
 
       - uses: googleapis/release-please-action@v4
+        id: release
         with:
           # Use a PAT or GitHub App token so the tag created by Release Please can
           # trigger the downstream publish workflow. Fall back to GITHUB_TOKEN so
@@ -31,3 +38,38 @@ jobs:
           token: ${{ secrets.RELEASE_PLEASE_TOKEN != '' && secrets.RELEASE_PLEASE_TOKEN || secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
+
+      - name: Resolve release outputs
+        id: resolve
+        env:
+          HAS_RELEASE_PLEASE_TOKEN: ${{ secrets.RELEASE_PLEASE_TOKEN != '' && 'true' || 'false' }}
+          RP_RELEASE_CREATED: ${{ steps.release.outputs['dashboard--release_created'] || steps.release.outputs.release_created }}
+          RP_TAG_NAME: ${{ steps.release.outputs['dashboard--tag_name'] || steps.release.outputs.tag_name }}
+          RP_VERSION: ${{ steps.release.outputs['dashboard--version'] || steps.release.outputs.version }}
+        run: |
+          echo "has_release_please_token=${HAS_RELEASE_PLEASE_TOKEN}" >> "$GITHUB_OUTPUT"
+          echo "release_created=${RP_RELEASE_CREATED}" >> "$GITHUB_OUTPUT"
+          echo "tag_name=${RP_TAG_NAME}" >> "$GITHUB_OUTPUT"
+          echo "version=${RP_VERSION}" >> "$GITHUB_OUTPUT"
+
+          if [ "${RP_RELEASE_CREATED}" = "true" ]; then
+            echo "Release created: ${RP_TAG_NAME} (${RP_VERSION})"
+          else
+            echo "No release created in this run."
+          fi
+
+  dispatch-publish:
+    needs: release-please
+    if: ${{ needs.release-please.outputs.release_created == 'true' && needs.release-please.outputs.has_release_please_token != 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Dispatch publish workflow
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG_NAME: ${{ needs.release-please.outputs.tag_name }}
+        run: |
+          gh workflow run publish.yml \
+            --ref main \
+            -f tag_name="${TAG_NAME}" \
+            -f publish_latest=true \
+            -f update_version_json=true

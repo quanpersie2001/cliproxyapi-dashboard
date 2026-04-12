@@ -10,7 +10,7 @@ This repo supports three distinct ways to run the project:
 | --- | --- | --- |
 | Local appliance stack | [`../setup-local.sh`](../setup-local.sh) / [`../setup-local.ps1`](../setup-local.ps1) | Running the published dashboard image locally with minimal setup |
 | Source development | [`../dashboard/dev-local.sh`](../dashboard/dev-local.sh) / [`../dashboard/dev-local.ps1`](../dashboard/dev-local.ps1) | Working on dashboard code from this checkout |
-| Server install | [`../install.sh`](../install.sh) | Provisioning the bundled production compose stack on Ubuntu/Debian |
+| Server install | [`../install.sh`](../install.sh) | Provisioning the bundled production compose stack on Ubuntu/Debian, with or without pre-cloning the repo |
 
 ## Bundled Stack Topology
 
@@ -137,7 +137,7 @@ cd dashboard
 
 ## Option 3: Server Install
 
-`install.sh` is intended for Ubuntu/Debian hosts with root access.
+[`../install.sh`](../install.sh) is the single server installer for Ubuntu/Debian hosts with root access. It can run directly from a repo checkout, or as a one-file bootstrap that downloads the bundled deployment files into `INSTALL_DIR` before continuing.
 
 ### Prerequisites
 
@@ -149,19 +149,40 @@ cd dashboard
 ### Commands
 
 ```bash
-git clone https://github.com/quanpersie2001/cliproxyapi-dashboard.git
-cd cliproxyapi-dashboard
+curl -fsSL https://raw.githubusercontent.com/quanpersie2001/cliproxyapi-dashboard/main/install.sh | sudo bash
+```
+
+Default install location:
+
+- `/opt/cliproxyapi-dashboard`
+
+Optional overrides:
+
+- `INSTALL_DIR=/srv/cliproxyapi-dashboard` to change the target directory
+- `CLIPROXYAPI_DASHBOARD_REF=dashboard-vX.Y.Z` to pin a tag instead of `main`
+
+Example with a custom install path:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/quanpersie2001/cliproxyapi-dashboard/main/install.sh \
+  | sudo env INSTALL_DIR=/srv/cliproxyapi-dashboard bash
+```
+
+If you already cloned the repo onto the server, you can also run:
+
+```bash
 sudo ./install.sh
 ```
 
 The installer currently:
 
 1. Detects Ubuntu/Debian and installs Docker Engine + Compose if needed.
-2. Prompts for public dashboard and API URLs.
-3. Optionally configures firewall rules for OAuth callback ports.
-4. Generates `JWT_SECRET`, `MANAGEMENT_API_KEY`, `POSTGRES_PASSWORD`, `COLLECTOR_API_KEY`, and `PROVIDER_ENCRYPTION_KEY`.
-5. Writes `infrastructure/.env`.
-6. Optionally installs backup cron jobs, the usage collector cron, and the dashboard deploy webhook.
+2. Ensures the deployment bundle exists in `INSTALL_DIR` by using the local checkout or downloading it when needed.
+3. Prompts for public dashboard and API URLs.
+4. Optionally configures firewall rules for OAuth callback ports.
+5. Generates `JWT_SECRET`, `MANAGEMENT_API_KEY`, `POSTGRES_PASSWORD`, `COLLECTOR_API_KEY`, and `PROVIDER_ENCRYPTION_KEY`.
+6. Writes `infrastructure/.env`.
+7. Optionally installs backup cron jobs, the usage collector cron, and the dashboard deploy webhook.
 
 After install:
 
@@ -173,7 +194,7 @@ cd infrastructure
 
 ## Manual Server Installation
 
-Use this if you do not want `install.sh`.
+Use this if you do not want the interactive `install.sh` flow.
 
 ### 1. Install Docker
 
