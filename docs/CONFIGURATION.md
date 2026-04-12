@@ -10,7 +10,7 @@ The current architecture has three configuration layers:
 | --- | --- | --- |
 | Stack/runtime environment | `infrastructure/.env` | operator / `install.sh` |
 | CLIProxyAPI runtime config | `infrastructure/config/config.yaml` | operator + dashboard config editor |
-| Dashboard-local settings | PostgreSQL (`system_settings`) | dashboard admin UI |
+| Dashboard-local state | PostgreSQL | dashboard UI and APIs |
 
 During local appliance setup the equivalents are:
 
@@ -31,6 +31,7 @@ The environment layer controls:
 - management API authentication
 - usage collector authentication
 - provider secret encryption
+- public dashboard and proxy URLs shown in the UI
 - dashboard update-check repository and optional deploy webhook host
 
 See the canonical variable reference in [`ENV.md`](ENV.md).
@@ -39,7 +40,7 @@ See the canonical variable reference in [`ENV.md`](ENV.md).
 
 `infrastructure/config/config.yaml` is the proxy runtime document mounted into the `cliproxyapi` container.
 
-The dashboard config page currently manages or edits these groups:
+The dashboard config page currently manages or edits these groups.
 
 ### General Runtime
 
@@ -75,7 +76,7 @@ The dashboard config page currently manages or edits these groups:
 - `pprof.enable`
 - `pprof.addr`
 
-### TLS / Advanced Integrations
+### TLS and Advanced Integrations
 
 - `tls.enable`
 - `tls.cert`
@@ -87,9 +88,9 @@ The dashboard config page currently manages or edits these groups:
 - `payload.*`
 - `oauth-model-alias`
 
-The dashboard does not replace the idea of `config.yaml`; it acts as the control plane for the parts of that file that are actively managed by the UI.
+The dashboard does not replace `config.yaml`; it acts as the control plane for the parts of that file that are actively managed by the UI.
 
-## Dashboard-Local Settings
+## Dashboard-Local State
 
 Some state is intentionally stored in PostgreSQL instead of `config.yaml`:
 
@@ -101,18 +102,23 @@ Some state is intentionally stored in PostgreSQL instead of `config.yaml`:
 - model preferences
 - usage history and collector state
 - audit logs
-- global settings such as max provider keys per user
+- global dashboard settings
+
+The admin settings API currently allowlists one key:
+
+- `max_provider_keys_per_user`
 
 ## Provider Surfaces
 
-The current provider model is split across three surfaces:
+The current provider model is split across three surfaces.
 
 ### Direct Provider API Keys
 
 - Claude
 - Gemini
 - OpenAI / Codex
-- OpenAI-compatible providers
+
+OpenAI-compatible upstreams are modeled through custom providers instead of the direct-key cards.
 
 ### OAuth Providers
 
@@ -134,7 +140,7 @@ Custom provider records allow:
 
 - display name + provider ID
 - base URL
-- encrypted API key storage when `PROVIDER_ENCRYPTION_KEY` is configured
+- encrypted API-key storage when `PROVIDER_ENCRYPTION_KEY` is configured
 - optional prefix
 - optional upstream proxy URL
 - optional headers
@@ -156,6 +162,8 @@ Relevant environment variables:
 - `GITHUB_REPO`
 - `WEBHOOK_HOST`
 - `DEPLOY_SECRET`
+- `DASHBOARD_URL`
+- `API_URL`
 
 ## Health and Usage Collection
 

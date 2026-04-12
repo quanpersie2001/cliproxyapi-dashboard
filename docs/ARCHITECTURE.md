@@ -1,11 +1,11 @@
-<!-- Updated: 2026-04-11 -->
+<!-- Updated: 2026-04-12 -->
 # Architecture
 
-This document replaces the older codemap split and keeps the architecture view in one place.
+Canonical docs hub: [`docs/README.md`](README.md)
 
 ## Stack
 
-Next.js 16 + React 19 + TypeScript 5.9 + Tailwind CSS 4 + Prisma 7 + PostgreSQL 16
+Next.js 16.1.6 + React 19.2.4 + TypeScript 5.9 + Tailwind CSS 4 + Prisma 7 + PostgreSQL 16
 
 ## System Diagram
 
@@ -14,7 +14,7 @@ Browser
   -> Next.js App Router dashboard (:3000)
       -> Prisma -> PostgreSQL
       -> /api/management/[...path] -> CLIProxyAPI management API (:8317/v0/management)
-      -> docker CLI -> docker-socket-proxy
+      -> Docker CLI (via DOCKER_HOST) -> docker-socket-proxy
 
 CLIProxyAPI
   -> config.yaml
@@ -38,24 +38,21 @@ Usage collector
   - bundled Docker Compose deployment
   - loopback-bound dashboard and proxy API
   - internal PostgreSQL network
-  - deploy webhook helper and ops wrapper script
-- **Maintenance scripts (`scripts/`)**
-  - backup
-  - restore
-  - retention rotation
+  - `manage.sh` for runtime control plus backup and restore operations
+  - webhook helpers
 
 ## Current Source Layout
 
 ```text
 dashboard/src/
-├── app/                16 page routes total
+├── app/                18 page routes total
 │   ├── api/            48 route handlers
-│   └── dashboard/      13 authenticated dashboard pages
-├── components/         69 shared UI/component files
-├── features/           14 feature-surface files
-├── hooks/              dashboard hooks
-├── lib/                55 service/utility files
-├── server/             server-side usage services
+│   └── dashboard/      authenticated dashboard and admin surfaces
+├── components/         71 shared component files
+├── features/           16 feature-surface files
+├── hooks/              8 hook files
+├── lib/                57 service/utility files
+├── server/             2 server-side usage service files
 └── generated/          Prisma client output
 ```
 
@@ -70,6 +67,9 @@ dashboard/src/
 └── /dashboard
     ├── /
     ├── /providers
+    │   └── /oauth
+    │       ├── /connect
+    │       └── /model-alias
     ├── /api-keys
     ├── /usage
     ├── /quota
@@ -93,73 +93,61 @@ dashboard/src/
 - `QuotaPage`: provider quota aggregation and capacity windows
 - `ConfigPage`: managed CLIProxyAPI runtime settings and YAML preview
 - `SettingsPage`: password changes, session revoke, proxy update, dashboard update, deploy flow
+- `DashboardSetupPage`: authenticated onboarding checklist after login
 - `MonitoringPage`: proxy health, usage polling, live logs, restart actions
 - `LogsPage`: log-focused monitoring entry
 - `ContainersPage`: allowlisted container inspection and actions
 - `AdminUsersPage`: user and role management
 - `AdminLogsPage`: audit log review
+- `OAuthConnectPage` and `OAuthModelAliasPage`: provider connect/model-alias workflows
 
 ## Backend Surface
 
+The 48 route handlers fall into these groups.
+
 ### Auth and Setup
 
-- `POST /api/auth/login`
-- `POST /api/auth/logout`
-- `GET /api/auth/me`
-- `POST /api/auth/change-password`
-- `GET|POST /api/setup`
-- `GET /api/setup-status`
+- `/api/auth/*` for login, logout, password change, and current-session lookups
+- `/api/setup` for first-admin bootstrap
+- `/api/setup-status` for post-login onboarding state
 
 ### Admin
 
-- `GET|POST|DELETE /api/admin/users`
-- `GET|PUT /api/admin/settings`
-- `GET|DELETE /api/admin/logs`
-- `GET|POST /api/admin/deploy`
-- `POST /api/admin/revoke-sessions`
-- `POST /api/admin/migrate-api-keys`
+- `/api/admin/users`
+- `/api/admin/settings`
+- `/api/admin/logs`
+- `/api/admin/deploy`
+- `/api/admin/revoke-sessions`
+- `/api/admin/migrate-api-keys`
 
-### User and Provider Management
+### Provider and Ownership Management
 
-- `GET|POST|DELETE /api/user/api-keys`
-- `GET|POST /api/providers/keys`
-- `DELETE /api/providers/keys/[keyHash]`
-- `GET|POST /api/providers/oauth`
-- `DELETE|PATCH /api/providers/oauth/[id]`
-- `GET /api/providers/oauth/[id]/download`
-- `GET /api/providers/oauth/[id]/models`
-- `GET|PATCH /api/providers/oauth/[id]/settings`
-- `POST /api/providers/oauth/import`
-- `POST /api/providers/oauth/claim`
-- `POST /api/management/oauth-callback`
-- `GET|POST /api/custom-providers`
-- `PATCH|DELETE /api/custom-providers/[id]`
-- `POST /api/custom-providers/fetch-models`
-- `POST /api/custom-providers/resync`
-- `PUT /api/custom-providers/reorder`
-- `GET|POST /api/provider-groups`
-- `PATCH|DELETE /api/provider-groups/[id]`
-- `PUT /api/provider-groups/reorder`
-- `GET|PUT /api/model-preferences`
+- `/api/user/api-keys`
+- `/api/providers/keys`
+- `/api/providers/oauth/*`
+- `/api/custom-providers/*`
+- `/api/provider-groups/*`
+- `/api/model-preferences`
+- `/api/management/oauth-callback`
 
 ### Proxy Runtime and Operations
 
-- `GET|POST|PUT|PATCH|DELETE /api/management/[...path]`
-- `GET /api/proxy/status`
-- `GET /api/proxy/oauth-settings`
-- `GET /api/health`
-- `POST /api/restart`
-- `GET /api/containers/list`
-- `GET /api/containers/[name]/details`
-- `GET /api/containers/[name]/logs`
-- `POST /api/containers/[name]/action`
-- `GET /api/quota`
-- `POST /api/usage/collect`
-- `GET /api/usage/history`
-- `GET /api/usage` (deprecated compatibility route)
-- `GET /api/update/check`
-- `POST /api/update`
-- `GET /api/update/dashboard/check`
+- `/api/management/[...path]` as the management API passthrough layer
+- `/api/proxy/status`
+- `/api/proxy/oauth-settings`
+- `/api/restart`
+- `/api/containers/*`
+- `/api/update`
+- `/api/update/check`
+- `/api/update/dashboard/check`
+- `/api/health`
+
+### Usage and Quota
+
+- `/api/quota`
+- `/api/usage/collect`
+- `/api/usage/history`
+- `/api/usage` as a deprecated compatibility route
 
 ## Data Model Summary
 
@@ -212,14 +200,16 @@ CollectorState
 - `lib/providers/management-api.ts`: management API wrapper and process-local mutex
 - `lib/usage/history.ts`: persistent usage snapshot and aggregation logic
 - `lib/containers.ts`: allowlist for container management
+- `lib/auth/origin.ts`: effective-origin validation for state-changing authenticated requests
 
 ## Runtime Notes
 
-- The production dashboard image runs [`dashboard/entrypoint.sh`](../dashboard/entrypoint.sh), which bootstraps and patches core tables with a PostgreSQL advisory lock.
+- The production dashboard image runs [`../dashboard/entrypoint.sh`](../dashboard/entrypoint.sh), which bootstraps and patches core tables with a PostgreSQL advisory lock.
 - Source development still uses Prisma bootstrap plus `prisma migrate deploy`.
 - The bundled stack does not include a public reverse proxy or TLS termination layer.
-- `providerMutex` in [`dashboard/src/lib/providers/management-api.ts`](../dashboard/src/lib/providers/management-api.ts) is process-local only.
-- [`dashboard/prisma/schema.prisma`](../dashboard/prisma/schema.prisma) is the active source of truth for the data model.
+- The bundled deployment assumes a single dashboard instance.
+- `providerMutex` in [`../dashboard/src/lib/providers/management-api.ts`](../dashboard/src/lib/providers/management-api.ts) is process-local only.
+- [`../dashboard/prisma/schema.prisma`](../dashboard/prisma/schema.prisma) is the active source of truth for the data model.
 
 ## Auth Model
 

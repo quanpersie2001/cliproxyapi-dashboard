@@ -1,7 +1,7 @@
 #!/bin/bash
 #
 # CLIProxyAPI Dashboard installation script
-# Installs Docker, writes infrastructure/.env, installs a systemd unit,
+# Installs Docker, writes infrastructure/.env,
 # and optionally configures backups, UFW, and the deploy webhook.
 #
 
@@ -187,69 +187,17 @@ EOF
     log_success ".env file created at $env_file"
 }
 
-install_systemd_service() {
-    local service_file="/etc/systemd/system/cliproxyapi-stack.service"
+setup_backup_scripts() {
     local manage_script="$INSTALL_DIR/infrastructure/manage.sh"
-    local skip_service=0
 
-    if [ -f "$service_file" ]; then
-        log_warning "Systemd service already exists"
-        read -p "Overwrite service file? [y/N]: " OVERWRITE_SERVICE
-        if [[ ! "$OVERWRITE_SERVICE" =~ ^[Yy]$ ]]; then
-            skip_service=1
-        fi
-    fi
-
-    if [ "$skip_service" -eq 1 ]; then
-        log_info "Keeping existing service file"
-        return
+    if [ ! -f "$manage_script" ]; then
+        log_error "infrastructure/manage.sh is missing"
+        exit 1
     fi
 
     chmod +x "$manage_script"
 
-    cat > "$service_file" << EOF
-[Unit]
-Description=CLIProxyAPI Dashboard Stack (Docker Compose)
-Requires=docker.service
-After=docker.service network-online.target
-Wants=network-online.target
-
-[Service]
-Type=oneshot
-RemainAfterExit=true
-WorkingDirectory=${INSTALL_DIR}/infrastructure
-ExecStart=${manage_script} up
-ExecStop=${manage_script} down
-TimeoutStartSec=300
-TimeoutStopSec=120
-Restart=on-failure
-RestartSec=10s
-User=root
-Group=root
-
-[Install]
-WantedBy=multi-user.target
-EOF
-
-    systemctl daemon-reload
-    systemctl enable cliproxyapi-stack.service
-
-    log_success "Systemd service installed"
-}
-
-setup_backup_scripts() {
-    local scripts_dir="$INSTALL_DIR/scripts"
-
-    if [ ! -d "$scripts_dir" ] || [ ! -f "$scripts_dir/backup.sh" ]; then
-        log_error "scripts/ directory is missing"
-        exit 1
-    fi
-
-    chmod +x "$scripts_dir/backup.sh"
-    chmod +x "$scripts_dir/restore.sh"
-    chmod +x "$scripts_dir/rotate-backups.sh"
-
-    log_success "Backup scripts are ready"
+    log_success "Backup commands are ready via infrastructure/manage.sh"
 
     if [ "$BACKUP_INTERVAL" = "none" ]; then
         return
@@ -266,7 +214,7 @@ setup_backup_scripts() {
         cron_comment="CLIProxyAPI weekly backup"
     fi
 
-    if crontab -l 2>/dev/null | grep -q "$scripts_dir/backup.sh"; then
+    if crontab -l 2>/dev/null | grep -Eq "$manage_script backup|$INSTALL_DIR/scripts/backup.sh"; then
         log_warning "Backup cron job already exists"
         return
     fi
@@ -274,7 +222,7 @@ setup_backup_scripts() {
     (
         crontab -l 2>/dev/null || true
         echo "# $cron_comment"
-        echo "$cron_schedule $scripts_dir/backup.sh >> $INSTALL_DIR/backups/backup.log 2>&1 && $scripts_dir/rotate-backups.sh $BACKUP_RETENTION >> $INSTALL_DIR/backups/backup.log 2>&1"
+        echo "$cron_schedule $manage_script backup >> $INSTALL_DIR/backups/backup.log 2>&1 && $manage_script rotate-backups $BACKUP_RETENTION >> $INSTALL_DIR/backups/backup.log 2>&1"
     ) | crontab -
 
     log_success "Backup cron job installed"
@@ -321,7 +269,7 @@ install_webhook_service() {
         -e "s|{{LOG_DIR}}|/var/log/cliproxyapi|g" \
         "$INSTALL_DIR/infrastructure/webhook.yaml" > /etc/webhook/hooks.yaml
     chmod 600 /etc/webhook/hooks.yaml
-    chmod +x "$INSTALL_DIR/infrastructure/deploy.sh"
+    chmod +x "$INSTALL_DIR/infrastructure/internal/dashboard-deploy.sh"
     chmod +x "$INSTALL_DIR/infrastructure/manage.sh"
 
     cat > /etc/systemd/system/webhook-deploy.service << EOF
@@ -536,12 +484,6 @@ echo ""
 create_env_file
 
 echo ""
-log_info "=== Systemd Service Installation ==="
-echo ""
-
-install_systemd_service
-
-echo ""
 log_info "=== Backup Setup ==="
 echo ""
 
@@ -566,14 +508,16 @@ log_success "CLIProxyAPI Dashboard stack installation completed successfully"
 echo ""
 echo "Next steps:"
 echo "  1. Start the stack:"
-echo "     sudo systemctl start cliproxyapi-stack"
+echo "     cd $INSTALL_DIR/infrastructure"
+echo "     ./manage.sh up"
 echo ""
 echo "  2. Check status:"
-echo "     sudo systemctl status cliproxyapi-stack"
+echo "     cd $INSTALL_DIR/infrastructure"
+echo "     ./manage.sh ps"
 echo ""
 echo "  3. View logs:"
 echo "     cd $INSTALL_DIR/infrastructure"
-echo "     docker compose logs -f"
+echo "     ./manage.sh logs -f"
 echo ""
 echo "  4. Local service endpoints:"
 echo "     Dashboard: http://127.0.0.1:3000"

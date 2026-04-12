@@ -8,7 +8,7 @@ Canonical docs hub: [`docs/README.md`](README.md)
 curl -s http://127.0.0.1:3000/api/health
 ```
 
-The current health route checks both PostgreSQL and the proxy. If it reports `degraded`, investigate the dependency named in the response.
+The current health route checks both PostgreSQL and the proxy. If it reports `degraded`, investigate the dependency named in the response first.
 
 ## Database Connection Errors
 
@@ -73,11 +73,17 @@ cd infrastructure
 curl -I http://127.0.0.1:8317/
 ```
 
-If the UI is up but provider/config actions fail:
+If the UI is up but provider or config actions fail:
 
 - verify `CLIPROXYAPI_MANAGEMENT_URL`
 - verify `MANAGEMENT_API_KEY`
 - confirm the proxy container is healthy
+
+If monitoring, update, or container actions fail specifically:
+
+- verify the dashboard container has a working `DOCKER_HOST`
+- verify `docker-proxy` is healthy
+- verify the target container name matches `CLIPROXYAPI_CONTAINER_NAME`
 
 ## Source-Dev Environment Fails
 
@@ -138,6 +144,7 @@ If dashboard update checks work but the deploy action fails:
 - verify `DEPLOY_SECRET`
 - verify the webhook service is running
 - verify `host.docker.internal:host-gateway` is available to the dashboard container when required
+- re-check the setup steps in [`OPERATIONS.md`](OPERATIONS.md) or [`../infrastructure/WEBHOOK_SETUP.md`](../infrastructure/WEBHOOK_SETUP.md)
 
 Useful checks:
 

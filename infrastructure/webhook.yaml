@@ -1,5 +1,5 @@
 - id: deploy-dashboard
-  execute-command: "{{INSTALL_DIR}}/infrastructure/deploy.sh"
+  execute-command: "{{INSTALL_DIR}}/infrastructure/internal/dashboard-deploy.sh"
   command-working-directory: "{{INSTALL_DIR}}/infrastructure"
   trigger-rule:
     and:

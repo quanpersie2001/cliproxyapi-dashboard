@@ -5,7 +5,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-MANAGE_SCRIPT="${SCRIPT_DIR}/manage.sh"
+MANAGE_SCRIPT="${SCRIPT_DIR}/../manage.sh"
 LOG_DIR="${CLIPROXYAPI_DEPLOY_LOG_DIR:-/var/log/cliproxyapi}"
 LOG_FILE="${LOG_DIR}/dashboard-deploy.log"
 STATUS_FILE="${LOG_DIR}/dashboard-deploy-status.json"

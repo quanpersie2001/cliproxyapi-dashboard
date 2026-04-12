@@ -59,8 +59,8 @@ cd cliproxyapi-dashboard
 What the script does:
 
 - creates a root `.env` containing `JWT_SECRET`, `MANAGEMENT_API_KEY`, and `POSTGRES_PASSWORD`
-- creates `config.local.yaml` with a local CLIProxyAPI config and a generated local API key
-- starts [`docker-compose.local.yml`](../docker-compose.local.yml)
+- creates `config.local.yaml` with a local CLIProxyAPI config and a generated local API key if the file does not already exist
+- starts [`../docker-compose.local.yml`](../docker-compose.local.yml)
 - waits for `postgres`, `cliproxyapi`, `docker-proxy`, and `dashboard` to become healthy
 
 Local appliance endpoints:
@@ -74,6 +74,8 @@ Lifecycle helpers:
 ./setup-local.sh --down
 ./setup-local.sh --reset
 ```
+
+`--reset` removes volumes and deletes the generated root `.env` plus `config.local.yaml`.
 
 ## Option 2: Source Development
 
@@ -101,8 +103,9 @@ cd dashboard
 
 What the source-dev script does:
 
-- starts [`dashboard/docker-compose.dev.yml`](../dashboard/docker-compose.dev.yml)
+- starts [`../dashboard/docker-compose.dev.yml`](../dashboard/docker-compose.dev.yml)
 - waits for PostgreSQL and CLIProxyAPI
+- creates `dashboard/config.dev.yaml` from [`../dashboard/config.dev.yaml.example`](../dashboard/config.dev.yaml.example) when needed
 - bootstraps fresh databases with `prisma db push` when needed
 - repairs the known local migration drift for `20260329_add_custom_provider_encrypted_key`
 - runs `prisma migrate deploy`
@@ -115,6 +118,14 @@ Source-dev endpoints:
 - Dashboard: `http://localhost:3000`
 - Proxy API: `http://localhost:28317`
 - PostgreSQL: `localhost:5433`
+
+Source-dev callback host ports:
+
+- `28085`
+- `21455`
+- `24545`
+- `21121`
+- `21451`
 
 Lifecycle helpers:
 
@@ -132,7 +143,7 @@ cd dashboard
 
 - Ubuntu 20.04+ or Debian 11+
 - root or `sudo`
-- outbound network access for package/image downloads
+- outbound network access for package and image downloads
 - optional public reachability for OAuth callback ports if provider logins will happen remotely
 
 ### Commands
@@ -146,12 +157,11 @@ sudo ./install.sh
 The installer currently:
 
 1. Detects Ubuntu/Debian and installs Docker Engine + Compose if needed.
-2. Prompts for public dashboard/API URLs.
-3. Optionally configures UFW for OAuth callback ports.
+2. Prompts for public dashboard and API URLs.
+3. Optionally configures firewall rules for OAuth callback ports.
 4. Generates `JWT_SECRET`, `MANAGEMENT_API_KEY`, `POSTGRES_PASSWORD`, `COLLECTOR_API_KEY`, and `PROVIDER_ENCRYPTION_KEY`.
 5. Writes `infrastructure/.env`.
-6. Installs `cliproxyapi-stack.service`.
-7. Optionally installs backup cron jobs, the usage collector cron, and the dashboard deploy webhook.
+6. Optionally installs backup cron jobs, the usage collector cron, and the dashboard deploy webhook.
 
 After install:
 
@@ -159,13 +169,6 @@ After install:
 cd infrastructure
 ./manage.sh up
 ./manage.sh ps
-```
-
-If you prefer `systemd`:
-
-```bash
-sudo systemctl start cliproxyapi-stack
-sudo systemctl status cliproxyapi-stack
 ```
 
 ## Manual Server Installation
@@ -224,34 +227,14 @@ Visit the dashboard. If there are no users yet, you will be redirected to `/setu
 
 After the first admin is created:
 
-- `/setup` is disabled
-- normal login is enabled
-- provider, API-key, monitoring, config, usage, and update flows become available
+- `/setup` is no longer the normal entrypoint
+- standard login flow is enabled
 
-## Reverse Proxy / Public Access
+## Next Documents
 
-By default, the bundled compose stack binds only these local endpoints:
+After installation, the next documents to read are usually:
 
-- `127.0.0.1:3000` for the dashboard
-- `127.0.0.1:8317` for the proxy API
-
-If you expose the stack publicly:
-
-- terminate TLS in your own reverse proxy or ingress
-- keep `CLIPROXYAPI_MANAGEMENT_URL` internal
-- set `DASHBOARD_URL` and `API_URL` so the dashboard shows correct public links
-
-Typical upstream targets:
-
-- dashboard upstream: `127.0.0.1:3000`
-- proxy upstream: `127.0.0.1:8317`
-
-## Firewall Notes
-
-Only open OAuth callback ports if provider login flows need to complete from outside the host.
-
-Recommended reading:
-
-- [`UFW.md`](UFW.md)
+- [`CONFIGURATION.md`](CONFIGURATION.md)
+- [`ENV.md`](ENV.md)
+- [`OPERATIONS.md`](OPERATIONS.md)
 - [`SECURITY.md`](SECURITY.md)
-- [`WEBHOOK-DEPLOY.md`](WEBHOOK-DEPLOY.md)
