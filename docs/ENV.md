@@ -38,7 +38,7 @@ These values are read by the current app or compose stack but are not written by
 
 | Variable | Default | Notes |
 | --- | --- | --- |
-| `GITHUB_REPO` | `itsmylife44/cliproxyapi-dashboard` | Used by dashboard update checks to fetch `version.json` |
+| `GITHUB_REPO` | `quanpersie2001/cliproxyapi-dashboard` | Used by dashboard update checks to fetch `version.json` |
 | `DASHBOARD_VERSION` | `dev` | Usually injected at image build time |
 | `DOCKER_HOST` | none | Used by Docker CLI operations inside the dashboard container |
 | `API_URL` | none | Also consumed in UI links; `install.sh` writes it for bundled installs |

@@ -89,7 +89,7 @@ services:
       start_period: 5s
 
   dashboard:
-    image: ghcr.io/itsmylife44/cliproxyapi-dashboard/dashboard:latest
+    image: ghcr.io/quanpersie2001/cliproxyapi-dashboard/dashboard:latest
     container_name: cliproxyapi-dashboard
     restart: unless-stopped
     networks:
@@ -106,6 +106,7 @@ services:
       DOCKER_HOST: tcp://docker-proxy:2375
       DASHBOARD_URL: http://localhost:3000
       API_URL: http://localhost:8317
+      GITHUB_REPO: quanpersie2001/cliproxyapi-dashboard
     depends_on:
       postgres:
         condition: service_healthy

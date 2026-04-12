@@ -1,10 +1,11 @@
 <div align="center">
+  <img src="./dashboard/src/app/icon.svg" alt="CLIProxyAPI Dashboard logo" width="112" height="112" />
   <h1>CLIProxyAPI Dashboard</h1>
   <p><strong>Proxy-only control plane for <a href="https://github.com/router-for-me/CLIProxyAPIPlus">CLIProxyAPIPlus</a></strong></p>
   <p>Next.js 16 / React 19 dashboard for provider credentials, proxy runtime settings, usage history, quotas, updates, logs, and safe container operations.</p>
 
   <p>
-    <a href="https://github.com/itsmylife44/cliproxyapi-dashboard/blob/main/LICENSE"><img alt="MIT License" src="https://img.shields.io/github/license/itsmylife44/cliproxyapi-dashboard?style=for-the-badge" /></a>
+    <a href="https://github.com/quanpersie2001/cliproxyapi-dashboard/blob/main/LICENSE"><img alt="MIT License" src="https://img.shields.io/github/license/quanpersie2001/cliproxyapi-dashboard?style=for-the-badge" /></a>
   </p>
 
   <p>
@@ -75,7 +76,7 @@ OAuth callback ports remain published because upstream login flows require them.
 ### 1. Local Appliance Setup
 
 ```bash
-git clone https://github.com/itsmylife44/cliproxyapi-dashboard.git
+git clone https://github.com/quanpersie2001/cliproxyapi-dashboard.git
 cd cliproxyapi-dashboard
 ./setup-local.sh
 # Windows: .\setup-local.ps1
@@ -109,7 +110,7 @@ Source-dev endpoints:
 ### 3. Server Install
 
 ```bash
-git clone https://github.com/itsmylife44/cliproxyapi-dashboard.git
+git clone https://github.com/quanpersie2001/cliproxyapi-dashboard.git
 cd cliproxyapi-dashboard
 sudo ./install.sh
 ```

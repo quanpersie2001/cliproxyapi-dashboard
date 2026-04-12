@@ -43,7 +43,7 @@ Use the root setup scripts when you want the full stack quickly without building
 ### Commands
 
 ```bash
-git clone https://github.com/itsmylife44/cliproxyapi-dashboard.git
+git clone https://github.com/quanpersie2001/cliproxyapi-dashboard.git
 cd cliproxyapi-dashboard
 ./setup-local.sh
 ```
@@ -51,7 +51,7 @@ cd cliproxyapi-dashboard
 Windows:
 
 ```powershell
-git clone https://github.com/itsmylife44/cliproxyapi-dashboard.git
+git clone https://github.com/quanpersie2001/cliproxyapi-dashboard.git
 cd cliproxyapi-dashboard
 .\setup-local.ps1
 ```
@@ -149,7 +149,7 @@ cd dashboard
 ### Commands
 
 ```bash
-git clone https://github.com/itsmylife44/cliproxyapi-dashboard.git
+git clone https://github.com/quanpersie2001/cliproxyapi-dashboard.git
 cd cliproxyapi-dashboard
 sudo ./install.sh
 ```

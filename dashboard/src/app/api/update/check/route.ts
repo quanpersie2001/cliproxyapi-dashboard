@@ -8,6 +8,7 @@ import { updateCheckCache, CACHE_TTL } from "@/lib/cache";
 import { getProxyContainerName } from "@/lib/proxy-runtime";
 
 const execFileAsync = promisify(execFile);
+const PROXY_GITHUB_REPO = "router-for-me/CLIProxyAPIPlus";
 
 interface DockerHubTag {
   name: string;
@@ -76,7 +77,7 @@ async function getCurrentImageDigest(
 }
 
 async function checkGitHubBuildStatus(): Promise<boolean> {
-  const cacheKey = "github-build-status:router-for-me/CLIProxyAPI";
+  const cacheKey = `github-build-status:${PROXY_GITHUB_REPO}`;
   const cached = updateCheckCache.get(cacheKey) as boolean | null;
   if (cached !== null) return cached;
 
@@ -85,7 +86,7 @@ async function checkGitHubBuildStatus(): Promise<boolean> {
       Accept: "application/vnd.github+json",
       "User-Agent": "cliproxyapi-dashboard/update-check",
     };
-    const base = "https://api.github.com/repos/router-for-me/CLIProxyAPI/actions/runs?per_page=1";
+    const base = `https://api.github.com/repos/${PROXY_GITHUB_REPO}/actions/runs?per_page=1`;
 
     const [inProgressRes, queuedRes] = await Promise.all([
       fetch(`${base}&status=in_progress`, { cache: "no-store", headers }),

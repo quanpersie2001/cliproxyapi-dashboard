@@ -117,7 +117,7 @@ services:
 
   # Dashboard Service
   dashboard:
-    image: ghcr.io/itsmylife44/cliproxyapi-dashboard/dashboard:latest
+    image: ghcr.io/quanpersie2001/cliproxyapi-dashboard/dashboard:latest
     container_name: cliproxyapi-dashboard
     restart: unless-stopped
     # Resource limits (calibrated from real usage: ~98MiB actual, spiky CPU)
@@ -137,7 +137,7 @@ services:
       DASHBOARD_URL: ${DASHBOARD_URL:-http://localhost:3000}
       API_URL: ${API_URL:-http://localhost:8317}
       DOCKER_HOST: tcp://docker-proxy:2375
-      GITHUB_REPO: ${GITHUB_REPO:-itsmylife44/cliproxyapi-dashboard}
+      GITHUB_REPO: ${GITHUB_REPO:-quanpersie2001/cliproxyapi-dashboard}
     env_file:
       - ./.env
     volumes:
