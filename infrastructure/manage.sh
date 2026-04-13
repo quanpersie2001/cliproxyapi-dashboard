@@ -4,6 +4,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 COMPOSE_FILE="${SCRIPT_DIR}/docker-compose.yml"
+COMPOSE_OVERRIDE_FILE="${SCRIPT_DIR}/docker-compose.override.yml"
 ENV_FILE="${SCRIPT_DIR}/.env"
 CONFIG_FILE="${SCRIPT_DIR}/config/config.yaml"
 BACKUP_DIR="${PROJECT_DIR}/backups"
@@ -87,7 +88,12 @@ seed_bootstrap_api_key_if_empty() {
 }
 
 docker_compose() {
-    docker compose --env-file "$ENV_FILE" -f "$COMPOSE_FILE" "$@"
+    local compose_args=(--env-file "$ENV_FILE" -f "$COMPOSE_FILE")
+    if [ -f "$COMPOSE_OVERRIDE_FILE" ]; then
+        compose_args+=(-f "$COMPOSE_OVERRIDE_FILE")
+    fi
+
+    docker compose "${compose_args[@]}" "$@"
 }
 
 find_auth_volume() {

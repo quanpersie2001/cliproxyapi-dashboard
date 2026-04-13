@@ -758,7 +758,8 @@ setup_backup_scripts() {
 setup_usage_collector() {
     local collector_url="http://127.0.0.1:3000"
     local cron_schedule="*/5 * * * *"
-    local cron_cmd="curl -sf -X POST ${collector_url}/api/usage/collect -H 'Authorization: Bearer ${COLLECTOR_API_KEY}' -o /dev/null"
+    local env_file="$INSTALL_DIR/infrastructure/.env"
+    local cron_cmd=". \"${env_file}\" && curl -fsS -X POST ${collector_url}/api/usage/collect -H \"Authorization: Bearer \$COLLECTOR_API_KEY\" -o /dev/null"
 
     ensure_cron_available
     ensure_command curl curl

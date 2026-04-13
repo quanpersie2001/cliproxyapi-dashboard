@@ -100,6 +100,7 @@ export async function GET(request: NextRequest) {
         "Content-Type": "application/json",
         "X-Deploy-Token": DEPLOY_SECRET,
       },
+      body: JSON.stringify({}),
     });
 
     if (!response.ok) {

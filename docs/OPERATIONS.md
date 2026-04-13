@@ -144,6 +144,7 @@ curl -sf -X POST http://127.0.0.1:3000/api/usage/collect \
 Important behavior:
 
 - `install.sh` installs a cron trigger every 5 minutes
+- the generated cron job sources `infrastructure/.env` on each run so `COLLECTOR_API_KEY` rotations do not leave a stale bearer token in crontab
 - concurrent runs are serialized through `collector_state`
 - overlapping runs return `202` instead of double-processing
 - long-term analytics are exposed via `GET /api/usage/history`
