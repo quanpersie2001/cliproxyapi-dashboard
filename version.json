@@ -1,6 +1,6 @@
 {
-  "version": "0.2.3",
-  "tag": "dashboard-v0.2.3",
-  "releaseUrl": "https://github.com/quanpersie2001/cliproxyapi-dashboard/releases/tag/dashboard-v0.2.3",
-  "releaseNotes": "## [0.2.3](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.2...dashboard-v0.2.3) (2026-04-13)\n\n\n### Features\n\n* **dashboard:** add model pricing management and cost estimation ([26f77d6](https://github.com/quanpersie2001/cliproxyapi-dashboard/commit/26f77d616e6d1f3019946c02eb420c43bcfa960a))"
+  "version": "0.2.4",
+  "tag": "dashboard-v0.2.4",
+  "releaseUrl": "https://github.com/quanpersie2001/cliproxyapi-dashboard/releases/tag/dashboard-v0.2.4",
+  "releaseNotes": "## [0.2.4](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.3...dashboard-v0.2.4) (2026-04-13)\n\n\n### Bug Fixes\n\n* **infra:** resolve stale credentials and missing request body ([a1e741d](https://github.com/quanpersie2001/cliproxyapi-dashboard/commit/a1e741d88777248d4cb168b93c6510b24630ef36))"
 }
