@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.2...dashboard-v0.2.3) (2026-04-13)
+
+
+### Features
+
+* **dashboard:** add model pricing management and cost estimation ([26f77d6](https://github.com/quanpersie2001/cliproxyapi-dashboard/commit/26f77d616e6d1f3019946c02eb420c43bcfa960a))
+
 ## [0.2.2](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.1...dashboard-v0.2.2) (2026-04-12)
 
 
