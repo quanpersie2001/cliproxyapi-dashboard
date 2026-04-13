@@ -13,6 +13,8 @@ export const API_ENDPOINTS = {
     DEPLOY: "/api/admin/deploy",
     USERS: "/api/admin/users",
     SETTINGS: "/api/admin/settings",
+    MODEL_PRICING: "/api/admin/model-pricing",
+    MODEL_PRICING_SYNC: "/api/admin/model-pricing/sync",
     LOGS: "/api/admin/logs",
     REVOKE_SESSIONS: "/api/admin/revoke-sessions",
   },
@@ -24,6 +26,7 @@ export const API_ENDPOINTS = {
   QUOTA: {
     BASE: "/api/quota",
   },
+  MODEL_PRICING: "/api/model-pricing",
   USAGE: {
     COLLECT: "/api/usage/collect",
     HISTORY: "/api/usage/history",

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Area,
   AreaChart,
@@ -16,9 +16,8 @@ import {
 import { DashboardMiniCharts } from "@/components/dashboard-mini-charts";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Modal, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@/components/ui/modal";
 import { UsageCharts } from "@/features/usage/components/usage-charts";
+import { UsageModelPricingPanel } from "@/features/usage/components/usage-model-pricing-panel";
 import { UsageRequestEvents } from "@/features/usage/components/usage-request-events";
 import { UsageTable } from "@/features/usage/components/usage-table";
 import {
@@ -30,6 +29,17 @@ import {
 } from "@/components/ui/chart-theme";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import type { UsageHistorySnapshot } from "@/lib/usage/history";
+import {
+  deleteModelPricingRecord,
+  saveModelPricingRecord,
+  MODEL_PRICING_ENDPOINT,
+  syncModelPricingRecords,
+  type ModelPricingDraft,
+  type ModelPrice,
+  type ModelPricingRecord,
+  modelPricingToLookup,
+  normalizeModelPricing,
+} from "@/features/usage/model-pricing";
 import { cn } from "@/lib/utils";
 
 type UsageAnalyticsData = UsageHistorySnapshot["data"];
@@ -37,21 +47,15 @@ type UsageDetailRecord = UsageAnalyticsData["details"][number];
 type TimeRange = "7h" | "24h" | "7d" | "all";
 type TrendPeriod = "hour" | "day";
 
-interface ModelPrice {
-  prompt: number;
-  completion: number;
-  cache: number;
-}
-
 interface UsageAnalyticsProps {
   initialSnapshot: UsageHistorySnapshot;
+  initialModelPricing?: ModelPricingRecord[];
   title?: string;
   embedded?: boolean;
 }
 
 const TIME_RANGE_STORAGE_KEY = "dashboard-usage-time-range-v1";
 const CHART_LINES_STORAGE_KEY = "dashboard-usage-chart-lines-v1";
-const MODEL_PRICES_STORAGE_KEY = "dashboard-usage-model-prices-v1";
 const MAX_CHART_LINES = 9;
 const SERIES_COLORS = [
   CHART_COLORS.primary,
@@ -151,17 +155,6 @@ function loadChartLines(): string[] {
     return lines.length > 0 ? lines : ["all"];
   } catch {
     return ["all"];
-  }
-}
-
-function loadModelPrices(): Record<string, ModelPrice> {
-  try {
-    const raw = localStorage.getItem(MODEL_PRICES_STORAGE_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw) as Record<string, ModelPrice>;
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
   }
 }
 
@@ -499,12 +492,14 @@ function MetricCard({
 
 export function UsageAnalytics({
   initialSnapshot,
+  initialModelPricing = [],
   title = "Usage Analytics",
   embedded = false,
 }: UsageAnalyticsProps) {
   const [windowRange, setWindowRange] = useState<TimeRange>(() => (typeof window === "undefined" ? "7d" : loadTimeRange()));
   const [chartLines, setChartLines] = useState<string[]>(() => (typeof window === "undefined" ? ["all"] : loadChartLines()));
-  const [modelPrices, setModelPrices] = useState<Record<string, ModelPrice>>(() => (typeof window === "undefined" ? {} : loadModelPrices()));
+  const [modelPricingRecords, setModelPricingRecords] = useState<ModelPricingRecord[]>(() => initialModelPricing);
+  const [previewModelPricingRecords, setPreviewModelPricingRecords] = useState<ModelPricingRecord[]>([]);
   const [requestsPeriod, setRequestsPeriod] = useState<TrendPeriod>("day");
   const [tokensPeriod, setTokensPeriod] = useState<TrendPeriod>("day");
   const [tokenBreakdownPeriod, setTokenBreakdownPeriod] = useState<TrendPeriod>("hour");
@@ -512,32 +507,67 @@ export function UsageAnalytics({
   const [snapshot, setSnapshot] = useState<UsageHistorySnapshot>(initialSnapshot);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [pricingLoading, setPricingLoading] = useState(false);
+  const [pricingError, setPricingError] = useState<string | null>(null);
   const [lastUpdatedAt, setLastUpdatedAt] = useState<string>(new Date().toISOString());
-  const [priceFormModel, setPriceFormModel] = useState("");
-  const [priceFormPrompt, setPriceFormPrompt] = useState("");
-  const [priceFormCompletion, setPriceFormCompletion] = useState("");
-  const [priceFormCache, setPriceFormCache] = useState("");
-  const [editingModel, setEditingModel] = useState<string | null>(null);
-  const [editPrompt, setEditPrompt] = useState("");
-  const [editCompletion, setEditCompletion] = useState("");
-  const [editCache, setEditCache] = useState("");
   const hasHydratedRef = useRef(false);
 
-  const fetchSnapshot = async (targetWindow: TimeRange, showLoading: boolean) => {
+  const loadSnapshot = useCallback(async (targetWindow: TimeRange) => {
+    const response = await fetch(`${API_ENDPOINTS.USAGE.HISTORY}?window=${targetWindow}`);
+    if (!response.ok) {
+      throw new Error("Failed to load usage analytics");
+    }
+    const json = await response.json() as UsageHistorySnapshot;
+    setSnapshot(json);
+    setLastUpdatedAt(new Date().toISOString());
+    setError(null);
+  }, []);
+
+  const fetchSnapshot = useCallback(async (targetWindow: TimeRange, showLoading: boolean) => {
     if (showLoading) setLoading(true);
     try {
-      const response = await fetch(`${API_ENDPOINTS.USAGE.HISTORY}?window=${targetWindow}`);
-      if (!response.ok) {
-        throw new Error("Failed to load usage analytics");
-      }
-      const json = await response.json() as UsageHistorySnapshot;
-      setSnapshot(json);
-      setLastUpdatedAt(new Date().toISOString());
-      setError(null);
+      await loadSnapshot(targetWindow);
     } catch (fetchError) {
       setError(fetchError instanceof Error ? fetchError.message : "Failed to load usage analytics");
     } finally {
       if (showLoading) setLoading(false);
+    }
+  }, [loadSnapshot]);
+
+  const triggerCollector = async () => {
+    const response = await fetch(API_ENDPOINTS.USAGE.COLLECT, {
+      method: "POST",
+    });
+
+    if (response.ok || response.status === 202) {
+      return;
+    }
+
+    let errorMessage = "Failed to sync latest usage data";
+    try {
+      const payload = await response.json() as { message?: string; error?: string };
+      errorMessage = payload.message ?? payload.error ?? errorMessage;
+    } catch {
+      // Ignore malformed error bodies and fall back to the generic message.
+    }
+
+    throw new Error(errorMessage);
+  };
+
+  const handleRefresh = async () => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      if (snapshot.isAdmin) {
+        await triggerCollector();
+      }
+
+      await loadSnapshot(windowRange);
+    } catch (refreshError) {
+      setError(refreshError instanceof Error ? refreshError.message : "Failed to refresh usage analytics");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -550,7 +580,7 @@ export function UsageAnalytics({
       return;
     }
     void fetchSnapshot(windowRange, true);
-  }, [windowRange]);
+  }, [fetchSnapshot, windowRange]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -558,7 +588,36 @@ export function UsageAnalytics({
       void fetchSnapshot(windowRange, false);
     }, 300_000);
     return () => clearInterval(interval);
-  }, [windowRange]);
+  }, [fetchSnapshot, windowRange]);
+
+  const refreshModelPricing = async (showLoading: boolean) => {
+    if (showLoading) setPricingLoading(true);
+    try {
+      const response = await fetch(MODEL_PRICING_ENDPOINT, {
+        cache: "no-store",
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        if (response.status !== 404 && response.status !== 204) {
+          setPricingError("Failed to load global pricing");
+        }
+        return;
+      }
+
+      const payload = await response.json() as unknown;
+      setModelPricingRecords(normalizeModelPricing(payload));
+      setPricingError(null);
+    } catch {
+      setPricingError("Failed to load global pricing");
+    } finally {
+      if (showLoading) setPricingLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    void refreshModelPricing(false);
+  }, []);
 
   useEffect(() => {
     try {
@@ -572,14 +631,9 @@ export function UsageAnalytics({
     } catch {}
   }, [chartLines]);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(MODEL_PRICES_STORAGE_KEY, JSON.stringify(modelPrices));
-    } catch {}
-  }, [modelPrices]);
-
   const details = snapshot.data.details;
   const modelNames = useMemo(() => [...new Set(details.map((detail) => detail.model))].sort(), [details]);
+  const modelPriceLookup = useMemo(() => modelPricingToLookup(modelPricingRecords), [modelPricingRecords]);
   const recentRate = snapshot.data.recentRate;
   const totals = snapshot.data.totals;
   const totalAttempts = totals.successCount + totals.failureCount;
@@ -590,8 +644,8 @@ export function UsageAnalytics({
   const latencySamples = latencySummary.sampleCount;
   const hasLatencySamples = latencySamples > 0;
   const totalCost = useMemo(
-    () => details.reduce((sum, detail) => sum + calculateCost(detail, modelPrices), 0),
-    [details, modelPrices]
+    () => details.reduce((sum, detail) => sum + calculateCost(detail, modelPriceLookup), 0),
+    [details, modelPriceLookup]
   );
   const requestTrendData = useMemo(
     () => buildTrendData(details, requestsPeriod, "requests", chartLines, windowRange),
@@ -606,8 +660,8 @@ export function UsageAnalytics({
     [details, tokenBreakdownPeriod, windowRange]
   );
   const costTrendData = useMemo(
-    () => buildCostTrendData(details, modelPrices, costPeriod, windowRange),
-    [costPeriod, details, modelPrices, windowRange]
+    () => buildCostTrendData(details, modelPriceLookup, costPeriod, windowRange),
+    [costPeriod, details, modelPriceLookup, windowRange]
   );
   const serviceHealthRows = useMemo(
     () => chunkBlocks(snapshot.data.serviceHealth.blockDetails, snapshot.data.serviceHealth.cols),
@@ -622,7 +676,7 @@ export function UsageAnalytics({
       : serviceHealthRate >= 80
         ? "warning"
         : "danger";
-  const pricedModelsCount = Object.keys(modelPrices).length;
+  const pricedModelsCount = Object.keys(modelPriceLookup).length;
   const topModels = snapshot.data.modelBreakdown.slice(0, 5);
 
   const addChartLine = () => {
@@ -639,49 +693,59 @@ export function UsageAnalytics({
     setChartLines((current) => (current.length <= 1 ? current : current.filter((_, lineIndex) => lineIndex !== index)));
   };
 
-  const savePrice = () => {
-    if (!priceFormModel) return;
-    setModelPrices((current) => ({
-      ...current,
-      [priceFormModel]: {
-        prompt: Number(priceFormPrompt) || 0,
-        completion: Number(priceFormCompletion) || 0,
-        cache: priceFormCache.trim() === "" ? Number(priceFormPrompt) || 0 : Number(priceFormCache) || 0,
-      },
-    }));
-    setPriceFormModel("");
-    setPriceFormPrompt("");
-    setPriceFormCompletion("");
-    setPriceFormCache("");
+  const handlePricingReload = async () => {
+    await refreshModelPricing(true);
   };
 
-  const openEditPrice = (model: string) => {
-    const current = modelPrices[model];
-    setEditingModel(model);
-    setEditPrompt(String(current?.prompt ?? ""));
-    setEditCompletion(String(current?.completion ?? ""));
-    setEditCache(String(current?.cache ?? ""));
+  const handlePricingSyncOfficial = async () => {
+    setPricingLoading(true);
+    try {
+      const preview = await syncModelPricingRecords();
+      if (!preview) {
+        setPricingError("Failed to sync official model pricing");
+        return;
+      }
+
+      const existingByKey = new Map(
+        modelPricingRecords.map((record) => [`${record.provider}:${record.model}`, record] as const)
+      );
+      setPreviewModelPricingRecords(
+        preview.records.map((record) => {
+          const existing = existingByKey.get(`${record.provider}:${record.model}`);
+          return existing ? { ...record, id: existing.id } : record;
+        })
+      );
+      setPricingError(null);
+    } finally {
+      setPricingLoading(false);
+    }
   };
 
-  const saveEditPrice = () => {
-    if (!editingModel) return;
-    setModelPrices((current) => ({
-      ...current,
-      [editingModel]: {
-        prompt: Number(editPrompt) || 0,
-        completion: Number(editCompletion) || 0,
-        cache: editCache.trim() === "" ? Number(editPrompt) || 0 : Number(editCache) || 0,
-      },
-    }));
-    setEditingModel(null);
+  const handlePricingSave = async (draft: ModelPricingDraft, recordId?: string) => {
+    const saved = await saveModelPricingRecord(draft, recordId);
+    if (!saved) {
+      setPricingError("Failed to save model pricing");
+      return false;
+    }
+
+    await refreshModelPricing(false);
+    setPreviewModelPricingRecords((current) =>
+      current.filter((record) => !(record.provider === draft.provider.trim() && record.model === draft.model.trim()))
+    );
+    setPricingError(null);
+    return true;
   };
 
-  const deletePrice = (model: string) => {
-    setModelPrices((current) => {
-      const next = { ...current };
-      delete next[model];
-      return next;
-    });
+  const handlePricingDelete = async (recordId: string) => {
+    const removed = await deleteModelPricingRecord(recordId);
+    if (!removed) {
+      setPricingError("Failed to delete model pricing");
+      return false;
+    }
+
+    await refreshModelPricing(false);
+    setPricingError(null);
+    return true;
   };
 
   const detailLinkClassName = "dashboard-pill-link";
@@ -813,7 +877,7 @@ export function UsageAnalytics({
             <MetricCard
               label="Estimated cost"
               value={pricedModelsCount > 0 ? formatUsd(totalCost) : "--"}
-              detail={pricedModelsCount > 0 ? `${pricedModelsCount} models priced locally` : "Configure model prices on the analytics page to unlock cost estimates"}
+              detail={pricedModelsCount > 0 ? `${pricedModelsCount} models priced globally` : "Configure global model prices to unlock cost estimates"}
             />
           </div>
 
@@ -869,8 +933,8 @@ export function UsageAnalytics({
               ))}
             </div>
             <div className="flex flex-wrap gap-2">
-              <Button onClick={() => void fetchSnapshot(windowRange, true)} disabled={loading}>
-                {loading ? "Refreshing..." : "Refresh"}
+              <Button onClick={() => void handleRefresh()} disabled={loading}>
+                {loading ? (snapshot.isAdmin ? "Syncing..." : "Refreshing...") : "Refresh"}
               </Button>
               <Link href="/dashboard" className={detailLinkClassName}>
                 Back to overview
@@ -917,7 +981,7 @@ export function UsageAnalytics({
         <MetricCard
           label="Estimated cost"
           value={pricedModelsCount > 0 ? formatUsd(totalCost) : "--"}
-          detail={pricedModelsCount > 0 ? `${pricedModelsCount} models priced locally` : "Add model prices below to enable cost analytics"}
+          detail={pricedModelsCount > 0 ? `${pricedModelsCount} models priced globally` : "Add global model prices to enable cost analytics"}
         />
       </section>
 
@@ -1080,15 +1144,15 @@ export function UsageAnalytics({
         <ChartContainer
           title="Cost Trend"
           className="h-[320px] lg:h-[340px]"
-          subtitle={Object.keys(modelPrices).length > 0 ? "Calculated from local model pricing" : "Add prices below to enable"}
+          subtitle={pricedModelsCount > 0 ? "Calculated from global model pricing" : "Add global prices to enable"}
         >
           <div className="mb-3 flex gap-2">
             <Button variant={costPeriod === "hour" ? "primary" : "secondary"} onClick={() => setCostPeriod("hour")}>By Hour</Button>
             <Button variant={costPeriod === "day" ? "primary" : "secondary"} onClick={() => setCostPeriod("day")}>By Day</Button>
           </div>
-          {Object.keys(modelPrices).length === 0 ? (
+          {pricedModelsCount === 0 ? (
             <div className="flex h-[85%] items-center justify-center text-sm text-[var(--text-muted)]">
-              No model prices configured.
+              No global model prices configured.
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="85%">
@@ -1209,53 +1273,19 @@ export function UsageAnalytics({
         </div>
       </section>
 
-      <section className="dashboard-panel-surface p-4">
-        <h2 className="text-sm font-semibold text-[var(--text-primary)]">Model Price Settings</h2>
-        <p className="mt-1 text-xs text-[var(--text-muted)]">
-          Prices are stored locally in your browser and used to calculate estimated cost charts.
-        </p>
-        <div className="mt-4 grid gap-3 xl:grid-cols-[1.2fr_1fr_1fr_1fr_auto]">
-          <SelectField value={priceFormModel} onChange={setPriceFormModel} options={[{ value: "", label: "Select model" }, ...modelNames.map((model) => ({ value: model, label: model }))]} />
-          <Input name="prompt-price" value={priceFormPrompt} onChange={setPriceFormPrompt} placeholder="Prompt ($/1M)" type="number" />
-          <Input name="completion-price" value={priceFormCompletion} onChange={setPriceFormCompletion} placeholder="Completion ($/1M)" type="number" />
-          <Input name="cache-price" value={priceFormCache} onChange={setPriceFormCache} placeholder="Cache ($/1M)" type="number" />
-          <Button onClick={savePrice} disabled={!priceFormModel}>Save</Button>
-        </div>
-        <div className="mt-4 space-y-2">
-          {Object.entries(modelPrices).length > 0 ? Object.entries(modelPrices).map(([model, price]) => (
-            <div key={model} className="dashboard-card-surface flex flex-col gap-3 p-3 lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <div className="font-medium text-[var(--text-primary)]">{model}</div>
-                <div className="mt-1 text-xs text-[var(--text-muted)]">
-                  Prompt {price.prompt.toFixed(4)} / Completion {price.completion.toFixed(4)} / Cache {price.cache.toFixed(4)}
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Button variant="secondary" onClick={() => openEditPrice(model)}>Edit</Button>
-                <Button variant="ghost" onClick={() => deletePrice(model)}>Delete</Button>
-              </div>
-            </div>
-          )) : (
-            <div className="text-sm text-[var(--text-muted)]">No model prices configured yet.</div>
-          )}
-        </div>
-      </section>
-
-      <Modal isOpen={editingModel !== null} onClose={() => setEditingModel(null)}>
-        <ModalHeader>
-          <ModalTitle>Edit Model Price</ModalTitle>
-        </ModalHeader>
-        <ModalContent className="space-y-3">
-          <div className="text-sm text-[var(--text-secondary)]">{editingModel}</div>
-          <Input name="edit-prompt-price" value={editPrompt} onChange={setEditPrompt} placeholder="Prompt ($/1M)" type="number" />
-          <Input name="edit-completion-price" value={editCompletion} onChange={setEditCompletion} placeholder="Completion ($/1M)" type="number" />
-          <Input name="edit-cache-price" value={editCache} onChange={setEditCache} placeholder="Cache ($/1M)" type="number" />
-        </ModalContent>
-        <ModalFooter>
-          <Button variant="ghost" onClick={() => setEditingModel(null)}>Cancel</Button>
-          <Button onClick={saveEditPrice}>Save</Button>
-        </ModalFooter>
-      </Modal>
+      <UsageModelPricingPanel
+        records={modelPricingRecords}
+        previewRecords={previewModelPricingRecords}
+        modelNames={modelNames}
+        isAdmin={snapshot.isAdmin}
+        loading={pricingLoading}
+        error={pricingError}
+        onCreateOrUpdate={handlePricingSave}
+        onDelete={handlePricingDelete}
+        onReload={handlePricingReload}
+        onSyncOfficial={handlePricingSyncOfficial}
+        onClearPreview={() => setPreviewModelPricingRecords([])}
+      />
     </div>
   );
 }

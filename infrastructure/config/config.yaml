@@ -48,6 +48,8 @@ auth-dir: "/root/.cli-proxy-api"
 # Managed automatically by the Dashboard via Management API sync.
 # Keys created in the Dashboard are synced to CLIProxyAPI on creation/deletion.
 # To add keys manually, use the Management API: PUT /v0/management/api-keys
+# If you start the bundled production stack with ./manage.sh, an empty list is
+# replaced with a per-install lockdown key before the proxy boots.
 api-keys: []
 # ============================================================================
 # LOGGING & DEBUGGING

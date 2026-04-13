@@ -1,10 +1,15 @@
 import "server-only";
 import { prisma } from "@/lib/db";
+import { buildCliProxyApiKeyPayload } from "@/lib/api-keys/payload";
 import { logger } from "@/lib/logger";
 
 const MANAGEMENT_BASE_URL =
   process.env.CLIPROXYAPI_MANAGEMENT_URL ||
   "http://cliproxyapi:8317/v0/management";
+const BACKGROUND_SYNC_INTERVAL_MS = 30_000;
+
+let scheduledSync: Promise<SyncResult> | null = null;
+let lastScheduledSyncAt = 0;
 
 /**
  * Sync result indicating successful synchronization.
@@ -39,6 +44,24 @@ interface SyncFailure {
  * }
  */
 export type SyncResult = SyncSuccess | SyncFailure;
+
+export function scheduleKeysToCliProxyApiSync(): Promise<SyncResult> | null {
+  const now = Date.now();
+  if (scheduledSync) {
+    return scheduledSync;
+  }
+
+  if (now - lastScheduledSyncAt < BACKGROUND_SYNC_INTERVAL_MS) {
+    return null;
+  }
+
+  lastScheduledSyncAt = now;
+  scheduledSync = syncKeysToCliProxyApi().finally(() => {
+    scheduledSync = null;
+  });
+
+  return scheduledSync;
+}
 
 async function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -82,9 +105,7 @@ export async function syncKeysToCliProxyApi(): Promise<SyncResult> {
     });
 
     const keyList = allKeys.map((uk) => uk.key);
-
-    // CLIProxyAPI expects a plain array, not {"api-keys": [...]}
-    const payload = keyList;
+    const payload = buildCliProxyApiKeyPayload(keyList, apiKey);
 
     let lastError: Error | null = null;
     const maxRetries = 3;
@@ -138,4 +159,3 @@ export async function syncKeysToCliProxyApi(): Promise<SyncResult> {
     };
   }
 }
-

@@ -108,6 +108,7 @@ export const CACHE_KEYS = {
 
 export function invalidateUsageCaches(): void {
   usageCache.invalidatePattern(/^usage:/);
+  usageCache.invalidatePattern(/^usage-history:/);
 }
 
 export function invalidateProxyModelsCache(): void {

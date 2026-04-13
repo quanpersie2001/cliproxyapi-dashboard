@@ -4,7 +4,7 @@
 # Can run from a repo checkout or as a standalone bootstrap.
 # Ensures the minimal production deployment bundle exists in INSTALL_DIR,
 # installs Docker, writes infrastructure/.env, and optionally configures
-# backups, UFW, and the deploy webhook.
+# Nginx, backups, UFW, and the deploy webhook.
 #
 
 set -euo pipefail
@@ -22,6 +22,8 @@ ARCHIVE_URL="https://codeload.github.com/${CLIPROXYAPI_DASHBOARD_REPO}/tar.gz/${
 TMP_BUNDLE_DIR=""
 PRESERVE_DIR=""
 LOCAL_BUNDLE_DIR=""
+NGINX_SITE_PATH=""
+NGINX_AUTO_CONFIGURED=0
 MINIMAL_BUNDLE_PATHS=("install.sh" "infrastructure")
 LEGACY_BUNDLE_PATHS=(
     ".agents"
@@ -131,6 +133,37 @@ normalize_public_url() {
 validate_public_url() {
     local value="$1"
     [[ "$value" =~ ^https?://[^[:space:]]+$ ]]
+}
+
+extract_url_authority() {
+    local value="$1"
+    local without_scheme="${value#*://}"
+    printf '%s' "${without_scheme%%/*}"
+}
+
+extract_url_host() {
+    local authority
+    authority="$(extract_url_authority "$1")"
+
+    if [[ "$authority" == \[* ]]; then
+        authority="${authority%%]*}"
+        printf '%s' "${authority#\[}"
+        return
+    fi
+
+    printf '%s' "${authority%%:*}"
+}
+
+extract_url_path() {
+    local value="$1"
+    local without_scheme="${value#*://}"
+
+    if [[ "$without_scheme" == */* ]]; then
+        printf '/%s' "${without_scheme#*/}"
+        return
+    fi
+
+    printf '%s' "/"
 }
 
 prompt_public_url() {
@@ -551,6 +584,12 @@ configure_ufw() {
         done
     fi
 
+    if [ "${INSTALL_NGINX:-0}" -eq 1 ]; then
+        if ! ufw status | grep -q "80/tcp"; then
+            ufw allow 80/tcp comment 'Nginx reverse proxy'
+        fi
+    fi
+
     if ! ufw status | grep -q "Status: active"; then
         ufw --force enable
     fi
@@ -602,6 +641,76 @@ EOF
 
     chmod 600 "$env_file"
     log_success ".env file created at $env_file"
+}
+
+setup_nginx_reverse_proxy() {
+    if [ "${INSTALL_NGINX:-0}" -ne 1 ]; then
+        log_info "Skipping Nginx reverse proxy setup"
+        return
+    fi
+
+    local dashboard_host api_host dashboard_path api_path template_path enabled_path
+    dashboard_host="$(extract_url_host "$DASHBOARD_URL")"
+    api_host="$(extract_url_host "$API_URL")"
+    dashboard_path="$(extract_url_path "$DASHBOARD_URL")"
+    api_path="$(extract_url_path "$API_URL")"
+
+    if [ -z "$dashboard_host" ] || [ -z "$api_host" ]; then
+        log_warning "Could not derive hostnames from DASHBOARD_URL/API_URL. Skipping automatic Nginx config."
+        return
+    fi
+
+    if [ "$dashboard_path" != "/" ] || [ "$api_path" != "/" ]; then
+        log_warning "Automatic Nginx setup only supports root-path URLs. Skipping automatic Nginx config."
+        return
+    fi
+
+    if [ "$dashboard_host" = "$api_host" ]; then
+        log_warning "Automatic Nginx setup expects separate dashboard and API hostnames. Skipping automatic Nginx config."
+        return
+    fi
+
+    if [[ "$DASHBOARD_URL" == https://* ]] || [[ "$API_URL" == https://* ]]; then
+        log_warning "Generated Nginx config is HTTP-only. Add TLS certificates or another TLS terminator separately."
+    fi
+
+    ensure_command nginx nginx
+
+    template_path="$INSTALL_DIR/infrastructure/nginx/cliproxyapi-dashboard.http.conf.template"
+    if [ ! -f "$template_path" ]; then
+        log_error "Missing Nginx template: $template_path"
+        exit 1
+    fi
+
+    NGINX_SITE_PATH="/etc/nginx/sites-available/cliproxyapi-dashboard.conf"
+    enabled_path="/etc/nginx/sites-enabled/cliproxyapi-dashboard.conf"
+
+    if [ -f "$NGINX_SITE_PATH" ]; then
+        log_warning "Nginx site already exists at $NGINX_SITE_PATH"
+        prompt_yes_no OVERWRITE_NGINX_SITE "Overwrite Nginx site config?" 0
+        if [ "$OVERWRITE_NGINX_SITE" -ne 1 ]; then
+            log_info "Keeping existing Nginx site config"
+            return
+        fi
+    fi
+
+    install -d -m 0755 /etc/nginx/sites-available /etc/nginx/sites-enabled
+
+    sed \
+        -e "s|{{DASHBOARD_SERVER_NAME}}|${dashboard_host}|g" \
+        -e "s|{{API_SERVER_NAME}}|${api_host}|g" \
+        -e "s|{{DASHBOARD_UPSTREAM}}|127.0.0.1:3000|g" \
+        -e "s|{{API_UPSTREAM}}|127.0.0.1:8317|g" \
+        "$template_path" > "$NGINX_SITE_PATH"
+
+    ln -sfn "$NGINX_SITE_PATH" "$enabled_path"
+
+    nginx -t
+    systemctl enable nginx >/dev/null 2>&1 || true
+    systemctl restart nginx
+
+    NGINX_AUTO_CONFIGURED=1
+    log_success "Nginx reverse proxy configured"
 }
 
 setup_backup_scripts() {
@@ -804,11 +913,13 @@ print_key_value "Distribution" "$DISTRO_ID ($DISTRO_CODENAME)"
 
 print_section "Configuration"
 echo "Enter a full URL or just a hostname. Bare hostnames will be normalized automatically."
+echo "Use separate hostnames if you want the installer to manage Nginx for both the dashboard and public API."
 echo ""
 
 prompt_public_url DASHBOARD_URL "Public dashboard URL" "http://localhost:3000"
 prompt_public_url API_URL "Public API URL" "http://localhost:8317"
 
+prompt_yes_no INSTALL_NGINX "Install and configure Nginx reverse proxy now?" 1
 prompt_yes_no OAUTH_ENABLED "Enable OAuth callback ports in the firewall?" 0
 prompt_yes_no CONFIGURE_UFW "Configure UFW firewall now?" 0
 
@@ -844,6 +955,7 @@ echo ""
 log_info "Configuration summary:"
 print_key_value "Dashboard URL" "$DASHBOARD_URL"
 print_key_value "API URL" "$API_URL"
+print_key_value "Nginx reverse proxy" "$(enabled_label "$INSTALL_NGINX")"
 print_key_value "OAuth callback ports" "$(enabled_label "$OAUTH_ENABLED")"
 print_key_value "UFW configuration" "$(enabled_label "$CONFIGURE_UFW")"
 print_key_value "Backup interval" "$(backup_interval_label "$BACKUP_INTERVAL")"
@@ -908,6 +1020,10 @@ print_section "Environment Configuration"
 
 create_env_file
 
+print_section "Nginx Reverse Proxy"
+
+setup_nginx_reverse_proxy
+
 print_section "Backup Setup"
 
 setup_backup_scripts
@@ -947,7 +1063,15 @@ echo ""
 echo "  6. Create the first admin account in the dashboard, then configure"
 echo "     providers, proxy settings, and API keys."
 echo ""
-echo "If you need public HTTPS access, place your own reverse proxy in front of"
-echo "127.0.0.1:3000 and 127.0.0.1:8317."
+if [ "$NGINX_AUTO_CONFIGURED" -eq 1 ]; then
+    echo "  7. Nginx site config:"
+    echo "     $NGINX_SITE_PATH"
+    echo "     This is an HTTP starter config for the dashboard/API split hostnames."
+    echo ""
+fi
+echo "If you need TLS/HTTPS, add certificate handling to Nginx or place another"
+echo "TLS terminator in front of the generated HTTP reverse proxy."
+echo "The bundled Nginx template lives at:"
+echo "  $INSTALL_DIR/infrastructure/nginx/cliproxyapi-dashboard.http.conf.template"
 echo ""
 log_warning "Secrets are stored in $INSTALL_DIR/infrastructure/.env"

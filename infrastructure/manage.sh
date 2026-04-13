@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
 COMPOSE_FILE="${SCRIPT_DIR}/docker-compose.yml"
 ENV_FILE="${SCRIPT_DIR}/.env"
+CONFIG_FILE="${SCRIPT_DIR}/config/config.yaml"
 BACKUP_DIR="${PROJECT_DIR}/backups"
 BACKUP_PATTERN='cliproxyapi_backup_*.tar.gz'
 
@@ -42,6 +43,47 @@ ensure_compose_file() {
 
 ensure_env_file() {
     [ -f "$ENV_FILE" ] || die "Missing environment file: $ENV_FILE"
+}
+
+ensure_config_file() {
+    [ -f "$CONFIG_FILE" ] || die "Missing runtime config file: $CONFIG_FILE"
+}
+
+read_env_value() {
+    local key="$1"
+    grep -E "^${key}=" "$ENV_FILE" | tail -n 1 | cut -d= -f2-
+}
+
+derive_lockdown_api_key() {
+    local management_api_key="$1"
+    printf 'sk-%s\n' "$(printf '%s' "dashboard-lockdown:${management_api_key}" | sha256sum | awk '{print $1}')"
+}
+
+seed_bootstrap_api_key_if_empty() {
+    ensure_config_file
+
+    if ! grep -Eq '^[[:space:]]*api-keys:[[:space:]]*\[\][[:space:]]*$' "$CONFIG_FILE"; then
+        return
+    fi
+
+    local management_api_key bootstrap_api_key tmp_file
+    management_api_key="$(read_env_value MANAGEMENT_API_KEY)"
+    [ -n "$management_api_key" ] || die "MANAGEMENT_API_KEY is missing from $ENV_FILE"
+
+    bootstrap_api_key="$(derive_lockdown_api_key "$management_api_key")"
+    tmp_file="$(mktemp)"
+
+    awk -v key="$bootstrap_api_key" '
+        /^[[:space:]]*api-keys:[[:space:]]*\[\][[:space:]]*$/ {
+            print "api-keys:"
+            print "  - \"" key "\""
+            next
+        }
+        { print }
+    ' "$CONFIG_FILE" > "$tmp_file"
+
+    mv "$tmp_file" "$CONFIG_FILE"
+    echo "[INFO] Seeded bootstrap client API key in $(basename "$CONFIG_FILE")"
 }
 
 docker_compose() {
@@ -208,6 +250,7 @@ run_restore() {
     fi
 
     echo "[INFO] Starting CLIProxyAPI stack..."
+    seed_bootstrap_api_key_if_empty
     docker_compose up -d --wait
 
     echo "[SUCCESS] Restore completed successfully"
@@ -261,6 +304,7 @@ main() {
             ensure_docker
             ensure_compose_file
             ensure_env_file
+            seed_bootstrap_api_key_if_empty
             docker_compose up -d --wait "$@"
             ;;
         down)

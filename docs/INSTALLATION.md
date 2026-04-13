@@ -29,7 +29,12 @@ Published OAuth callback ports:
 - `51121`
 - `11451`
 
-The stack does not include a public ingress or TLS terminator. If you want public HTTPS access, put your own reverse proxy in front of `127.0.0.1:3000` and `127.0.0.1:8317`.
+The Docker stack itself does not include a public ingress container. The repo ships [`../infrastructure/nginx/cliproxyapi-dashboard.http.conf.template`](../infrastructure/nginx/cliproxyapi-dashboard.http.conf.template), and `install.sh` can optionally install Nginx plus render `/etc/nginx/sites-available/cliproxyapi-dashboard.conf` as an HTTP reverse proxy starter for the split-host layout:
+
+- dashboard hostname -> `127.0.0.1:3000`
+- API hostname -> `127.0.0.1:8317`
+
+TLS certificate provisioning remains outside the bundled stack.
 
 ## Option 1: Local Appliance Setup
 
@@ -183,10 +188,11 @@ The installer currently:
 1. Detects Ubuntu/Debian and installs Docker Engine + Compose if needed.
 2. Ensures the minimal deployment bundle exists in `INSTALL_DIR` by using the local checkout or downloading it when needed.
 3. Prompts for public dashboard and API URLs.
-4. Optionally configures firewall rules for OAuth callback ports.
-5. Generates `JWT_SECRET`, `MANAGEMENT_API_KEY`, `POSTGRES_PASSWORD`, `COLLECTOR_API_KEY`, and `PROVIDER_ENCRYPTION_KEY`.
-6. Writes `infrastructure/.env`.
-7. Optionally installs backup cron jobs, the usage collector cron, and the dashboard deploy webhook.
+4. Optionally installs and configures Nginx with a split-host HTTP reverse proxy config when the dashboard and API URLs use distinct hostnames rooted at `/`.
+5. Optionally configures firewall rules for OAuth callback ports and the Nginx HTTP listener.
+6. Generates `JWT_SECRET`, `MANAGEMENT_API_KEY`, `POSTGRES_PASSWORD`, `COLLECTOR_API_KEY`, and `PROVIDER_ENCRYPTION_KEY`.
+7. Writes `infrastructure/.env`.
+8. Optionally installs backup cron jobs, the usage collector cron, and the dashboard deploy webhook.
 
 Installed files are intentionally limited to:
 
@@ -201,6 +207,12 @@ cd infrastructure
 ./manage.sh up
 ./manage.sh ps
 ```
+
+Installer-managed Nginx notes:
+
+- the generated site config lives at `/etc/nginx/sites-available/cliproxyapi-dashboard.conf`
+- the current template is HTTP-only and expects separate dashboard and API hostnames
+- if you use `https://...` public URLs, you still need to add certificate handling yourself or place another TLS terminator in front
 
 ## Manual Server Installation
 
@@ -245,14 +257,42 @@ chmod 600 infrastructure/.env
 
 `config.yaml` is the runtime config consumed by CLIProxyAPI. The dashboard can edit large parts of this file later, but the initial file still needs to exist.
 
-### 4. Start the stack
+### 4. Optional: Install Nginx and render the bundled split-host template
+
+```bash
+sudo apt-get update
+sudo apt-get install -y nginx
+
+sudo sed \
+  -e 's|{{DASHBOARD_SERVER_NAME}}|llm-dashboard.example.com|g' \
+  -e 's|{{API_SERVER_NAME}}|llm-api.example.com|g' \
+  -e 's|{{DASHBOARD_UPSTREAM}}|127.0.0.1:3000|g' \
+  -e 's|{{API_UPSTREAM}}|127.0.0.1:8317|g' \
+  infrastructure/nginx/cliproxyapi-dashboard.http.conf.template \
+  | sudo tee /etc/nginx/sites-available/cliproxyapi-dashboard.conf >/dev/null
+
+sudo ln -sfn \
+  /etc/nginx/sites-available/cliproxyapi-dashboard.conf \
+  /etc/nginx/sites-enabled/cliproxyapi-dashboard.conf
+
+sudo nginx -t
+sudo systemctl restart nginx
+```
+
+This template intentionally keeps:
+
+- the dashboard hostname pointed at `127.0.0.1:3000`
+- the public API hostname pointed at `127.0.0.1:8317`
+- `/v0/management/*` blocked on the public API hostname
+
+### 5. Start the stack
 
 ```bash
 cd infrastructure
 ./manage.sh up
 ```
 
-### 5. Create the first admin account
+### 6. Create the first admin account
 
 Visit the dashboard. If there are no users yet, you will be redirected to `/setup`.
 

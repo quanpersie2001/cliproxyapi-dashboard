@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { logger } from "@/lib/logger";
 import { randomUUID, timingSafeEqual } from "crypto";
 import { Errors } from "@/lib/errors";
+import { invalidateUsageCaches } from "@/lib/cache";
 import {
   isUsageRecordEndpointUnavailableError,
   omitUsageRecordEndpointFromMany,
@@ -543,6 +544,8 @@ export async function POST(request: NextRequest) {
         errorMessage: null,
       },
     });
+
+    invalidateUsageCaches();
 
     logger.info(
       { runId, processed: candidates.length, stored: totalStored, skipped, latencyBackfilled, durationMs },

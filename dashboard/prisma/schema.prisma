@@ -85,6 +85,33 @@ model SystemSetting {
   @@map("system_settings")
 }
 
+model ModelPricing {
+  id              String   @id @default(cuid())
+  provider        String
+  model           String
+  displayName     String?
+  promptPriceUsd  Decimal  @db.Decimal(12, 6)
+  completionPriceUsd Decimal @db.Decimal(12, 6)
+  cachedPriceUsd   Decimal? @db.Decimal(12, 6)
+  reasoningPriceUsd Decimal? @db.Decimal(12, 6)
+  currency        String   @default("USD")
+  sourceType      String   @default("manual")
+  sourceUrl       String?
+  manualOverride  Boolean  @default(true)
+  isActive        Boolean  @default(true)
+  effectiveFrom   DateTime @default(now())
+  lastSyncedAt    DateTime?
+  syncError       String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([provider, model])
+  @@index([provider])
+  @@index([isActive])
+  @@index([updatedAt])
+  @@map("model_pricings")
+}
+
 model ModelPreference {
   id             String   @id @default(cuid())
   userId         String   @unique

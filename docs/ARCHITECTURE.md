@@ -9,22 +9,35 @@ Next.js 16.1.6 + React 19.2.4 + TypeScript 5.9 + Tailwind CSS 4 + Prisma 7 + Pos
 
 ## System Diagram
 
-```text
-Browser
-  -> Next.js App Router dashboard (:3000)
-      -> Prisma -> PostgreSQL
-      -> /api/management/[...path] -> CLIProxyAPI management API (:8317/v0/management)
-      -> Docker CLI (via DOCKER_HOST) -> docker-socket-proxy
+```mermaid
+flowchart TD
+    internet["Internet"]
+    nginx["Nginx reverse proxy"]
+    dashboard["Next.js dashboard<br/>127.0.0.1:3000"]
+    proxy["CLIProxyAPI<br/>127.0.0.1:8317"]
+    postgres["PostgreSQL<br/>internal Docker network"]
+    dockerproxy["docker-socket-proxy<br/>internal Docker network"]
+    authvol["auth volume"]
+    logsvol["logs volume"]
+    collector["Usage collector<br/>POST /api/usage/collect"]
 
-CLIProxyAPI
-  -> config.yaml
-  -> auth volume
-  -> logs volume
-
-Usage collector
-  -> POST /api/usage/collect
-  -> usage_records / collector_state tables
+    internet --> nginx
+    nginx -->|"dashboard host"| dashboard
+    nginx -->|"API host"| proxy
+    dashboard -->|"Prisma"| postgres
+    dashboard -->|"Docker CLI via DOCKER_HOST"| dockerproxy
+    dashboard -->|"/api/management/[...path]<br/>CLIPROXYAPI_MANAGEMENT_URL"| proxy
+    proxy --> authvol
+    proxy --> logsvol
+    collector --> postgres
 ```
+
+## Public Traffic Split
+
+- The dashboard UI and its authenticated `/api/*` routes live behind the dashboard hostname and terminate in the Next.js service.
+- OpenAI-compatible inference traffic lives behind the API hostname and terminates directly in CLIProxyAPI.
+- The dashboard does not sit on the hot path for `/v1/*` inference traffic in the current architecture.
+- The repo ships [`../infrastructure/nginx/cliproxyapi-dashboard.http.conf.template`](../infrastructure/nginx/cliproxyapi-dashboard.http.conf.template) for this split-host ingress pattern.
 
 ## Deployment Boundaries
 
@@ -206,7 +219,7 @@ CollectorState
 
 - The production dashboard image runs [`../dashboard/entrypoint.sh`](../dashboard/entrypoint.sh), which applies the baseline Prisma migration chain with `prisma migrate deploy` before starting the server.
 - Source development uses the same baseline migration chain with `prisma migrate deploy`.
-- The bundled stack does not include a public reverse proxy or TLS termination layer.
+- The Docker stack itself does not include a public ingress service. The repo ships an optional Nginx template, and `install.sh` can install Nginx as an HTTP reverse proxy starter outside the Compose stack.
 - The bundled deployment assumes a single dashboard instance.
 - `providerMutex` in [`../dashboard/src/lib/providers/management-api.ts`](../dashboard/src/lib/providers/management-api.ts) is process-local only.
 - [`../dashboard/prisma/schema.prisma`](../dashboard/prisma/schema.prisma) is the active source of truth for the data model.

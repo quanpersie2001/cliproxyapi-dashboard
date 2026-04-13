@@ -1,0 +1,51 @@
+# HTTP reverse proxy starter for the bundled CLIProxyAPI Dashboard stack.
+#
+# Rendered automatically by install.sh when Nginx setup is enabled, or
+# customize it manually by replacing the placeholders below.
+#
+# This template assumes two separate public hostnames:
+# - one for the dashboard UI/API
+# - one for the OpenAI-compatible proxy API
+#
+# TLS certificate provisioning is intentionally left outside this template.
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name {{DASHBOARD_SERVER_NAME}};
+
+    location / {
+        proxy_pass http://{{DASHBOARD_UPSTREAM}};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_read_timeout 3600;
+    }
+}
+
+server {
+    listen 80;
+    listen [::]:80;
+    server_name {{API_SERVER_NAME}};
+
+    # Do not expose CLIProxyAPI's management API on the public API hostname.
+    location ^~ /v0/management/ {
+        return 403;
+    }
+
+    location / {
+        proxy_pass http://{{API_UPSTREAM}};
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-Host $host;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_buffering off;
+        proxy_request_buffering off;
+        proxy_read_timeout 3600;
+    }
+}

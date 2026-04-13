@@ -71,6 +71,27 @@ Default bundled endpoints:
 
 OAuth callback ports remain published because upstream login flows require them.
 
+Common public ingress shape:
+
+```mermaid
+flowchart TD
+    internet["Internet"]
+    nginx["Nginx reverse proxy"]
+    dashboard["Dashboard<br/>127.0.0.1:3000"]
+    proxy["CLIProxyAPI<br/>127.0.0.1:8317"]
+    postgres["PostgreSQL<br/>internal Docker network"]
+    dockerproxy["docker-socket-proxy<br/>internal Docker network"]
+
+    internet --> nginx
+    nginx -->|"dashboard host"| dashboard
+    nginx -->|"API host"| proxy
+    dashboard -->|"Prisma"| postgres
+    dashboard -->|"Docker API allowlist"| dockerproxy
+    dashboard -->|"CLIPROXYAPI_MANAGEMENT_URL<br/>/v0/management/*"| proxy
+```
+
+The repo now ships [`infrastructure/nginx/cliproxyapi-dashboard.http.conf.template`](infrastructure/nginx/cliproxyapi-dashboard.http.conf.template) as the starter config for this split-host ingress pattern.
+
 ## Quick Start
 
 ### 1. Local Appliance Setup
@@ -139,6 +160,7 @@ The bundled installer currently:
 - installs Docker Engine and Compose if missing
 - generates stack secrets
 - writes `infrastructure/.env`
+- optionally installs Nginx and renders a split-host HTTP reverse proxy config from the public dashboard/API URLs you entered
 - optionally configures firewall rules, backup cron, usage collector cron, and the dashboard deploy webhook
 
 After install:
