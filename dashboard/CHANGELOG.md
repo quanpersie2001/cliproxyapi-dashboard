@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.4](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.3...dashboard-v0.2.4) (2026-04-13)
+
+
+### Bug Fixes
+
+* **infra:** resolve stale credentials and missing request body ([a1e741d](https://github.com/quanpersie2001/cliproxyapi-dashboard/commit/a1e741d88777248d4cb168b93c6510b24630ef36))
+
 ## [0.2.3](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.2...dashboard-v0.2.3) (2026-04-13)
 
 
