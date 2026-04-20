@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { getStateAccentBorderStyle, getStateToneStyle } from "@/components/ui/state-styles";
+import { AlertSurface } from "@/components/ui/alert-surface";
 import { extractApiError } from "@/lib/utils";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 
@@ -137,12 +137,23 @@ export function DeployDashboard() {
 
   const getStatusColor = (s: string) => {
     switch (s) {
-      case "running": return "text-blue-600";
+      case "running": return "var(--state-info-text)";
       case "success":
-      case "completed": return "text-green-600";
+      case "completed": return "var(--state-success-text)";
       case "error":
-      case "failed": return "text-red-500";
-      default: return "text-[var(--text-secondary)]";
+      case "failed": return "var(--state-danger-text)";
+      default: return "var(--text-secondary)";
+    }
+  };
+
+  const getStatusDotColor = (s: string) => {
+    switch (s) {
+      case "running": return "var(--state-info-accent)";
+      case "success":
+      case "completed": return "var(--state-success-accent)";
+      case "error":
+      case "failed": return "var(--state-danger-accent)";
+      default: return "var(--text-muted)";
     }
   };
 
@@ -155,16 +166,13 @@ export function DeployDashboard() {
         </div>
 
         <div className="space-y-4">
-          <div
-            className="rounded-sm border border-l-4 p-3"
-            style={{ ...getStateToneStyle("warning"), ...getStateAccentBorderStyle("warning") }}
-          >
-            <div className="text-sm font-medium text-[var(--text-primary)]">Webhook Not Configured</div>
-            <p className="mt-1 text-xs text-[var(--text-muted)]">
+          <AlertSurface tone="warning" accent className="rounded-sm">
+            <div className="text-sm font-semibold">Webhook Not Configured</div>
+            <p className="mt-1 text-xs opacity-90">
               The deployment webhook is not set up. To enable dashboard deployments from the UI,
               you need to configure the webhook server on your host machine.
             </p>
-          </div>
+          </AlertSurface>
 
           <div className="space-y-3 text-sm text-[var(--text-secondary)]">
             <div className="font-medium text-[var(--text-primary)]">Setup Instructions:</div>
@@ -224,9 +232,9 @@ export function DeployDashboard() {
       {status.status !== "idle" && (
         <div className="space-y-3 border-t border-[var(--surface-border)] pt-3">
           <div className="flex items-center gap-2">
-            <span className={`text-sm font-medium ${getStatusColor(status.status)}`}>
+            <span className="text-sm font-medium" style={{ color: getStatusColor(status.status) }}>
               {status.status === "running" && (
-                <span className="mr-2 inline-block size-2 animate-pulse rounded-full bg-blue-400" />
+                <span className="mr-2 inline-block size-2 animate-pulse rounded-full" style={{ backgroundColor: getStatusDotColor(status.status) }} />
               )}
               {getStepLabel(status.step)}
             </span>
@@ -237,9 +245,9 @@ export function DeployDashboard() {
           )}
 
           {status.error && (
-            <div role="alert" className="rounded-sm border border-rose-200 bg-rose-50 p-3 text-xs text-rose-600">
+            <AlertSurface role="alert" tone="danger" className="rounded-sm text-xs">
               {status.error}
-            </div>
+            </AlertSurface>
           )}
 
           {status.completedAt && (

@@ -2,6 +2,7 @@
 
 import { getOAuthProviderPresentation, OAuthProviderIcon } from "@/components/providers/oauth-provider-meta";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
+import { AlertSurface } from "@/components/ui/alert-surface";
 import { cn } from "@/lib/utils";
 
 interface QuotaModel {
@@ -307,13 +308,13 @@ export function QuotaDetails({ filteredAccounts, loading }: QuotaDetailsProps) {
                     </div>
 
                     {account.error ? (
-                      <div className="rounded-md border border-rose-200/70 bg-rose-50/80 px-3 py-2 text-xs text-rose-700">
+                      <AlertSurface tone="danger" className="px-3 py-2 text-xs">
                         {account.error}
-                      </div>
+                      </AlertSurface>
                     ) : !account.supported ? (
-                      <div className="rounded-md border border-amber-200/70 bg-amber-50/80 px-3 py-2 text-xs text-amber-800">
+                      <AlertSurface tone="warning" className="px-3 py-2 text-xs">
                         Quota monitoring not available for this provider.
-                      </div>
+                      </AlertSurface>
                     ) : null}
 
                     <div className="mt-auto space-y-2 border-t border-[var(--surface-border)] pt-3">

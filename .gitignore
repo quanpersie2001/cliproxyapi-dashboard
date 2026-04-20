@@ -121,3 +121,4 @@ infrastructure/.env
 
 # Local reference repositories
 references/
+.gitnexus

@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Modal, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@/components/ui/modal";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
+import { AlertSurface } from "@/components/ui/alert-surface";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
-import { getStateAccentBorderStyle, getStateToneStyle } from "@/components/ui/state-styles";
 
 type ShowToast = ReturnType<typeof useToast>["showToast"];
 
@@ -238,9 +238,9 @@ export function ApiKeySection({
                       <p className="truncate text-sm font-medium text-[var(--text-primary)]">{provider.name}</p>
                       <p className="truncate text-xs text-[var(--text-muted)]">{provider.description}</p>
                     </div>
-                    <span className={`text-xs font-medium ${isConfigured ? "text-emerald-700" : "text-[var(--text-muted)]"}`}>
+                    <Badge tone={isConfigured ? "success" : "neutral"} size="xs" className="w-fit rounded-sm">
                       {isConfigured ? "Active" : "Inactive"}
-                    </span>
+                    </Badge>
                     <span className="text-xs text-[var(--text-secondary)]">
                       {configuredCount} {configuredCount === 1 ? "key" : "keys"}
                     </span>
@@ -318,14 +318,15 @@ export function ApiKeySection({
               <p className="mt-1.5 text-xs text-[var(--text-muted)]">Your API key will be stored securely and associated with your account</p>
             </div>
             {currentUser && (
-              <div
-                className="rounded-sm border border-l-4 p-3 text-sm"
-                style={{ ...getStateToneStyle("info"), ...getStateAccentBorderStyle("info") }}
+              <AlertSurface
+                tone="info"
+                accent
+                className="rounded-sm text-sm"
               >
-                <p className="text-[var(--text-primary)]">
+                <p>
                   <strong>Usage:</strong> You have contributed {currentUser ? configs[PROVIDER_IDS.CLAUDE].keys.filter((k) => k.isOwn).length + configs[PROVIDER_IDS.GEMINI].keys.filter((k) => k.isOwn).length + configs[PROVIDER_IDS.CODEX].keys.filter((k) => k.isOwn).length + configs[PROVIDER_IDS.OPENAI].keys.filter((k) => k.isOwn).length : 0} / {maxKeysPerUser} keys total
                 </p>
-              </div>
+              </AlertSurface>
             )}
           </div>
         </ModalContent>

@@ -1,17 +1,13 @@
 import Link from "next/link";
 import { DashboardMiniCharts } from "@/components/dashboard-mini-charts";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
+import { formatCompact } from "@/components/ui/chart-theme";
+import { formatMetricCompact } from "@/lib/metric-format";
 import type { UsageHistoryData } from "@/lib/usage/history";
 
 interface OverviewUsagePanelProps {
   snapshot: UsageHistoryData;
   isAdmin: boolean;
-}
-
-function formatCompactNumber(value: number): string {
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
-  return value.toLocaleString();
 }
 
 function formatPerMinuteValue(value: number): string {
@@ -184,13 +180,13 @@ export function OverviewUsagePanel({
           />
           <MetricCard
             label="Tokens (7d)"
-            value={formatCompactNumber(snapshot.totals.totalTokens)}
-            detail={`Input ${formatCompactNumber(snapshot.totals.inputTokens)} / Output ${formatCompactNumber(snapshot.totals.outputTokens)}`}
+            value={formatMetricCompact(snapshot.totals.totalTokens)}
+            detail={`Input ${formatMetricCompact(snapshot.totals.inputTokens)} / Output ${formatMetricCompact(snapshot.totals.outputTokens)}`}
           />
           <MetricCard
             label="Success Rate"
             value={hasTraffic ? formatPercent(successRate) : "--"}
-            detail={`Cached ${formatCompactNumber(snapshot.totals.cachedTokens)} / Reasoning ${formatCompactNumber(snapshot.totals.reasoningTokens)}`}
+            detail={`Cached ${formatMetricCompact(snapshot.totals.cachedTokens)} / Reasoning ${formatMetricCompact(snapshot.totals.reasoningTokens)}`}
           />
           <MetricCard
             label="Avg Latency"
@@ -207,7 +203,7 @@ export function OverviewUsagePanel({
           <MetricCard
             label="TPM (30m)"
             value={formatPerMinuteValue(snapshot.recentRate.tpm)}
-            detail={`${formatCompactNumber(snapshot.recentRate.tokenCount)} tokens in the last 30 minutes`}
+            detail={`${formatMetricCompact(snapshot.recentRate.tokenCount)} tokens in the last 30 minutes`}
           />
         </div>
 
@@ -261,7 +257,7 @@ export function OverviewUsagePanel({
                           {model.requests.toLocaleString()}
                         </td>
                         <td className="py-3 text-right tabular-nums text-[var(--text-muted)]">
-                          {formatCompactNumber(model.tokens)}
+                          {formatCompact(model.tokens)}
                         </td>
                         <td className="py-3 text-right">
                           <Badge

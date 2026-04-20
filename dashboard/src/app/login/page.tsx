@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { AlertSurface } from "@/components/ui/alert-surface";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 
 export default function LoginPage() {
@@ -129,9 +130,9 @@ export default function LoginPage() {
             </div>
 
             {error && (
-              <div role="alert" aria-live="polite" className="rounded-xl bg-red-50 border border-red-200 p-3 text-sm text-red-600">
+              <AlertSurface role="alert" aria-live="polite" tone="danger" className="rounded-xl text-sm">
                 {error}
-              </div>
+              </AlertSurface>
             )}
 
             <Button type="submit" disabled={loading} className="w-full">

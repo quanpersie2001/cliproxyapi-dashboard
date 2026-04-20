@@ -48,8 +48,8 @@ function NotificationItem({ notification, onNavigate, onDismiss }: { notificatio
     <div className="flex items-start gap-2.5 rounded-md border px-3 py-2.5 transition-colors hover:brightness-125" style={style.container}>
       <div className="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full" style={{ backgroundColor: style.dotColor }} />
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-medium text-[var(--text-primary)]">{notification.title}</p>
-        <p className="mt-0.5 text-[11px] leading-relaxed text-[var(--text-muted)]">{notification.message}</p>
+        <p className="text-xs font-semibold">{notification.title}</p>
+        <p className="mt-0.5 text-[11px] leading-relaxed opacity-90">{notification.message}</p>
       </div>
     </div>
   );
@@ -119,7 +119,7 @@ function NotificationDropdown({
       ref={dropdownRef}
       role="menu"
       aria-label="Notifications"
-      className="fixed z-[9999] w-80 overflow-hidden rounded-lg border border-[var(--surface-border)] bg-[var(--surface-base)] shadow-[var(--shadow-card)]"
+      className="dashboard-panel-surface fixed z-[9999] w-80 overflow-hidden"
       style={{ top: position.top, right: position.right }}
     >
       <div className="flex items-center justify-between border-b border-[var(--surface-border)] px-4 py-2.5">

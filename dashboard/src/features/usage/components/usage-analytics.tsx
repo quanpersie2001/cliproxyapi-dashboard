@@ -40,6 +40,7 @@ import {
   modelPricingToLookup,
   normalizeModelPricing,
 } from "@/features/usage/model-pricing";
+import { formatMetricCompact } from "@/lib/metric-format";
 import { cn } from "@/lib/utils";
 
 type UsageAnalyticsData = UsageHistorySnapshot["data"];
@@ -867,7 +868,7 @@ export function UsageAnalytics({
             <MetricCard
               label="Recent throughput"
               value={`${formatPerMinuteValue(recentRate.rpm)} / ${formatPerMinuteValue(recentRate.tpm)}`}
-              detail={`${recentRate.requestCount.toLocaleString()} requests and ${formatCompact(recentRate.tokenCount)} tokens in the last 30 minutes`}
+              detail={`${recentRate.requestCount.toLocaleString()} requests and ${formatMetricCompact(recentRate.tokenCount)} tokens in the last 30 minutes`}
             />
             <MetricCard
               label="Collector freshness"
@@ -965,8 +966,8 @@ export function UsageAnalytics({
         />
         <MetricCard
           label="Token footprint"
-          value={formatCompact(totals.totalTokens)}
-          detail={`Input ${formatCompact(totals.inputTokens)} / Output ${formatCompact(totals.outputTokens)}`}
+          value={formatMetricCompact(totals.totalTokens)}
+          detail={`Input ${formatMetricCompact(totals.inputTokens)} / Output ${formatMetricCompact(totals.outputTokens)}`}
         />
         <MetricCard
           label="Avg latency"
@@ -976,7 +977,7 @@ export function UsageAnalytics({
         <MetricCard
           label="Recent throughput"
           value={`${formatPerMinuteValue(recentRate.rpm)} / ${formatPerMinuteValue(recentRate.tpm)}`}
-          detail={`${recentRate.requestCount.toLocaleString()} requests and ${formatCompact(recentRate.tokenCount)} tokens in the last 30 minutes`}
+          detail={`${recentRate.requestCount.toLocaleString()} requests and ${formatMetricCompact(recentRate.tokenCount)} tokens in the last 30 minutes`}
         />
         <MetricCard
           label="Estimated cost"
@@ -1004,14 +1005,14 @@ export function UsageAnalytics({
           <div className="dashboard-card-surface p-4">
             <SummaryRow
               label="Cached tokens"
-              value={formatCompact(totals.cachedTokens)}
+              value={formatMetricCompact(totals.cachedTokens)}
               detail={formatShare(totals.cachedTokens, totals.totalTokens)}
             />
           </div>
           <div className="dashboard-card-surface p-4">
             <SummaryRow
               label="Reasoning tokens"
-              value={formatCompact(totals.reasoningTokens)}
+              value={formatMetricCompact(totals.reasoningTokens)}
               detail="Observed in persisted request history"
             />
           </div>

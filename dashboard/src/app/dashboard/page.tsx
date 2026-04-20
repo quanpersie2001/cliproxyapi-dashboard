@@ -12,6 +12,7 @@ import {
   groupProxyModelsByProvider,
 } from "@/lib/proxy-models";
 import { loadExcludedModelsForUser } from "@/lib/model-preferences";
+import { formatMetricCompact } from "@/lib/metric-format";
 import { getUtcDayRange } from "@/lib/usage/dashboard-window";
 import { getUsageHistorySnapshot } from "@/lib/usage/history";
 
@@ -33,12 +34,6 @@ interface OverviewPanelProps {
   description: string;
   children: ReactNode;
   footer?: ReactNode;
-}
-
-function formatCompactNumber(value: number): string {
-  if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
-  if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
-  return value.toLocaleString();
 }
 
 function formatPercent(value: number): string {
@@ -318,8 +313,8 @@ export default async function DashboardOverviewPage() {
           />
           <HighlightMetric
             label="Tokens (7d)"
-            value={formatCompactNumber(totals.totalTokens)}
-            detail={`Input ${formatCompactNumber(totals.inputTokens)} / Output ${formatCompactNumber(totals.outputTokens)}`}
+            value={formatMetricCompact(totals.totalTokens)}
+            detail={`Input ${formatMetricCompact(totals.inputTokens)} / Output ${formatMetricCompact(totals.outputTokens)}`}
           />
         </div>
 
@@ -361,7 +356,7 @@ export default async function DashboardOverviewPage() {
             <div className="grid gap-2 sm:grid-cols-2">
               <CompactDetailMetric
                 label="Usage records"
-                value={formatCompactNumber(usageRecordCount)}
+                value={formatMetricCompact(usageRecordCount)}
                 detail="Persisted history rows"
               />
               <CompactDetailMetric

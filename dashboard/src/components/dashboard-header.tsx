@@ -59,7 +59,7 @@ export function DashboardHeader({ onUserClick, username, isAdmin, externalStatus
   const initial = username ? username.charAt(0).toUpperCase() : "?";
 
   return (
-    <header className="w-full bg-[var(--surface-base)] border-b border-[var(--surface-border)] py-2.5 px-4 lg:px-6 rounded-2xl mb-4 shadow-[var(--shadow-card)] flex items-center justify-between">
+    <header className="dashboard-panel-surface mb-4 flex w-full items-center justify-between px-4 py-2.5 lg:px-6">
       {/* Left Side: Status + Latency */}
       <div className="flex items-center gap-3 text-sm">
         <div className="flex items-center gap-2">
