@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.5](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.4...dashboard-v0.2.5) (2026-04-20)
+
+
+### Bug Fixes
+
+* **dashboard:** refine UI surfaces and metric card formatting ([2e7c160](https://github.com/quanpersie2001/cliproxyapi-dashboard/commit/2e7c1602694b25cf2c127fea2efce762539f13f8))
+
 ## [0.2.4](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.3...dashboard-v0.2.4) (2026-04-13)
 
 
