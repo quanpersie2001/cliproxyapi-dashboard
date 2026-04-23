@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { AlertSurface } from "@/components/ui/alert-surface";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@/components/ui/modal";
@@ -27,7 +28,7 @@ import {
   OAUTH_PROVIDERS,
   type OAuthProviderId,
 } from "@/components/providers/oauth-provider-meta";
-import { getStateAccentBorderStyle, getStateToneStyle } from "@/components/ui/state-styles";
+import { getStateToneStyle } from "@/components/ui/state-styles";
 import {
   buildOAuthAuthFileSettingsPayload,
   createOAuthAuthFileSettingsEditor,
@@ -58,6 +59,8 @@ interface OAuthSectionProps {
 const OAUTH_STATUS_POLL_INTERVAL_MS = 5000;
 const OAUTH_STATUS_POLL_INTERVAL_HIDDEN_MS = 10000;
 const OAUTH_ACCOUNT_PAGE_SIZE = 12;
+const OAUTH_MODAL_PANEL_CLASSNAME = "rounded-xl px-5 py-4 text-sm leading-relaxed shadow-[var(--shadow-edge)]";
+const OAUTH_MODAL_INLINE_MESSAGE_CLASSNAME = "rounded-lg px-3 py-2 text-xs leading-relaxed shadow-[var(--shadow-edge)]";
 
 const MODAL_STATUS = {
   IDLE: "idle",
@@ -1215,40 +1218,39 @@ export function OAuthSection({
             {selectedOAuthProvider ? `Connect ${selectedOAuthProvider.name}` : "Connect"}
           </ModalTitle>
         </ModalHeader>
-        <ModalContent>
+        <ModalContent className="space-y-4">
           {oauthModalStatus === MODAL_STATUS.LOADING && (
-            <div
-              className="rounded-xl border border-l-4 p-4 text-sm"
-              style={{ ...getStateToneStyle("info"), ...getStateAccentBorderStyle("info") }}
+            <AlertSurface
+              tone="info"
+              role="status"
+              aria-live="polite"
+              className={OAUTH_MODAL_PANEL_CLASSNAME}
             >
               Fetching authorization link...
-            </div>
+            </AlertSurface>
           )}
 
           {authLaunchUrl && (oauthModalStatus === MODAL_STATUS.WAITING || oauthModalStatus === MODAL_STATUS.POLLING || oauthModalStatus === MODAL_STATUS.ERROR) && (
-            <div
-              className="rounded-xl border border-l-4 p-4 text-sm"
-              style={{
-                ...getStateToneStyle(incognitoBrowserEnabled ? "warning" : "info"),
-                ...getStateAccentBorderStyle(incognitoBrowserEnabled ? "warning" : "info"),
-              }}
+            <AlertSurface
+              tone={incognitoBrowserEnabled ? "warning" : "info"}
+              className={OAUTH_MODAL_PANEL_CLASSNAME}
             >
-              <div className="font-medium text-[var(--text-primary)]">
+              <div className="font-medium tracking-tight text-[var(--text-primary)]">
                 {incognitoBrowserEnabled ? "Open This URL In A Private Window" : "Authorization URL"}
               </div>
-              <p className="mt-2 text-[var(--text-secondary)]">
+              <p className="mt-2 max-w-[62ch] text-[var(--text-secondary)]">
                 {incognitoBrowserEnabled
                   ? "Open this link manually in a new Firefox Private Window or browser incognito window, then continue the flow."
                   : "If the popup did not appear, open this link manually."}
               </p>
-              <div className="mt-3 rounded-lg bg-[var(--surface-muted)] p-3">
+              <div className="mt-3 rounded-lg border border-[var(--surface-border)] bg-[var(--surface-muted)] p-3 shadow-[var(--shadow-edge)]">
                 <input
                   readOnly
                   value={authLaunchUrl}
-                  className="w-full bg-transparent font-mono text-xs text-[var(--text-primary)] outline-none"
+                  className="w-full bg-transparent font-mono text-xs leading-relaxed text-[var(--text-primary)] outline-none"
                 />
               </div>
-              <div className="mt-3 flex gap-2">
+              <div className="mt-3 flex flex-wrap gap-2.5">
                 <Button
                   variant="ghost"
                   onClick={async () => {
@@ -1276,7 +1278,7 @@ export function OAuthSection({
                   </Button>
                 )}
               </div>
-            </div>
+            </AlertSurface>
           )}
 
           {(oauthModalStatus === MODAL_STATUS.WAITING ||
@@ -1285,14 +1287,14 @@ export function OAuthSection({
             oauthModalStatus === MODAL_STATUS.ERROR) &&
             selectedOAuthProviderRequiresCallback && (
             <div className="space-y-4">
-              <div
-                className="rounded-xl border border-l-4 p-4 text-sm"
-                style={{ ...getStateToneStyle("info"), ...getStateAccentBorderStyle("info") }}
+              <AlertSurface
+                tone="info"
+                className={OAUTH_MODAL_PANEL_CLASSNAME}
               >
-                <div className="font-medium text-[var(--text-primary)]">
+                <div className="font-medium tracking-tight text-[var(--text-primary)]">
                   Step-by-step
                 </div>
-                <ol className="mt-3 list-decimal space-y-2 pl-4 text-[var(--text-primary)]">
+                <ol className="mt-3 list-decimal space-y-2.5 pl-5 text-[var(--text-primary)] marker:text-[var(--text-secondary)]">
                   <li>{incognitoBrowserEnabled ? "Open the authorization URL above in a private/incognito window and sign in there." : "Log in and authorize in the popup window."}</li>
                   <li>
                     After authorizing, the page will fail to load (this is
@@ -1304,10 +1306,10 @@ export function OAuthSection({
                   </li>
                   <li>Paste the URL below and submit.</li>
                 </ol>
-              </div>
+              </AlertSurface>
 
               <div>
-                <div className="mb-2 text-xs font-medium text-[var(--text-primary)]">
+                <div className="mb-2.5 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
                   Paste callback URL
                 </div>
                 <Input
@@ -1322,27 +1324,18 @@ export function OAuthSection({
                   }
                   className="font-mono"
                 />
-                <div
-                  className="mt-2 rounded-xl border border-l-4 p-2 text-xs"
-                  style={{
-                    ...getStateToneStyle(
-                      callbackValidation === CALLBACK_VALIDATION.VALID
-                        ? "success"
-                        : callbackValidation === CALLBACK_VALIDATION.INVALID
-                          ? "danger"
-                          : "info"
-                    ),
-                    ...getStateAccentBorderStyle(
-                      callbackValidation === CALLBACK_VALIDATION.VALID
-                        ? "success"
-                        : callbackValidation === CALLBACK_VALIDATION.INVALID
-                          ? "danger"
-                          : "info"
-                    ),
-                  }}
+                <AlertSurface
+                  tone={
+                    callbackValidation === CALLBACK_VALIDATION.VALID
+                      ? "success"
+                      : callbackValidation === CALLBACK_VALIDATION.INVALID
+                        ? "danger"
+                        : "info"
+                  }
+                  className={`mt-2 ${OAUTH_MODAL_INLINE_MESSAGE_CLASSNAME}`}
                 >
                   {callbackMessage}
-                </div>
+                </AlertSurface>
               </div>
             </div>
           )}
@@ -1351,21 +1344,21 @@ export function OAuthSection({
             oauthModalStatus === MODAL_STATUS.POLLING ||
             oauthModalStatus === MODAL_STATUS.ERROR) &&
             !selectedOAuthProviderRequiresCallback && (
-            <div
-              className="rounded-xl border border-l-4 p-4 text-sm"
-              style={{ ...getStateToneStyle("info"), ...getStateAccentBorderStyle("info") }}
+            <AlertSurface
+              tone="info"
+              className={OAUTH_MODAL_PANEL_CLASSNAME}
             >
-              <div className="font-medium text-[var(--text-primary)]">
+              <div className="font-medium tracking-tight text-[var(--text-primary)]">
                 Device Authorization
               </div>
-              <ol className="mt-3 list-decimal space-y-2 pl-4 text-[var(--text-primary)]">
+              <ol className="mt-3 list-decimal space-y-2.5 pl-5 text-[var(--text-primary)] marker:text-[var(--text-secondary)]">
                 <li>{incognitoBrowserEnabled ? "Open the authorization URL above in a private/incognito window." : "A browser window has opened with the authorization page."}</li>
                 <li>Log in and approve the access request.</li>
                 <li>Once approved, this dialog will update automatically.</li>
               </ol>
               {deviceCodeInfo && (
                 <div className="mt-4 space-y-3">
-                  <div className="rounded-lg bg-[var(--surface-muted)] p-3">
+                  <div className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-muted)] p-3 shadow-[var(--shadow-edge)]">
                     <p className="text-xs font-medium text-[var(--text-muted)]">Your authorization code:</p>
                     <p className="mt-1 select-all font-mono text-lg font-bold tracking-wider text-[var(--text-primary)]">{deviceCodeInfo.userCode}</p>
                   </div>
@@ -1383,36 +1376,41 @@ export function OAuthSection({
                   </p>
                 </div>
               )}
-            </div>
+            </AlertSurface>
           )}
 
           {oauthModalStatus === MODAL_STATUS.POLLING && (
-            <div
-              className="mt-4 rounded-xl border border-l-4 p-4 text-sm"
-              style={{ ...getStateToneStyle("info"), ...getStateAccentBorderStyle("info") }}
+            <AlertSurface
+              tone="info"
+              role="status"
+              aria-live="polite"
+              className={OAUTH_MODAL_PANEL_CLASSNAME}
             >
               {selectedOAuthProviderRequiresCallback
                 ? "Callback submitted. Waiting for CLIProxyAPI to finish token exchange..."
                 : "Waiting for CLIProxyAPI to finish OAuth authorization..."}
-            </div>
+            </AlertSurface>
           )}
 
           {oauthModalStatus === MODAL_STATUS.SUCCESS && (
-            <div
-              className="rounded-xl border border-l-4 p-4 text-sm"
-              style={{ ...getStateToneStyle("success"), ...getStateAccentBorderStyle("success") }}
+            <AlertSurface
+              tone="success"
+              role="status"
+              aria-live="polite"
+              className={OAUTH_MODAL_PANEL_CLASSNAME}
             >
               OAuth account connected successfully.
-            </div>
+            </AlertSurface>
           )}
 
           {oauthModalStatus === MODAL_STATUS.ERROR && oauthErrorMessage && (
-            <div
-              className="rounded-xl border border-l-4 p-4 text-sm"
-              style={{ ...getStateToneStyle("danger"), ...getStateAccentBorderStyle("danger") }}
+            <AlertSurface
+              tone="danger"
+              role="alert"
+              className={OAUTH_MODAL_PANEL_CLASSNAME}
             >
               {oauthErrorMessage}
-            </div>
+            </AlertSurface>
           )}
         </ModalContent>
         <ModalFooter>

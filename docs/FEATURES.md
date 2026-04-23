@@ -83,12 +83,7 @@ The OAuth inventory currently supports:
 - Codex
 - Antigravity
 - iFlow
-- Kimi
 - Qwen Code
-- GitHub Copilot
-- Kiro
-- Cursor
-- CodeBuddy
 
 Key OAuth workflows include:
 

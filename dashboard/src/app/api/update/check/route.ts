@@ -8,7 +8,7 @@ import { updateCheckCache, CACHE_TTL } from "@/lib/cache";
 import { getProxyContainerName } from "@/lib/proxy-runtime";
 
 const execFileAsync = promisify(execFile);
-const PROXY_GITHUB_REPO = "router-for-me/CLIProxyAPIPlus";
+const PROXY_GITHUB_REPO = "router-for-me/CLIProxyAPI";
 
 interface DockerHubTag {
   name: string;
@@ -31,12 +31,12 @@ interface GitHubRunsResponse {
 }
 
 async function getDockerHubTags(): Promise<DockerHubTag[]> {
-  const cacheKey = "docker-hub-tags:eceasy/cli-proxy-api-plus";
+  const cacheKey = "docker-hub-tags:eceasy/cli-proxy-api";
   const cached = updateCheckCache.get(cacheKey) as DockerHubTag[] | null;
   if (cached) return cached;
 
   const response = await fetch(
-    "https://hub.docker.com/v2/repositories/eceasy/cli-proxy-api-plus/tags?page_size=20",
+    "https://hub.docker.com/v2/repositories/eceasy/cli-proxy-api/tags?page_size=20",
     { cache: "no-store" }
   );
   

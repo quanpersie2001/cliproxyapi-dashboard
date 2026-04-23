@@ -127,12 +127,7 @@ OpenAI-compatible upstreams are modeled through custom providers instead of the 
 - Codex
 - Antigravity
 - iFlow
-- Kimi
 - Qwen Code
-- GitHub Copilot
-- Kiro
-- Cursor
-- CodeBuddy
 
 ### Custom Providers
 
@@ -154,7 +149,7 @@ The current update model has two separate flows:
 
 | Flow | How it works |
 | --- | --- |
-| CLIProxyAPI update | Dashboard pulls a new `eceasy/cli-proxy-api-plus` image and recreates the proxy container |
+| CLIProxyAPI update | Dashboard pulls a new `eceasy/cli-proxy-api` image and recreates the proxy container |
 | Dashboard update | Dashboard checks `version.json` from `GITHUB_REPO`, then optionally triggers the external webhook deploy flow |
 
 Relevant environment variables:

@@ -123,7 +123,7 @@ export async function importOAuthCredential(
       return { ok: false, error: "Credential file must contain a JSON object, not an array" };
     }
 
-    // Build multipart form data to upload to CLIProxyAPIPlus
+    // Build multipart form data to upload to CLIProxyAPI
     const blob = new Blob([fileContent], { type: "application/json" });
     const formData = new FormData();
     formData.append("file", blob, fileName);

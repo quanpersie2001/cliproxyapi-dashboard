@@ -5,7 +5,7 @@
 **Branch:** main
 
 ## OVERVIEW
-CLIProxyAPI Dashboard monorepo: Next.js 16/React 19 control plane for CLIProxyAPIPlus, focused on proxy administration only.
+CLIProxyAPI Dashboard monorepo: Next.js 16/React 19 control plane for CLIProxyAPI, focused on proxy administration only.
 Primary operational boundaries are `dashboard/` (app/API) and `infrastructure/` (compose stack, config, ops docs).
 
 ## STRUCTURE

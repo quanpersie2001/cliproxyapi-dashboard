@@ -1,16 +1,12 @@
 /**
- * Maps CLIProxyAPIPlus `owned_by` values to display-friendly provider names.
+ * Maps CLIProxyAPI `owned_by` values to display-friendly provider names.
  * Unknown owned_by values are title-cased automatically.
  */
 const OWNED_BY_DISPLAY: Record<string, string> = {
   anthropic: "Claude",
-  "github-copilot": "Copilot",
   google: "Gemini",
   antigravity: "Antigravity",
   openai: "OpenAI/Codex",
-  moonshot: "Kimi",
-  aws: "Kiro",
-  kiro: "Kiro",
   iflow: "iFlow",
   qwen: "Qwen",
   zai: "ZAI",
@@ -19,12 +15,9 @@ const OWNED_BY_DISPLAY: Record<string, string> = {
 /** Display order for known providers. Unknown providers sort after these. */
 export const MODEL_PROVIDER_ORDER = [
   "Claude",
-  "Copilot",
   "Gemini",
   "Antigravity",
   "OpenAI/Codex",
-  "Kimi",
-  "Kiro",
   "iFlow",
   "Qwen",
   "OpenAI-Compatible",
@@ -93,8 +86,6 @@ export function detectModelProvider(
   if (lower.startsWith("claude-")) return "Claude";
   if (lower.startsWith("gemini-") || lower.startsWith("imagen-")) return "Gemini";
   if (lower.startsWith("antigravity-")) return "Antigravity";
-  if (lower.startsWith("kimi-")) return "Kimi";
-  if (lower.startsWith("kiro-") || lower.startsWith("amazonq-")) return "Kiro";
   if (lower.startsWith("glm-") || lower.startsWith("iflow-") || lower.startsWith("minimax-") || lower.startsWith("tstars")) return "iFlow";
   if (lower.startsWith("qwen")) return "Qwen";
   if (

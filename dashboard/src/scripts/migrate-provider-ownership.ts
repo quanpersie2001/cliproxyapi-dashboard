@@ -39,13 +39,6 @@ const OAUTH_PROVIDER_ALIASES: Record<string, string> = {
   antigravity: OAUTH_PROVIDER.ANTIGRAVITY,
   qwen: OAUTH_PROVIDER.QWEN,
   iflow: OAUTH_PROVIDER.IFLOW,
-  kimi: OAUTH_PROVIDER.KIMI,
-  copilot: OAUTH_PROVIDER.COPILOT,
-  "github-copilot": OAUTH_PROVIDER.COPILOT,
-  github: OAUTH_PROVIDER.COPILOT,
-  kiro: OAUTH_PROVIDER.KIRO,
-  cursor: OAUTH_PROVIDER.CURSOR,
-  codebuddy: OAUTH_PROVIDER.CODEBUDDY,
 };
 
 function hashProviderKey(apiKey: string): string {
@@ -288,8 +281,13 @@ async function main() {
               ? file.type
               : "unknown";
         const providerType = providerTypeRaw.toLowerCase();
-        const normalizedProvider =
-          OAUTH_PROVIDER_ALIASES[providerType] ?? providerType;
+        const normalizedProvider = OAUTH_PROVIDER_ALIASES[providerType];
+
+        if (!normalizedProvider) {
+          console.log(`      ⏭️  ${accountName} (${providerType}) - Unsupported OAuth provider skipped`);
+          totalOAuthSkipped++;
+          continue;
+        }
 
         const existing = await prisma.providerOAuthOwnership.findUnique({
           where: { accountName },

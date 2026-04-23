@@ -199,7 +199,7 @@ CollectorState
 
 ### External Services and Images
 
-- **CLIProxyAPIPlus** (`eceasy/cli-proxy-api-plus:latest`) for proxy runtime and management API
+- **CLIProxyAPI** (`eceasy/cli-proxy-api:latest`, upstream `router-for-me/CLIProxyAPI`) for proxy runtime and management API
 - **PostgreSQL 16** (`postgres:16-alpine`) for persistent storage
 - **Docker socket proxy** (`tecnativa/docker-socket-proxy:latest`) for restricted Docker API access
 - **GHCR dashboard image** (`ghcr.io/<repo>/dashboard`) for published dashboard builds

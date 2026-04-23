@@ -14,11 +14,6 @@ const PROVIDERS = {
   ANTIGRAVITY: "antigravity",
   IFLOW: "iflow",
   QWEN: "qwen",
-  KIMI: "kimi",
-  COPILOT: "copilot",
-  KIRO: "kiro",
-  CURSOR: "cursor",
-  CODEBUDDY: "codebuddy",
 } as const;
 
 type Provider = (typeof PROVIDERS)[keyof typeof PROVIDERS];
@@ -38,11 +33,6 @@ const PROVIDER_MATCH_ALIASES: Record<Provider, readonly string[]> = {
   [PROVIDERS.ANTIGRAVITY]: ["antigravity"],
   [PROVIDERS.IFLOW]: ["iflow"],
   [PROVIDERS.QWEN]: ["qwen"],
-  [PROVIDERS.KIMI]: ["kimi"],
-  [PROVIDERS.COPILOT]: ["copilot", "github", "github-copilot"],
-  [PROVIDERS.KIRO]: ["kiro"],
-  [PROVIDERS.CURSOR]: ["cursor"],
-  [PROVIDERS.CODEBUDDY]: ["codebuddy"],
 };
 
 const CLIPROXYAPI_BASE = process.env.CLIPROXYAPI_MANAGEMENT_URL?.replace("/v0/management", "") || "http://cliproxyapi:8317";
@@ -151,7 +141,7 @@ const fetchAuthFiles = async (): Promise<AuthFileEntry[] | null> => {
 /**
  * Find new auth files by comparing before/after snapshots.
  * Primary strategy: snapshot-diff is provider-agnostic and works regardless
- * of how CLIProxyAPIPlus names the auth file.
+ * of how CLIProxyAPI names the auth file.
  */
 const findNewAuthFilesByDiff = (
   before: AuthFileEntry[],
@@ -322,7 +312,7 @@ export async function POST(request: NextRequest) {
         break;
       }
 
-      // For non-callback providers (e.g. Cursor, CodeBuddy), the auth file is
+      // For non-callback providers (for example Qwen), the auth file is
       // written by the browser flow *before* POST /oauth-callback is called, so
       // preCallbackFiles is always stale and snapshot-diff yields nothing.
       // Run unclaimed detection on every attempt for these providers so we

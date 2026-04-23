@@ -16,7 +16,7 @@ import {
 
 const execFileAsync = promisify(execFile);
 
-const IMAGE_NAME = "eceasy/cli-proxy-api-plus";
+const IMAGE_NAME = "eceasy/cli-proxy-api";
 
 interface PortBinding {
   HostIp: string;

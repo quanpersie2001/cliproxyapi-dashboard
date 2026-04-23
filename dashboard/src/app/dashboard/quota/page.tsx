@@ -46,8 +46,7 @@ const PROVIDERS = {
   ANTIGRAVITY: "antigravity",
   CLAUDE: "claude",
   CODEX: "codex",
-  COPILOT: "github-copilot",
-  KIMI: "kimi",
+  GEMINI_CLI: "gemini-cli",
 } as const;
 
 type ProviderType = (typeof PROVIDERS)[keyof typeof PROVIDERS];
@@ -238,8 +237,8 @@ export default function QuotaPage() {
 
   const filteredAccounts = quotaData?.accounts.filter((account) => {
     if (selectedProvider === PROVIDERS.ALL) return true;
-    if (selectedProvider === PROVIDERS.COPILOT) {
-      return account.provider === "github" || account.provider === "github-copilot";
+    if (selectedProvider === PROVIDERS.GEMINI_CLI) {
+      return account.provider === "gemini" || account.provider === "gemini-cli";
     }
     return account.provider === selectedProvider;
   }) || [];
@@ -268,8 +267,7 @@ export default function QuotaPage() {
     { key: PROVIDERS.ANTIGRAVITY, label: "Antigravity" },
     { key: PROVIDERS.CLAUDE, label: "Claude" },
     { key: PROVIDERS.CODEX, label: "Codex" },
-    { key: PROVIDERS.COPILOT, label: "Copilot" },
-    { key: PROVIDERS.KIMI, label: "Kimi" },
+    { key: PROVIDERS.GEMINI_CLI, label: "Gemini CLI" },
   ] as const;
 
   return (
