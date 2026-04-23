@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { AlertSurface } from "@/components/ui/alert-surface";
 import { OwnerBadge, type CurrentUserLike } from "@/components/providers/api-key-section";
 import { getOAuthProviderPresentation, OAuthProviderIcon } from "@/components/providers/oauth-provider-meta";
 import { cn } from "@/lib/utils";
@@ -181,7 +182,7 @@ function ActionButton({
         "inline-flex items-center justify-center border text-[10px] font-medium transition-[background-color,border-color,color,transform,box-shadow] duration-200 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50",
         iconOnly ? "size-8 rounded-md px-0 py-0 shadow-[var(--shadow-edge)]" : "h-8 gap-1.5 rounded-md px-2.5",
         tone === "danger"
-          ? "border-red-200 bg-red-50/80 text-red-600 hover:border-red-300 hover:bg-red-100 disabled:hover:border-red-200 disabled:hover:bg-red-50/80"
+          ? "border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] text-[var(--state-danger-text)] hover:opacity-90 disabled:hover:opacity-100"
           : iconOnly
             ? "border-[var(--surface-border)] bg-[var(--surface-muted)] text-[var(--text-secondary)] hover:border-[var(--surface-border-strong)] hover:bg-[var(--surface-hover)] hover:text-[var(--text-primary)] disabled:hover:border-[var(--surface-border)] disabled:hover:bg-[var(--surface-muted)]"
             : "border-[var(--surface-border)] bg-[var(--surface-base)] text-[var(--text-primary)] hover:border-[var(--surface-border-strong)] hover:bg-[var(--surface-muted)] disabled:hover:border-[var(--surface-border)] disabled:hover:bg-[var(--surface-base)]"
@@ -219,9 +220,9 @@ function AccountToggle({
       onClick={onToggle}
       disabled={disabled}
       className={cn(
-        "relative inline-flex h-6 w-11 shrink-0 rounded-full border p-0.5 transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-500/35 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-50",
+        "relative inline-flex h-6 w-11 shrink-0 rounded-full border p-0.5 transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--state-info-border)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent disabled:cursor-not-allowed disabled:opacity-50",
         enabled
-          ? "border-emerald-500/70 bg-emerald-500/90"
+          ? "border-[var(--state-success-border)] bg-[var(--state-success-accent)]"
           : "border-[var(--surface-border)] bg-[var(--surface-muted)]"
       )}
     >
@@ -416,9 +417,13 @@ export function OAuthCredentialList({
                   </div>
 
                   {statusMessage && account.status !== "active" ? (
-                    <div className="rounded-md border border-amber-200/70 bg-amber-50/80 px-3 py-2 text-xs text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-100">
-                      {statusMessage}
-                    </div>
+                    <AlertSurface
+                      tone="warning"
+                      accent
+                      className="rounded-lg px-3 py-2 text-xs leading-relaxed shadow-[var(--shadow-edge)]"
+                    >
+                      <p className="break-words font-medium">{statusMessage}</p>
+                    </AlertSurface>
                   ) : null}
 
                   {canOperate ? (

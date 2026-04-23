@@ -20,9 +20,9 @@ export function Toggle({
       disabled={disabled}
       className={cn(
         "relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out",
-        "focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
+        "focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--state-info-border)] focus-visible:ring-offset-2 focus-visible:ring-offset-transparent",
         "disabled:cursor-not-allowed disabled:opacity-50",
-        enabled ? "bg-emerald-500" : "bg-[var(--surface-border)]"
+        enabled ? "bg-[var(--state-success-accent)]" : "bg-[var(--surface-border)]"
       )}
     >
       <span

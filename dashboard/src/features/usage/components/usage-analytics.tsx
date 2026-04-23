@@ -14,6 +14,7 @@ import {
   YAxis,
 } from "recharts";
 import { DashboardMiniCharts } from "@/components/dashboard-mini-charts";
+import { AlertSurface } from "@/components/ui/alert-surface";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { UsageCharts } from "@/features/usage/components/usage-charts";
@@ -44,7 +45,10 @@ import { formatMetricCompact } from "@/lib/metric-format";
 import { cn } from "@/lib/utils";
 
 type UsageAnalyticsData = UsageHistorySnapshot["data"];
-type UsageDetailRecord = UsageAnalyticsData["details"][number];
+type UsageTrendPoint = UsageAnalyticsData["requestTrend"]["day"][number];
+type UsageTokenBreakdownPoint = UsageAnalyticsData["tokenBreakdown"]["day"][number];
+type UsageCostBreakdownPoint = UsageAnalyticsData["costBreakdown"]["day"][number];
+type UsageCostBasis = UsageAnalyticsData["costBreakdown"]["totalsByModel"][string];
 type TimeRange = "7h" | "24h" | "7d" | "all";
 type TrendPeriod = "hour" | "day";
 
@@ -58,6 +62,7 @@ interface UsageAnalyticsProps {
 const TIME_RANGE_STORAGE_KEY = "dashboard-usage-time-range-v1";
 const CHART_LINES_STORAGE_KEY = "dashboard-usage-chart-lines-v1";
 const MAX_CHART_LINES = 9;
+const TREND_PERIOD_BUTTON_CLASS_NAME = "px-2.5 py-1 text-xs leading-5";
 const SERIES_COLORS = [
   CHART_COLORS.primary,
   CHART_COLORS.success,
@@ -169,207 +174,74 @@ function getCollectorTone(lastStatus: string, lastCollectedAt: string) {
   return "danger" as const;
 }
 
-function getHourWindow(timeRange: TimeRange): number {
-  switch (timeRange) {
-    case "7h":
-      return 7;
-    case "24h":
-      return 24;
-    case "7d":
-      return 7 * 24;
-    case "all":
-      return 24;
-  }
-}
-
-function calculateCost(detail: UsageDetailRecord, prices: Record<string, ModelPrice>): number {
-  const price = prices[detail.model];
+function calculateCostForModel(
+  model: string,
+  basis: UsageCostBasis,
+  prices: Record<string, ModelPrice>
+): number {
+  const price = prices[model];
   if (!price) return 0;
-  const cachedTokens = Math.max(detail.cachedTokens, 0);
-  const promptTokens = Math.max(detail.inputTokens - cachedTokens, 0);
+  const promptTokens = Math.max(basis.promptTokens, 0);
+  const cachedTokens = Math.max(basis.cachedTokens, 0);
+  const outputTokens = Math.max(basis.outputTokens, 0);
+
   return (
     (promptTokens / 1_000_000) * price.prompt +
     (cachedTokens / 1_000_000) * price.cache +
-    (detail.outputTokens / 1_000_000) * price.completion
+    (outputTokens / 1_000_000) * price.completion
   );
 }
 
-function buildTrendData(
-  details: UsageDetailRecord[],
-  period: TrendPeriod,
-  metric: "requests" | "tokens",
-  lines: string[],
-  timeRange: TimeRange
-) {
+function calculateTotalCost(
+  totalsByModel: Record<string, UsageCostBasis>,
+  prices: Record<string, ModelPrice>
+): number {
+  return Object.entries(totalsByModel).reduce(
+    (sum, [model, basis]) => sum + calculateCostForModel(model, basis, prices),
+    0
+  );
+}
+
+function mergeSelectedTrendLines(
+  rows: UsageTrendPoint[],
+  lines: string[]
+): UsageTrendPoint[] {
   const selectedLines = lines.length > 0 ? lines : ["all"];
-  const dataByModel = new Map<string, Map<string, number>>();
-  const labels: string[] = [];
-  const labelSet = new Set<string>();
 
-  if (period === "hour") {
-    const hourWindow = getHourWindow(timeRange);
-    const hourMs = 60 * 60 * 1000;
-    const now = new Date();
-    now.setMinutes(0, 0, 0);
-    const start = now.getTime() - (hourWindow - 1) * hourMs;
-
-    for (let index = 0; index < hourWindow; index += 1) {
-      const bucket = new Date(start + index * hourMs);
-      labels.push(bucket.toISOString());
-    }
-
-    for (const detail of details) {
-      const timestamp = new Date(detail.timestamp);
-      timestamp.setMinutes(0, 0, 0);
-      const bucketIso = timestamp.toISOString();
-      if (!labels.includes(bucketIso)) continue;
-      if (!dataByModel.has(detail.model)) {
-        dataByModel.set(detail.model, new Map());
-      }
-      const map = dataByModel.get(detail.model)!;
-      map.set(bucketIso, (map.get(bucketIso) ?? 0) + (metric === "tokens" ? detail.totalTokens : 1));
-    }
-  } else {
-    for (const detail of details) {
-      const label = detail.timestamp.slice(0, 10);
-      labelSet.add(label);
-      if (!dataByModel.has(detail.model)) {
-        dataByModel.set(detail.model, new Map());
-      }
-      const map = dataByModel.get(detail.model)!;
-      map.set(label, (map.get(label) ?? 0) + (metric === "tokens" ? detail.totalTokens : 1));
-    }
-    labels.push(...[...labelSet].sort());
-  }
-
-  return labels.map((label) => {
-    const row: Record<string, string | number> = {
-      label,
-      displayLabel: period === "hour"
-        ? new Date(label).toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })
-        : new Date(`${label}T00:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-    };
-    let allTotal = 0;
-    for (const [model, values] of dataByModel.entries()) {
-      const value = values.get(label) ?? 0;
-      row[model] = value;
-      allTotal += value;
-    }
-    row.all = allTotal;
+  return rows.map((row) => {
+    const nextRow: UsageTrendPoint = { ...row };
     for (const selected of selectedLines) {
-      if (!(selected in row)) {
-        row[selected] = 0;
+      if (!(selected in nextRow)) {
+        nextRow[selected] = 0;
       }
     }
-    return row;
+    return nextRow;
   });
 }
 
-function buildTokenBreakdownData(details: UsageDetailRecord[], period: TrendPeriod, timeRange: TimeRange) {
-  const bucketMap = new Map<string, { displayLabel: string; input: number; output: number; cached: number; reasoning: number }>();
-
-  if (period === "hour") {
-    const hourWindow = getHourWindow(timeRange);
-    const now = new Date();
-    now.setMinutes(0, 0, 0);
-    for (let index = hourWindow - 1; index >= 0; index -= 1) {
-      const bucket = new Date(now.getTime() - index * 60 * 60 * 1000);
-      const key = bucket.toISOString();
-      bucketMap.set(key, {
-        displayLabel: bucket.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
-        input: 0,
-        output: 0,
-        cached: 0,
-        reasoning: 0,
-      });
-    }
-    for (const detail of details) {
-      const bucket = new Date(detail.timestamp);
-      bucket.setMinutes(0, 0, 0);
-      const entry = bucketMap.get(bucket.toISOString());
-      if (!entry) continue;
-      entry.input += detail.inputTokens;
-      entry.output += detail.outputTokens;
-      entry.cached += detail.cachedTokens;
-      entry.reasoning += detail.reasoningTokens;
-    }
-  } else {
-    for (const detail of details) {
-      const key = detail.timestamp.slice(0, 10);
-      if (!bucketMap.has(key)) {
-        bucketMap.set(key, {
-          displayLabel: new Date(`${key}T00:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-          input: 0,
-          output: 0,
-          cached: 0,
-          reasoning: 0,
-        });
-      }
-      const entry = bucketMap.get(key)!;
-      entry.input += detail.inputTokens;
-      entry.output += detail.outputTokens;
-      entry.cached += detail.cachedTokens;
-      entry.reasoning += detail.reasoningTokens;
-    }
-  }
-
-  return [...bucketMap.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([label, value]) => ({ label, ...value }));
-}
-
-function buildCostTrendData(details: UsageDetailRecord[], prices: Record<string, ModelPrice>, period: TrendPeriod, timeRange: TimeRange) {
-  const bucketMap = new Map<string, { displayLabel: string; cost: number }>();
-
-  if (period === "hour") {
-    const hourWindow = getHourWindow(timeRange);
-    const now = new Date();
-    now.setMinutes(0, 0, 0);
-    for (let index = hourWindow - 1; index >= 0; index -= 1) {
-      const bucket = new Date(now.getTime() - index * 60 * 60 * 1000);
-      bucketMap.set(bucket.toISOString(), {
-        displayLabel: bucket.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" }),
-        cost: 0,
-      });
-    }
-    for (const detail of details) {
-      const bucket = new Date(detail.timestamp);
-      bucket.setMinutes(0, 0, 0);
-      const entry = bucketMap.get(bucket.toISOString());
-      if (!entry) continue;
-      entry.cost += calculateCost(detail, prices);
-    }
-  } else {
-    for (const detail of details) {
-      const key = detail.timestamp.slice(0, 10);
-      if (!bucketMap.has(key)) {
-        bucketMap.set(key, {
-          displayLabel: new Date(`${key}T00:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" }),
-          cost: 0,
-        });
-      }
-      bucketMap.get(key)!.cost += calculateCost(detail, prices);
-    }
-  }
-
-  return [...bucketMap.entries()]
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([label, value]) => ({ label, ...value }));
+function buildCostTrendData(
+  rows: UsageCostBreakdownPoint[],
+  prices: Record<string, ModelPrice>
+): Array<{ label: string; displayLabel: string; cost: number }> {
+  return rows.map((row) => ({
+    label: row.label,
+    displayLabel: row.displayLabel,
+    cost: Object.entries(row.models).reduce(
+      (sum, [model, basis]) => sum + calculateCostForModel(model, basis, prices),
+      0
+    ),
+  }));
 }
 
 function rateToColor(rate: number): string {
   const clamped = Math.max(0, Math.min(1, rate));
-  const red = { r: 239, g: 68, b: 68 };
-  const yellow = { r: 250, g: 204, b: 21 };
-  const green = { r: 34, g: 197, b: 94 };
-  const segment = clamped < 0.5 ? 0 : 1;
-  const localT = segment === 0 ? clamped * 2 : (clamped - 0.5) * 2;
-  const from = segment === 0 ? red : yellow;
-  const to = segment === 0 ? yellow : green;
-  const r = Math.round(from.r + (to.r - from.r) * localT);
-  const g = Math.round(from.g + (to.g - from.g) * localT);
-  const b = Math.round(from.b + (to.b - from.b) * localT);
-  return `rgb(${r}, ${g}, ${b})`;
+  const transitionPercent = Math.round((clamped < 0.5 ? clamped * 2 : (clamped - 0.5) * 2) * 100);
+
+  if (clamped < 0.5) {
+    return `color-mix(in srgb, var(--state-danger-accent) ${100 - transitionPercent}%, var(--state-warning-accent) ${transitionPercent}%)`;
+  }
+
+  return `color-mix(in srgb, var(--state-warning-accent) ${100 - transitionPercent}%, var(--state-success-accent) ${transitionPercent}%)`;
 }
 
 function chunkBlocks<T>(items: T[], chunkSize: number): T[][] {
@@ -632,8 +504,7 @@ export function UsageAnalytics({
     } catch {}
   }, [chartLines]);
 
-  const details = snapshot.data.details;
-  const modelNames = useMemo(() => [...new Set(details.map((detail) => detail.model))].sort(), [details]);
+  const modelNames = snapshot.data.modelNames;
   const modelPriceLookup = useMemo(() => modelPricingToLookup(modelPricingRecords), [modelPricingRecords]);
   const recentRate = snapshot.data.recentRate;
   const totals = snapshot.data.totals;
@@ -645,24 +516,21 @@ export function UsageAnalytics({
   const latencySamples = latencySummary.sampleCount;
   const hasLatencySamples = latencySamples > 0;
   const totalCost = useMemo(
-    () => details.reduce((sum, detail) => sum + calculateCost(detail, modelPriceLookup), 0),
-    [details, modelPriceLookup]
+    () => calculateTotalCost(snapshot.data.costBreakdown.totalsByModel, modelPriceLookup),
+    [modelPriceLookup, snapshot.data.costBreakdown.totalsByModel]
   );
   const requestTrendData = useMemo(
-    () => buildTrendData(details, requestsPeriod, "requests", chartLines, windowRange),
-    [chartLines, details, requestsPeriod, windowRange]
+    () => mergeSelectedTrendLines(snapshot.data.requestTrend[requestsPeriod], chartLines),
+    [chartLines, requestsPeriod, snapshot.data.requestTrend]
   );
   const tokenTrendData = useMemo(
-    () => buildTrendData(details, tokensPeriod, "tokens", chartLines, windowRange),
-    [chartLines, details, tokensPeriod, windowRange]
+    () => mergeSelectedTrendLines(snapshot.data.tokenTrend[tokensPeriod], chartLines),
+    [chartLines, tokensPeriod, snapshot.data.tokenTrend]
   );
-  const tokenBreakdownData = useMemo(
-    () => buildTokenBreakdownData(details, tokenBreakdownPeriod, windowRange),
-    [details, tokenBreakdownPeriod, windowRange]
-  );
+  const tokenBreakdownData: UsageTokenBreakdownPoint[] = snapshot.data.tokenBreakdown[tokenBreakdownPeriod];
   const costTrendData = useMemo(
-    () => buildCostTrendData(details, modelPriceLookup, costPeriod, windowRange),
-    [costPeriod, details, modelPriceLookup, windowRange]
+    () => buildCostTrendData(snapshot.data.costBreakdown[costPeriod], modelPriceLookup),
+    [costPeriod, modelPriceLookup, snapshot.data.costBreakdown]
   );
   const serviceHealthRows = useMemo(
     () => chunkBlocks(snapshot.data.serviceHealth.blockDetails, snapshot.data.serviceHealth.cols),
@@ -826,11 +694,11 @@ export function UsageAnalytics({
         <div className="flex flex-wrap items-center gap-2">
           <span className="inline-block h-2.5 w-2.5 rounded-[3px] bg-[var(--surface-muted)]" />
           <span>Idle</span>
-          <span className="inline-block h-2.5 w-2.5 rounded-[3px] bg-rose-500" />
+          <span className="inline-block h-2.5 w-2.5 rounded-[3px] bg-[var(--state-danger-accent)]" />
           <span>Poor</span>
-          <span className="inline-block h-2.5 w-2.5 rounded-[3px] bg-yellow-400" />
+          <span className="inline-block h-2.5 w-2.5 rounded-[3px] bg-[var(--state-warning-accent)]" />
           <span>Mixed</span>
-          <span className="inline-block h-2.5 w-2.5 rounded-[3px] bg-emerald-500" />
+          <span className="inline-block h-2.5 w-2.5 rounded-[3px] bg-[var(--state-success-accent)]" />
           <span>Healthy</span>
         </div>
         <span>{snapshot.data.serviceHealth.totalFailure.toLocaleString()} failed</span>
@@ -882,9 +750,13 @@ export function UsageAnalytics({
             />
           </div>
 
-          <div className="mt-4 grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-            {topModelsCard}
-            {serviceHealthCard}
+          <div className="mt-4 grid gap-4 xl:grid-cols-3">
+            <div className="xl:col-span-1">
+              {topModelsCard}
+            </div>
+            <div className="xl:col-span-2">
+              {serviceHealthCard}
+            </div>
           </div>
         </section>
       </div>
@@ -944,9 +816,9 @@ export function UsageAnalytics({
           </div>
         </div>
         {error ? (
-          <div className="mt-4 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <AlertSurface tone="danger" className="mt-4 text-sm">
             {error}
-          </div>
+          </AlertSurface>
         ) : null}
       </section>
 
@@ -1063,8 +935,20 @@ export function UsageAnalytics({
       <section className="grid gap-4 xl:grid-cols-2">
         <ChartContainer title="Requests Trend" className="h-[320px] lg:h-[340px]">
           <div className="mb-3 flex gap-2">
-            <Button variant={requestsPeriod === "hour" ? "primary" : "secondary"} onClick={() => setRequestsPeriod("hour")}>By Hour</Button>
-            <Button variant={requestsPeriod === "day" ? "primary" : "secondary"} onClick={() => setRequestsPeriod("day")}>By Day</Button>
+            <Button
+              variant={requestsPeriod === "hour" ? "primary" : "secondary"}
+              className={TREND_PERIOD_BUTTON_CLASS_NAME}
+              onClick={() => setRequestsPeriod("hour")}
+            >
+              By Hour
+            </Button>
+            <Button
+              variant={requestsPeriod === "day" ? "primary" : "secondary"}
+              className={TREND_PERIOD_BUTTON_CLASS_NAME}
+              onClick={() => setRequestsPeriod("day")}
+            >
+              By Day
+            </Button>
           </div>
           <ResponsiveContainer width="100%" height="85%">
             <LineChart data={requestTrendData} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
@@ -1093,8 +977,20 @@ export function UsageAnalytics({
 
         <ChartContainer title="Tokens Trend" className="h-[320px] lg:h-[340px]">
           <div className="mb-3 flex gap-2">
-            <Button variant={tokensPeriod === "hour" ? "primary" : "secondary"} onClick={() => setTokensPeriod("hour")}>By Hour</Button>
-            <Button variant={tokensPeriod === "day" ? "primary" : "secondary"} onClick={() => setTokensPeriod("day")}>By Day</Button>
+            <Button
+              variant={tokensPeriod === "hour" ? "primary" : "secondary"}
+              className={TREND_PERIOD_BUTTON_CLASS_NAME}
+              onClick={() => setTokensPeriod("hour")}
+            >
+              By Hour
+            </Button>
+            <Button
+              variant={tokensPeriod === "day" ? "primary" : "secondary"}
+              className={TREND_PERIOD_BUTTON_CLASS_NAME}
+              onClick={() => setTokensPeriod("day")}
+            >
+              By Day
+            </Button>
           </div>
           <ResponsiveContainer width="100%" height="85%">
             <LineChart data={tokenTrendData} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
@@ -1125,8 +1021,20 @@ export function UsageAnalytics({
       <section className="grid gap-4 xl:grid-cols-2">
         <ChartContainer title="Token Breakdown" className="h-[320px] lg:h-[340px]">
           <div className="mb-3 flex gap-2">
-            <Button variant={tokenBreakdownPeriod === "hour" ? "primary" : "secondary"} onClick={() => setTokenBreakdownPeriod("hour")}>By Hour</Button>
-            <Button variant={tokenBreakdownPeriod === "day" ? "primary" : "secondary"} onClick={() => setTokenBreakdownPeriod("day")}>By Day</Button>
+            <Button
+              variant={tokenBreakdownPeriod === "hour" ? "primary" : "secondary"}
+              className={TREND_PERIOD_BUTTON_CLASS_NAME}
+              onClick={() => setTokenBreakdownPeriod("hour")}
+            >
+              By Hour
+            </Button>
+            <Button
+              variant={tokenBreakdownPeriod === "day" ? "primary" : "secondary"}
+              className={TREND_PERIOD_BUTTON_CLASS_NAME}
+              onClick={() => setTokenBreakdownPeriod("day")}
+            >
+              By Day
+            </Button>
           </div>
           <ResponsiveContainer width="100%" height="85%">
             <AreaChart data={tokenBreakdownData} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
@@ -1148,8 +1056,20 @@ export function UsageAnalytics({
           subtitle={pricedModelsCount > 0 ? "Calculated from global model pricing" : "Add global prices to enable"}
         >
           <div className="mb-3 flex gap-2">
-            <Button variant={costPeriod === "hour" ? "primary" : "secondary"} onClick={() => setCostPeriod("hour")}>By Hour</Button>
-            <Button variant={costPeriod === "day" ? "primary" : "secondary"} onClick={() => setCostPeriod("day")}>By Day</Button>
+            <Button
+              variant={costPeriod === "hour" ? "primary" : "secondary"}
+              className={TREND_PERIOD_BUTTON_CLASS_NAME}
+              onClick={() => setCostPeriod("hour")}
+            >
+              By Hour
+            </Button>
+            <Button
+              variant={costPeriod === "day" ? "primary" : "secondary"}
+              className={TREND_PERIOD_BUTTON_CLASS_NAME}
+              onClick={() => setCostPeriod("day")}
+            >
+              By Day
+            </Button>
           </div>
           {pricedModelsCount === 0 ? (
             <div className="flex h-[85%] items-center justify-center text-sm text-[var(--text-muted)]">

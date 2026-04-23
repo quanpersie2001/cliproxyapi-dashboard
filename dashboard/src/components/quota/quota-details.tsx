@@ -98,10 +98,10 @@ function isShortTermGroup(group: QuotaGroup): boolean {
   );
 }
 
-function getCapacityBarClass(value: number): string {
-  if (value > 0.6) return "bg-emerald-500/80";
-  if (value > 0.2) return "bg-amber-500";
-  return "bg-rose-500/80";
+function getCapacityBarColor(value: number): string {
+  if (value > 0.6) return "var(--state-success-accent)";
+  if (value > 0.2) return "var(--state-warning-accent)";
+  return "var(--state-danger-accent)";
 }
 
 function getCapacityTone(value: number | null): BadgeTone {
@@ -363,14 +363,16 @@ export function QuotaDetails({ filteredAccounts, loading }: QuotaDetailsProps) {
                                 </div>
 
                                 <span className="mt-3 block h-1.5 w-full overflow-hidden rounded-full bg-[var(--surface-muted)]">
-                              <span
-                                  className={cn(
-                                    "block h-full transition-[width] duration-300",
-                                    fraction === null ? "bg-[var(--surface-border)]" : getCapacityBarClass(fraction)
-                                  )}
-                                  style={{ width: fraction === null ? "18%" : `${percentage}%` }}
-                                />
-                              </span>
+                                  <span
+                                    className={cn("block h-full transition-[width] duration-300")}
+                                    style={{
+                                      width: fraction === null ? "18%" : `${percentage}%`,
+                                      backgroundColor: fraction === null
+                                        ? "var(--surface-border)"
+                                        : getCapacityBarColor(fraction),
+                                    }}
+                                  />
+                                </span>
                             </div>
                           );
                         })}

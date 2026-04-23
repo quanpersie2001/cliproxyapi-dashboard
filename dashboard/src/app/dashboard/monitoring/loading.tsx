@@ -54,12 +54,12 @@ export default function MonitoringLoading() {
           <div className="h-7 w-16 animate-pulse rounded-md bg-[var(--surface-muted)]" />
         </div>
         {/* Log lines */}
-        <div className="rounded-sm border border-[var(--surface-border)] bg-[#1a1a1a] p-3">
+        <div className="console-surface rounded-sm border p-3">
           <div className="space-y-1.5">
             {Array.from({ length: 12 }).map((_, idx) => (
               <div
                 key={`logline-${idx}`}
-                className="h-3 animate-pulse rounded bg-[var(--surface-base)]/10"
+                className="console-skeleton h-3 animate-pulse rounded"
                 style={{ width: `${50 + (idx * 13 + 9) % 45}%` }}
               />
             ))}

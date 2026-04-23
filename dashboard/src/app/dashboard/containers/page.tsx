@@ -1,5 +1,6 @@
 "use client";
 
+import { AlertSurface } from "@/components/ui/alert-surface";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useRef } from "react";
 import { cn, extractApiError } from "@/lib/utils";
@@ -205,7 +206,7 @@ export default function ContainersPage() {
       ) : (
         <>
           {fetchError && (
-            <div className="rounded-md border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">{fetchError}</div>
+            <AlertSurface tone="danger" className="text-sm">{fetchError}</AlertSurface>
           )}
 
           {containers.length === 0 && !fetchError ? (
@@ -243,7 +244,17 @@ export default function ContainersPage() {
                       <p className="truncate text-sm font-medium text-[var(--text-primary)]">{container.displayName}</p>
                       <p className="mt-0.5 truncate text-[11px] text-[var(--text-muted)]">{container.status}</p>
                     </div>
-                    <span className={cn("text-xs font-medium", container.state === "running" ? "text-emerald-700" : container.state === "exited" || container.state === "dead" ? "text-rose-600" : "text-amber-700")}>
+                    <span
+                      className="text-xs font-medium"
+                      style={{
+                        color:
+                          container.state === "running"
+                            ? "var(--state-success-accent)"
+                            : container.state === "exited" || container.state === "dead"
+                              ? "var(--state-danger-accent)"
+                              : "var(--state-warning-accent)",
+                      }}
+                    >
                       {container.state}
                     </span>
                     <span className="text-xs text-[var(--text-secondary)]">{container.uptime !== null ? formatUptime(container.uptime) : "-"}</span>
@@ -301,14 +312,14 @@ export default function ContainersPage() {
                   </Button>
                 </div>
               </div>
-                <div className="h-96 overflow-auto rounded-sm border border-[var(--surface-border)] bg-[#1a1a1a] p-3 font-mono text-[10px] sm:p-4 sm:text-xs">
+                <div className="console-surface h-96 overflow-auto rounded-sm border p-3 font-mono text-[10px] sm:p-4 sm:text-xs">
                   {logsLoading ? (
-                    <div className="text-gray-400">Loading logs...</div>
+                    <div className="console-line-muted">Loading logs...</div>
                   ) : logLines.length === 0 ? (
-                    <div className="text-gray-400">No logs available</div>
+                    <div className="console-line-muted">No logs available</div>
                   ) : (
                     logLines.map((entry) => (
-                      <div key={entry.id} className="mb-1 break-all text-gray-200">
+                      <div key={entry.id} className="mb-1 break-all">
                         {entry.text}
                       </div>
                     ))

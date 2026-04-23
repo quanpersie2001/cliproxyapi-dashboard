@@ -61,17 +61,13 @@ function getCollectorTone(lastStatus: string, lastCollectedAt: string): BadgeTon
 
 function rateToColor(rate: number): string {
   const clamped = Math.max(0, Math.min(1, rate));
-  const red = { r: 239, g: 68, b: 68 };
-  const yellow = { r: 250, g: 204, b: 21 };
-  const green = { r: 34, g: 197, b: 94 };
-  const segment = clamped < 0.5 ? 0 : 1;
-  const localT = segment === 0 ? clamped * 2 : (clamped - 0.5) * 2;
-  const from = segment === 0 ? red : yellow;
-  const to = segment === 0 ? yellow : green;
-  const r = Math.round(from.r + (to.r - from.r) * localT);
-  const g = Math.round(from.g + (to.g - from.g) * localT);
-  const b = Math.round(from.b + (to.b - from.b) * localT);
-  return `rgb(${r}, ${g}, ${b})`;
+  const transitionPercent = Math.round((clamped < 0.5 ? clamped * 2 : (clamped - 0.5) * 2) * 100);
+
+  if (clamped < 0.5) {
+    return `color-mix(in srgb, var(--state-danger-accent) ${100 - transitionPercent}%, var(--state-warning-accent) ${transitionPercent}%)`;
+  }
+
+  return `color-mix(in srgb, var(--state-warning-accent) ${100 - transitionPercent}%, var(--state-success-accent) ${transitionPercent}%)`;
 }
 
 function formatHealthRange(startTime: number, endTime: number): string {
@@ -339,11 +335,11 @@ export function OverviewUsagePanel({
             <div className="flex items-center gap-2">
               <span className="inline-block h-2.5 w-2.5 rounded-[3px] bg-[var(--surface-muted)]" />
               <span>Idle</span>
-              <span className="inline-block h-2.5 w-2.5 rounded-[3px] bg-rose-500" />
+              <span className="inline-block h-2.5 w-2.5 rounded-[3px] bg-[var(--state-danger-accent)]" />
               <span>Poor</span>
-              <span className="inline-block h-2.5 w-2.5 rounded-[3px] bg-yellow-400" />
+              <span className="inline-block h-2.5 w-2.5 rounded-[3px] bg-[var(--state-warning-accent)]" />
               <span>Mixed</span>
-              <span className="inline-block h-2.5 w-2.5 rounded-[3px] bg-emerald-500" />
+              <span className="inline-block h-2.5 w-2.5 rounded-[3px] bg-[var(--state-success-accent)]" />
               <span>Healthy</span>
             </div>
             <span>{snapshot.serviceHealth.totalFailure.toLocaleString()} failed</span>

@@ -7,6 +7,7 @@ import {
   OAUTH_PROVIDERS,
   OAuthProviderIcon,
 } from "@/components/providers/oauth-provider-meta";
+import { AlertSurface } from "@/components/ui/alert-surface";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
@@ -922,8 +923,8 @@ export function OAuthModelAliasEditor({ showToast }: OAuthModelAliasEditorProps)
               </h3>
               <p className="mt-1 text-sm leading-relaxed text-[var(--text-muted)]">
                 Review aliases by provider in the list view or inspect provider-to-alias
-                relationships in the diagram view. Diagram mode is read-only, while add, edit,
-                and delete actions stay in list view and save directly to{" "}
+                relationships in the diagram view. Use list view for inline edits and deletions,
+                while new aliases still save directly to{" "}
                 <code className="rounded bg-[var(--surface-muted)] px-1 py-0.5 font-mono text-xs">
                   config.yaml
                 </code>
@@ -954,7 +955,7 @@ export function OAuthModelAliasEditor({ showToast }: OAuthModelAliasEditorProps)
                       "rounded-[0.375rem] border px-2.5 py-1 text-[11px] font-semibold transition-[background-color,border-color,color,transform] duration-200",
                       "active:translate-y-px",
                       viewMode === "diagram"
-                        ? "border-[var(--state-warning-accent)] bg-[var(--state-warning-accent)] text-[#1f2937] shadow-[var(--shadow-edge)]"
+                        ? "border-[var(--state-info-accent)] bg-[var(--state-info-accent)] text-white shadow-[var(--shadow-edge)]"
                         : "border-transparent bg-transparent text-[var(--text-muted)] hover:border-[var(--surface-border)] hover:bg-[var(--surface-base)] hover:text-[var(--text-primary)]"
                     )}
                   >
@@ -962,23 +963,21 @@ export function OAuthModelAliasEditor({ showToast }: OAuthModelAliasEditorProps)
                   </button>
                 </div>
 
-                {viewMode === "list" ? (
-                  <Button
-                    variant="pill"
-                    onClick={openCreateProviderModal}
-                    disabled={saving || loading}
-                    className="px-3 py-1.5 text-xs"
-                  >
-                    Add Alias
-                  </Button>
-                ) : null}
+                <Button
+                  variant="pill"
+                  onClick={openCreateProviderModal}
+                  disabled={saving || loading}
+                  className="px-3 py-1.5 text-xs"
+                >
+                  Add Alias
+                </Button>
               </div>
 
               <div className="min-h-5 text-right text-xs text-[var(--text-muted)]">
                 {saving
                   ? "Saving alias changes..."
                   : viewMode === "diagram"
-                    ? "Diagram is read-only. Switch to list view to manage aliases."
+                    ? "Diagram is read-only for existing mappings. Use Add Alias or switch to list view to edit."
                     : "Changes apply immediately after confirmation."}
               </div>
             </div>
@@ -1330,7 +1329,7 @@ export function OAuthModelAliasEditor({ showToast }: OAuthModelAliasEditorProps)
                         type="button"
                         onClick={() => removeProviderFormRow(row.id)}
                         disabled={saving}
-                        className="flex h-10 w-full items-center justify-center self-end rounded-md border border-red-200/70 bg-red-50/80 text-sm font-medium text-red-600 transition-colors hover:border-red-300 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300 xl:w-10"
+                        className="flex h-10 w-full items-center justify-center self-end rounded-md border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] text-sm font-medium text-[var(--state-danger-text)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 xl:w-10"
                         aria-label="Remove mapping"
                         title="Remove mapping"
                       >
@@ -1360,9 +1359,9 @@ export function OAuthModelAliasEditor({ showToast }: OAuthModelAliasEditorProps)
           </div>
 
           {providerFormError ? (
-            <div className="rounded-md border border-rose-200/70 bg-rose-50/80 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200">
+            <AlertSurface tone="danger" className="px-4 py-3 text-sm">
               {providerFormError}
-            </div>
+            </AlertSurface>
           ) : null}
         </ModalContent>
 
@@ -1522,7 +1521,7 @@ export function OAuthModelAliasEditor({ showToast }: OAuthModelAliasEditorProps)
                           type="button"
                           onClick={() => removeAliasFormRow(row.id)}
                           disabled={saving}
-                          className="flex h-10 w-full items-center justify-center self-end rounded-md border border-red-200/70 bg-red-50/80 text-sm font-medium text-red-600 transition-colors hover:border-red-300 hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-red-500/20 dark:bg-red-500/10 dark:text-red-300 xl:w-10"
+                          className="flex h-10 w-full items-center justify-center self-end rounded-md border border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] text-sm font-medium text-[var(--state-danger-text)] transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50 xl:w-10"
                           aria-label="Remove mapping"
                           title="Remove mapping"
                         >
@@ -1539,9 +1538,9 @@ export function OAuthModelAliasEditor({ showToast }: OAuthModelAliasEditorProps)
           </div>
 
           {aliasFormError ? (
-            <div className="rounded-md border border-rose-200/70 bg-rose-50/80 px-4 py-3 text-sm text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200">
+            <AlertSurface tone="danger" className="px-4 py-3 text-sm">
               {aliasFormError}
-            </div>
+            </AlertSurface>
           ) : null}
         </ModalContent>
 

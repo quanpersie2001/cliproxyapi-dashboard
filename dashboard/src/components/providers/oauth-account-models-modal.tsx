@@ -1,6 +1,7 @@
 "use client";
 
 import { Badge } from "@/components/ui/badge";
+import { AlertSurface } from "@/components/ui/alert-surface";
 import { Button } from "@/components/ui/button";
 import { Modal, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@/components/ui/modal";
 import type { OAuthAccountWithOwnership } from "@/components/providers/oauth-credential-list";
@@ -55,9 +56,9 @@ export function OAuthAccountModelsModal({
             Loading supported models...
           </div>
         ) : errorMessage ? (
-          <div className="rounded-lg border border-rose-200/70 bg-rose-50/80 p-5 text-sm text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200">
+          <AlertSurface tone="danger" className="rounded-lg p-5 text-sm">
             {errorMessage}
-          </div>
+          </AlertSurface>
         ) : models.length === 0 ? (
           <div className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-muted)]/50 p-5 text-sm text-[var(--text-muted)]">
             This account has no discoverable models yet.

@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
+import { AlertSurface } from "@/components/ui/alert-surface";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter } from "@/components/ui/modal";
@@ -164,12 +165,16 @@ export default function AdminUsersPage() {
       {loading ? (
         <div className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-base)] p-6 text-center text-sm text-[var(--text-muted)]">Loading...</div>
       ) : fetchError ? (
-        <div className="rounded-md border border-rose-200 bg-rose-50 p-4 text-center text-sm text-rose-700">
+        <AlertSurface tone="danger" className="text-center text-sm">
           Failed to load users.
-          <button type="button" onClick={() => void fetchUsers()} className="ml-2 font-medium text-rose-800 underline underline-offset-2 hover:text-rose-950">
+          <button
+            type="button"
+            onClick={() => void fetchUsers()}
+            className="ml-2 font-medium underline underline-offset-2 opacity-90 transition-opacity hover:opacity-100"
+          >
             Retry
           </button>
-        </div>
+        </AlertSurface>
       ) : users.length === 0 ? (
         <div className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-base)] p-4 text-sm text-[var(--text-muted)]">
           No users found. Create one to get started.

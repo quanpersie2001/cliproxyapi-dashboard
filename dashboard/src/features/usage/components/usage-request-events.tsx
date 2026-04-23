@@ -117,7 +117,8 @@ export function UsageRequestEvents({ events, isAdmin, truncated }: UsageRequestE
             {pagedEvents.map((event, index) => (
               <tr
                 key={`${event.timestamp}-${event.model}-${index}`}
-                className={`border-b border-[var(--surface-border)] last:border-b-0 ${event.failed ? "bg-rose-500/[0.03]" : "hover:bg-[var(--surface-muted)]"}`}
+                className={`border-b border-[var(--surface-border)] last:border-b-0 ${event.failed ? "" : "hover:bg-[var(--surface-muted)]"}`}
+                style={event.failed ? { backgroundColor: "var(--state-danger-bg)" } : undefined}
               >
                 <td className="px-3 py-2">
                   <div className="flex flex-col">

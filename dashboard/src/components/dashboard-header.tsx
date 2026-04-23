@@ -21,6 +21,21 @@ interface ProxyStatus {
   uptime?: number | null;
 }
 
+const HEADER_STATUS_STYLES = {
+  success: {
+    dot: { backgroundColor: "var(--state-success-accent)" },
+    text: { color: "var(--state-success-accent)" },
+  },
+  warning: {
+    dot: { backgroundColor: "var(--state-warning-accent)" },
+    text: { color: "var(--state-warning-accent)" },
+  },
+  danger: {
+    dot: { backgroundColor: "var(--state-danger-accent)" },
+    text: { color: "var(--state-danger-accent)" },
+  },
+} as const;
+
 function formatUptime(seconds: number): string {
   if (seconds <= 0) return "0m";
 
@@ -65,18 +80,18 @@ export function DashboardHeader({ onUserClick, username, isAdmin, externalStatus
         <div className="flex items-center gap-2">
           {isLoading ? (
             <>
-              <div className="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse" />
+              <div className="w-2.5 h-2.5 rounded-full animate-pulse" style={HEADER_STATUS_STYLES.warning.dot} />
               <span className="text-[var(--text-muted)]">Checking\u2026</span>
             </>
           ) : status?.running ? (
             <>
-              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse-dot" />
-              <span className="text-emerald-600 font-medium">All systems operational</span>
+              <div className="w-2.5 h-2.5 rounded-full animate-pulse-dot" style={HEADER_STATUS_STYLES.success.dot} />
+              <span className="font-medium" style={HEADER_STATUS_STYLES.success.text}>All systems operational</span>
             </>
           ) : (
             <>
-              <div className="w-2.5 h-2.5 rounded-full bg-red-500" />
-              <span className="text-red-600 font-medium">System offline</span>
+              <div className="w-2.5 h-2.5 rounded-full" style={HEADER_STATUS_STYLES.danger.dot} />
+              <span className="font-medium" style={HEADER_STATUS_STYLES.danger.text}>System offline</span>
             </>
           )}
         </div>

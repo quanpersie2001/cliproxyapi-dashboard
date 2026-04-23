@@ -70,7 +70,7 @@ export function ThemeToggle() {
       </span>
 
       {theme === "system" && mounted ? (
-        <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-blue-500" />
+        <span className="absolute -top-0.5 -right-0.5 h-2 w-2 rounded-full bg-[var(--state-info-accent)]" />
       ) : null}
     </button>
   );

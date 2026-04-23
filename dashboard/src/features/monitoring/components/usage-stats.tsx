@@ -59,13 +59,13 @@ export function UsageStats({ usage }: UsageStatsProps) {
               </div>
               <div className="rounded-md border border-[var(--surface-border)] bg-[var(--surface-base)] px-2.5 py-2">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">Success</p>
-                <p className="mt-0.5 text-xs font-semibold text-emerald-700">
+                <p className="mt-0.5 text-xs font-semibold" style={{ color: "var(--state-success-accent)" }}>
                   {(usage.usage?.success_count ?? 0).toLocaleString()}
                 </p>
               </div>
               <div className="rounded-md border border-[var(--surface-border)] bg-[var(--surface-base)] px-2.5 py-2">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">Failed</p>
-                <p className="mt-0.5 text-xs font-semibold text-rose-600">
+                <p className="mt-0.5 text-xs font-semibold" style={{ color: "var(--state-danger-accent)" }}>
                   {(usage.usage?.failure_count ?? 0).toLocaleString()}
                 </p>
               </div>

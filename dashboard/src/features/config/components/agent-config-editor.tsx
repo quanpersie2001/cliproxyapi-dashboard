@@ -569,7 +569,7 @@ export default function AgentConfigEditor({
                 }}
                 placeholder="null"
                 spellCheck={false}
-                className="h-28 w-full resize-y rounded-lg border border-[var(--surface-border)] bg-[var(--surface-base)] p-3 font-mono text-xs text-[var(--text-primary)] focus:border-[var(--surface-border-strong)] focus:outline-none focus:ring-1 focus:ring-blue-400/30"
+                className="h-28 w-full resize-y rounded-lg border border-[var(--surface-border)] bg-[var(--surface-base)] p-3 font-mono text-xs text-[var(--text-primary)] focus:border-[var(--state-info-border)] focus:outline-none focus:ring-1 focus:ring-[var(--state-info-border)]"
               />
             </ConfigField>
           ))}

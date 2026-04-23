@@ -354,7 +354,7 @@ export function CustomProviderSection({ showToast, onProviderCountChange }: Cust
         {loading ? (
           <div className="flex items-center justify-center p-8">
             <div className="flex flex-col items-center gap-3">
-              <div className="size-8 animate-spin rounded-full border-4 border-[#ddd] border-t-blue-500"></div>
+              <div className="size-8 animate-spin rounded-full border-4 border-[var(--surface-border)] border-t-[var(--state-info-accent)]"></div>
               <p className="text-sm text-[var(--text-secondary)]">Loading custom providers...</p>
             </div>
           </div>

@@ -151,10 +151,10 @@ export function ProviderSettings({
                   </div>
                   {dashboardUpdateInfo.releaseNotes && (
                     <details className="mt-2">
-                      <summary className="cursor-pointer text-xs text-blue-600 hover:text-blue-600 transition-colors">
+                      <summary className="cursor-pointer text-xs text-[var(--state-info-accent)] transition-opacity hover:opacity-80">
                         View release notes
                       </summary>
-                      <div className="mt-2 max-h-60 overflow-auto rounded-sm border border-[var(--surface-border)] bg-[var(--surface-base)] p-3 text-xs text-[var(--text-secondary)] prose prose-xs max-w-none [&_h1]:text-sm [&_h1]:font-semibold [&_h1]:text-[var(--text-primary)] [&_h2]:text-xs [&_h2]:font-semibold [&_h2]:text-[var(--text-primary)] [&_h3]:text-xs [&_h3]:font-semibold [&_h3]:text-[var(--text-secondary)] [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:my-0.5 [&_code]:bg-[var(--surface-muted)] [&_code]:px-1 [&_code]:rounded [&_a]:text-blue-600 [&_a]:underline [&_p]:my-1">
+                      <div className="mt-2 max-h-60 overflow-auto rounded-sm border border-[var(--surface-border)] bg-[var(--surface-base)] p-3 text-xs text-[var(--text-secondary)] prose prose-xs max-w-none [&_h1]:text-sm [&_h1]:font-semibold [&_h1]:text-[var(--text-primary)] [&_h2]:text-xs [&_h2]:font-semibold [&_h2]:text-[var(--text-primary)] [&_h3]:text-xs [&_h3]:font-semibold [&_h3]:text-[var(--text-secondary)] [&_ul]:list-disc [&_ul]:pl-4 [&_ol]:list-decimal [&_ol]:pl-4 [&_li]:my-0.5 [&_code]:bg-[var(--surface-muted)] [&_code]:px-1 [&_code]:rounded [&_a]:text-[var(--state-info-accent)] [&_a]:underline [&_p]:my-1">
                         <Markdown>{dashboardUpdateInfo.releaseNotes}</Markdown>
                       </div>
                     </details>

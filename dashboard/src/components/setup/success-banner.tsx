@@ -4,10 +4,29 @@ import Link from "next/link";
 
 export function SuccessBanner() {
   return (
-    <div className="relative overflow-hidden rounded-xl border border-emerald-200 bg-emerald-50 px-6 py-5 shadow-[0_0_32px_rgba(16,185,129,0.08)]">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(16,185,129,0.12),transparent_60%)]" />
+    <div
+      className="relative overflow-hidden rounded-xl px-6 py-5 shadow-[var(--shadow-warm)]"
+      style={{
+        border: "1px solid var(--state-success-border)",
+        backgroundColor: "var(--state-success-bg)",
+      }}
+    >
+      <div
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(ellipse at top right, color-mix(in srgb, var(--state-success-accent) 22%, transparent), transparent 60%)",
+        }}
+      />
       <div className="relative flex flex-col items-center gap-3 text-center sm:flex-row sm:text-left">
-        <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-emerald-50 text-emerald-600 ring-1 ring-emerald-400/40">
+        <div
+          className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full"
+          style={{
+            backgroundColor: "color-mix(in srgb, var(--state-success-bg) 72%, var(--surface-base))",
+            color: "var(--state-success-accent)",
+            boxShadow: "inset 0 0 0 1px var(--state-success-border)",
+          }}
+        >
           <svg
             xmlns="http://www.w3.org/2000/svg"
             className="h-6 w-6"
@@ -25,7 +44,7 @@ export function SuccessBanner() {
           </svg>
         </div>
         <div className="flex-1">
-          <p className="text-base font-semibold text-emerald-700">
+          <p className="text-base font-semibold" style={{ color: "var(--state-success-text)" }}>
             All steps complete
           </p>
           <p className="mt-0.5 text-sm text-[var(--text-muted)]">

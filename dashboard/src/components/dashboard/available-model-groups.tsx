@@ -229,7 +229,7 @@ export function AvailableModelGroups({
                             checked={enabled}
                             onChange={() => toggleModel(model.id)}
                             aria-label={`${enabled ? "Disable" : "Enable"} ${model.id}`}
-                            className="mt-0.5 size-4 shrink-0 rounded border-[var(--surface-border)] bg-[var(--surface-base)] text-[var(--state-info-accent)] focus:ring-2 focus:ring-blue-500/40 focus:ring-offset-0"
+                            className="mt-0.5 size-4 shrink-0 rounded border-[var(--surface-border)] bg-[var(--surface-base)] text-[var(--state-info-accent)] focus:ring-2 focus:ring-[var(--state-info-border)] focus:ring-offset-0"
                           />
                         </label>
                       );

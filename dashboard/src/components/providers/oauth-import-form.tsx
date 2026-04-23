@@ -87,7 +87,7 @@ export function OAuthImportForm({
                 placeholder='{&#10;  "access_token": "...",&#10;  "refresh_token": "...",&#10;  ...&#10;}'
                 rows={8}
                 disabled={status === "uploading"}
-                className="w-full rounded-md border border-[var(--surface-border)] bg-[var(--surface-muted)] px-3 py-2 font-mono text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-blue-500/50 focus:outline-none focus:ring-1 focus:ring-blue-500/30 disabled:opacity-50 resize-y"
+                className="w-full resize-y rounded-md border border-[var(--surface-border)] bg-[var(--surface-muted)] px-3 py-2 font-mono text-xs text-[var(--text-primary)] placeholder:text-[var(--text-muted)] focus:border-[var(--state-info-border)] focus:outline-none focus:ring-1 focus:ring-[var(--state-info-border)] disabled:opacity-50"
               />
             </div>
           </div>

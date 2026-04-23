@@ -16,12 +16,12 @@ export default function LogsLoading() {
       <section className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-base)] p-4">
         <div className="mb-3 h-4 w-28 animate-pulse rounded bg-[var(--surface-muted)]" />
         {/* Monospace log lines */}
-        <div className="rounded-sm border border-[var(--surface-border)] bg-[#1a1a1a] p-4">
+        <div className="console-surface rounded-sm border p-4">
           <div className="space-y-1.5">
             {Array.from({ length: 18 }).map((_, idx) => (
               <div
                 key={`log-${idx}`}
-                className="h-3 animate-pulse rounded bg-[var(--surface-base)]/10"
+                className="console-skeleton h-3 animate-pulse rounded"
                 style={{ width: `${55 + (idx * 17 + 7) % 40}%` }}
               />
             ))}

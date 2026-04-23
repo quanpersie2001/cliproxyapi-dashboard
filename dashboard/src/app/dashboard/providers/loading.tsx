@@ -65,7 +65,7 @@ export default function ProvidersLoading() {
           </div>
           <div className="rounded-lg border border-[var(--surface-border)]/70 bg-[var(--surface-base)] p-8">
             <div className="flex items-center justify-center">
-              <div className="size-8 animate-spin rounded-full border-4 border-[#ddd] border-t-blue-500" />
+              <div className="size-8 animate-spin rounded-full border-4 border-[var(--surface-border)] border-t-[var(--state-info-accent)]" />
             </div>
           </div>
         </div>

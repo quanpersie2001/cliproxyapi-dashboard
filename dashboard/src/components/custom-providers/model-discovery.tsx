@@ -77,7 +77,7 @@ export function ModelDiscovery({
                   type="checkbox"
                   checked={model.selected}
                   onChange={() => onToggleFetchedModel(model.id)}
-                  className="h-4 w-4 rounded border-[var(--surface-border)] bg-[var(--surface-base)] text-[var(--state-info-accent)] focus:ring-2 focus:ring-blue-500/40 focus:ring-offset-0"
+                  className="h-4 w-4 rounded border-[var(--surface-border)] bg-[var(--surface-base)] text-[var(--state-info-accent)] focus:ring-2 focus:ring-[var(--state-info-border)] focus:ring-offset-0"
                 />
                 <span className="text-sm text-[var(--text-secondary)]">{model.id}</span>
               </label>

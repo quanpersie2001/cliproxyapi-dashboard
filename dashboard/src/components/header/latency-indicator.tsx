@@ -2,16 +2,25 @@
 
 import { useHealthStatus } from "@/hooks/use-health-status";
 
-function getLatencyColor(ms: number): string {
-  if (ms < 100) return "text-emerald-600";
-  if (ms < 300) return "text-amber-600";
-  return "text-red-600";
-}
+const LATENCY_TONE_STYLES = {
+  success: {
+    dot: { backgroundColor: "var(--state-success-accent)" },
+    text: { color: "var(--state-success-accent)" },
+  },
+  warning: {
+    dot: { backgroundColor: "var(--state-warning-accent)" },
+    text: { color: "var(--state-warning-accent)" },
+  },
+  danger: {
+    dot: { backgroundColor: "var(--state-danger-accent)" },
+    text: { color: "var(--state-danger-accent)" },
+  },
+} as const;
 
-function getLatencyDotColor(ms: number): string {
-  if (ms < 100) return "bg-emerald-500";
-  if (ms < 300) return "bg-amber-500";
-  return "bg-red-500";
+function getLatencyTone(ms: number) {
+  if (ms < 100) return "success" as const;
+  if (ms < 300) return "warning" as const;
+  return "danger" as const;
 }
 
 export function LatencyIndicator() {
@@ -22,16 +31,18 @@ export function LatencyIndicator() {
   if (latencyMs === -1) {
     return (
       <div className="flex items-center gap-1.5" title="Proxy unreachable">
-        <div className="h-1.5 w-1.5 rounded-full bg-red-500" />
-        <span className="text-xs text-red-600">--ms</span>
+        <div className="h-1.5 w-1.5 rounded-full" style={LATENCY_TONE_STYLES.danger.dot} />
+        <span className="text-xs" style={LATENCY_TONE_STYLES.danger.text}>--ms</span>
       </div>
     );
   }
 
+  const tone = getLatencyTone(latencyMs);
+
   return (
     <div className="flex items-center gap-1.5" title={`Latency: ${latencyMs}ms`}>
-      <div className={`h-1.5 w-1.5 rounded-full ${getLatencyDotColor(latencyMs)}`} />
-      <span className={`text-xs tabular-nums ${getLatencyColor(latencyMs)}`}>{latencyMs}ms</span>
+      <div className="h-1.5 w-1.5 rounded-full" style={LATENCY_TONE_STYLES[tone].dot} />
+      <span className="text-xs tabular-nums" style={LATENCY_TONE_STYLES[tone].text}>{latencyMs}ms</span>
     </div>
   );
 }

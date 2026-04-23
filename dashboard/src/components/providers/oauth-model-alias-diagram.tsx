@@ -721,9 +721,9 @@ export function OAuthModelAliasDiagram({ items }: { items: OAuthAliasDiagramItem
                           </span>
 
                           {hasFork ? (
-                            <span className="rounded-md border border-amber-200/70 bg-amber-50/80 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-amber-700 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-200">
+                            <Badge tone="warning" size="xs" className="rounded-md px-1.5 py-0.5 uppercase tracking-[0.08em]">
                               Fork
-                            </span>
+                            </Badge>
                           ) : null}
 
                           <CountPill value={source.aliases.length} />

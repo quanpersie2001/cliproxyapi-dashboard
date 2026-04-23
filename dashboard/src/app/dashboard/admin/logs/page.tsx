@@ -233,7 +233,7 @@ export default function AdminLogsPage() {
                   setLevelFilter(e.target.value as LevelFilter);
                   setCurrentPage(1);
                 }}
-                className="rounded-sm border border-[var(--surface-border)] bg-[var(--surface-muted)] px-3 py-1.5 text-sm text-[var(--text-primary)] focus:outline-none focus:border-blue-400/50 transition-colors"
+                className="rounded-sm border border-[var(--surface-border)] bg-[var(--surface-muted)] px-3 py-1.5 text-sm text-[var(--text-primary)] transition-colors focus:border-[var(--state-info-border)] focus:outline-none"
               >
                 {LEVEL_FILTERS.map((level) => (
                   <option key={level} value={level} className="bg-[var(--surface-base)]">
@@ -267,7 +267,7 @@ export default function AdminLogsPage() {
       {stats && (
         <div className="flex flex-wrap gap-4 text-xs text-[var(--text-muted)]">
           <span className="flex items-center gap-1.5">
-            <span className={`size-2 rounded-full ${stats.persistent ? "bg-green-500" : "bg-yellow-500"}`} />
+            <span className={`size-2 rounded-full ${stats.persistent ? "bg-[var(--state-success-accent)]" : "bg-[var(--state-warning-accent)]"}`} />
             Persistent storage {stats.persistent ? "enabled" : "disabled"}
           </span>
           <span>Memory: {stats.memoryCount} logs</span>
@@ -346,7 +346,7 @@ export default function AdminLogsPage() {
                       <td className="px-3 py-2">
                         <button
                           type="button"
-                          className="text-blue-600 hover:text-blue-800 text-xs underline"
+                          className="text-xs underline text-[var(--state-info-accent)] hover:text-[var(--state-info-text)]"
                         >
                           {expandedRow === globalIndex ? "Hide" : "Show"}
                         </button>

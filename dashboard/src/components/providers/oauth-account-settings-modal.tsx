@@ -2,6 +2,7 @@
 
 import type { ReactNode } from "react";
 import { Badge } from "@/components/ui/badge";
+import { AlertSurface } from "@/components/ui/alert-surface";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Modal, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@/components/ui/modal";
@@ -195,9 +196,9 @@ export function OAuthAccountSettingsModal({
             Loading auth file settings...
           </div>
         ) : errorMessage ? (
-          <div className="rounded-lg border border-rose-200/70 bg-rose-50/80 p-5 text-sm text-rose-700 dark:border-rose-500/20 dark:bg-rose-500/10 dark:text-rose-200">
+          <AlertSurface tone="danger" className="rounded-lg p-5 text-sm">
             {errorMessage}
-          </div>
+          </AlertSurface>
         ) : editor ? (
           <div className="space-y-4">
             <div className="rounded-xl border border-[var(--surface-border)] bg-[var(--surface-base)] p-4">
@@ -214,9 +215,9 @@ export function OAuthAccountSettingsModal({
               </div>
 
               {parsedStatusMessage && account?.status !== "active" ? (
-                <div className="mt-3 rounded-lg border border-amber-200/70 bg-amber-50/80 px-3 py-2 text-xs text-amber-800 dark:border-amber-500/20 dark:bg-amber-500/10 dark:text-amber-100">
+                <AlertSurface tone="warning" accent className="mt-3 rounded-lg px-3 py-2 text-xs">
                   {parsedStatusMessage}
-                </div>
+                </AlertSurface>
               ) : null}
             </div>
 

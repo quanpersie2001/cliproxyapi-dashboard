@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import { AlertSurface } from "@/components/ui/alert-surface";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/toast";
@@ -32,7 +33,7 @@ function CopyIcon() {
 function SpinnerIcon() {
   return (
     <div
-      className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--surface-border)] border-t-blue-400"
+      className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--surface-border)] border-t-[var(--state-info-accent)]"
       aria-hidden="true"
     />
   );
@@ -134,9 +135,9 @@ export function Step2Content({ done, locked, onCreated }: Step2ContentProps) {
   if (createdKey) {
     return (
       <div className="mt-3 space-y-2">
-        <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+        <AlertSurface tone="warning" className="px-3 py-2 text-xs">
           Copy your API key now -- it will not be shown again.
-        </div>
+        </AlertSurface>
         <div className="flex items-center gap-2 rounded-md border border-[var(--surface-border)] bg-[var(--surface-base)]/60 px-3 py-2">
           <code className="flex-1 truncate font-mono text-xs text-[var(--text-primary)]">
             {createdKey.key}

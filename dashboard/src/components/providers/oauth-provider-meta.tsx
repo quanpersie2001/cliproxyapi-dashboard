@@ -22,9 +22,9 @@ export const OAUTH_PROVIDERS = [
     asset: "/provider-icons/claude.svg",
     fallback: "CC",
     theme: {
-      bg: "rgba(217, 119, 87, 0.12)",
-      border: "rgba(192, 86, 33, 0.18)",
-      text: "#c05621",
+      bg: "var(--oauth-provider-claude-bg)",
+      border: "var(--oauth-provider-claude-border)",
+      text: "var(--oauth-provider-claude-text)",
     },
   },
   {
@@ -36,9 +36,9 @@ export const OAUTH_PROVIDERS = [
     asset: "/provider-icons/gemini.svg",
     fallback: "GC",
     theme: {
-      bg: "rgba(49, 134, 255, 0.12)",
-      border: "rgba(30, 79, 163, 0.18)",
-      text: "#1e4fa3",
+      bg: "var(--oauth-provider-gemini-bg)",
+      border: "var(--oauth-provider-gemini-border)",
+      text: "var(--oauth-provider-gemini-text)",
     },
   },
   {
@@ -50,9 +50,9 @@ export const OAUTH_PROVIDERS = [
     asset: "/provider-icons/codex.svg",
     fallback: "CX",
     theme: {
-      bg: "rgba(99, 102, 241, 0.12)",
-      border: "rgba(67, 56, 202, 0.18)",
-      text: "#4338ca",
+      bg: "var(--oauth-provider-codex-bg)",
+      border: "var(--oauth-provider-codex-border)",
+      text: "var(--oauth-provider-codex-text)",
     },
   },
   {
@@ -64,9 +64,9 @@ export const OAUTH_PROVIDERS = [
     asset: "/provider-icons/antigravity.svg",
     fallback: "AG",
     theme: {
-      bg: "rgba(0, 96, 100, 0.12)",
-      border: "rgba(0, 96, 100, 0.18)",
-      text: "#006064",
+      bg: "var(--oauth-provider-antigravity-bg)",
+      border: "var(--oauth-provider-antigravity-border)",
+      text: "var(--oauth-provider-antigravity-text)",
     },
   },
   {
@@ -78,26 +78,9 @@ export const OAUTH_PROVIDERS = [
     asset: "/provider-icons/iflow.svg",
     fallback: "IF",
     theme: {
-      bg: "rgba(144, 37, 200, 0.12)",
-      border: "rgba(144, 37, 200, 0.18)",
-      text: "#9025c8",
-    },
-  },
-  {
-    id: "kimi",
-    name: "Kimi",
-    description: "Moonshot AI Kimi (device OAuth)",
-    authEndpoint: "/api/management/kimi-auth-url?is_webui=true",
-    requiresCallback: false,
-    asset: {
-      light: "/provider-icons/kimi-light.svg",
-      dark: "/provider-icons/kimi-dark.svg",
-    },
-    fallback: "KM",
-    theme: {
-      bg: "rgba(2, 122, 255, 0.12)",
-      border: "rgba(2, 122, 255, 0.18)",
-      text: "#0560cf",
+      bg: "var(--oauth-provider-iflow-bg)",
+      border: "var(--oauth-provider-iflow-border)",
+      text: "var(--oauth-provider-iflow-text)",
     },
   },
   {
@@ -109,67 +92,9 @@ export const OAUTH_PROVIDERS = [
     asset: "/provider-icons/qwen.svg",
     fallback: "QW",
     theme: {
-      bg: "rgba(99, 54, 231, 0.12)",
-      border: "rgba(85, 48, 199, 0.18)",
-      text: "#5530c7",
-    },
-  },
-  {
-    id: "copilot",
-    name: "GitHub Copilot",
-    description: "GitHub Copilot (via GitHub device OAuth)",
-    authEndpoint: "/api/management/github-auth-url?is_webui=true",
-    requiresCallback: false,
-    asset: {
-      light: "/provider-icons/github-copilot.svg",
-      dark: "/provider-icons/github-copilot-dark.svg",
-    },
-    fallback: "GH",
-    theme: {
-      bg: "rgba(17, 24, 39, 0.08)",
-      border: "rgba(17, 24, 39, 0.12)",
-      text: "var(--text-primary)",
-    },
-  },
-  {
-    id: "kiro",
-    name: "Kiro",
-    description: "AWS CodeWhisperer / Kiro (device OAuth)",
-    authEndpoint: "/api/management/kiro-auth-url?is_webui=true",
-    requiresCallback: false,
-    fallback: "KR",
-    theme: {
-      bg: "rgba(180, 83, 9, 0.12)",
-      border: "rgba(180, 83, 9, 0.18)",
-      text: "var(--text-primary)",
-    },
-  },
-  {
-    id: "cursor",
-    name: "Cursor",
-    description: "Cursor IDE (via PKCE OAuth)",
-    authEndpoint: "/api/management/cursor-auth-url?is_webui=true",
-    requiresCallback: false,
-    asset: "/provider-icons/cursor-ai.svg",
-    fallback: "CU",
-    theme: {
-      bg: "rgba(8, 145, 178, 0.12)",
-      border: "rgba(8, 145, 178, 0.18)",
-      text: "var(--text-primary)",
-    },
-  },
-  {
-    id: "codebuddy",
-    name: "CodeBuddy",
-    description: "Tencent CodeBuddy (via browser OAuth)",
-    authEndpoint: "/api/management/codebuddy-auth-url?is_webui=true",
-    requiresCallback: false,
-    asset: "/provider-icons/code-buddy.svg",
-    fallback: "CB",
-    theme: {
-      bg: "rgba(220, 38, 38, 0.1)",
-      border: "rgba(220, 38, 38, 0.16)",
-      text: "var(--text-primary)",
+      bg: "var(--oauth-provider-qwen-bg)",
+      border: "var(--oauth-provider-qwen-border)",
+      text: "var(--oauth-provider-qwen-text)",
     },
   },
 ] as const;
@@ -178,9 +103,9 @@ export type OAuthProviderEntry = (typeof OAUTH_PROVIDERS)[number];
 export type OAuthProviderId = OAuthProviderEntry["id"];
 
 const DEFAULT_PROVIDER_THEME: ProviderTheme = {
-  bg: "rgba(115, 113, 105, 0.08)",
-  border: "rgba(115, 113, 105, 0.16)",
-  text: "var(--text-secondary)",
+  bg: "var(--oauth-provider-default-bg)",
+  border: "var(--oauth-provider-default-border)",
+  text: "var(--oauth-provider-default-text)",
 };
 
 const OAUTH_PROVIDER_BY_ID = new Map<OAuthProviderId, OAuthProviderEntry>(
@@ -191,17 +116,10 @@ const OAUTH_PROVIDER_ALIASES: Record<string, OAuthProviderId> = {
   antigravity: "antigravity",
   claude: "claude",
   "claude-code": "claude",
-  codebuddy: "codebuddy",
   codex: "codex",
-  copilot: "copilot",
-  cursor: "cursor",
   gemini: "gemini-cli",
   "gemini-cli": "gemini-cli",
-  github: "copilot",
-  "github-copilot": "copilot",
   iflow: "iflow",
-  kiro: "kiro",
-  kimi: "kimi",
   qwen: "qwen",
 };
 
@@ -262,7 +180,7 @@ export function OAuthProviderIcon({
   const { resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const presentation = getOAuthProviderPresentation(provider);
-  const asset = "asset" in presentation ? presentation.asset : undefined;
+  const asset = ("asset" in presentation ? presentation.asset : undefined) as ProviderAsset | undefined;
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- hydration flag only

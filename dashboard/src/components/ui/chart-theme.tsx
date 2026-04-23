@@ -2,36 +2,36 @@
 
 /**
  * Shared chart theme configuration for Recharts.
- * Matches the ElevenLabs light design of the dashboard.
+ * Uses CSS variables so charts adapt with the active dashboard theme.
  */
 
 export const CHART_COLORS = {
-  primary: "#3b82f6",
-  primaryLight: "#60a5fa",
-  primaryDark: "#2563eb",
-  success: "#10b981",
-  successLight: "#34d399",
-  warning: "#f59e0b",
-  warningLight: "#fbbf24",
-  danger: "#ef4444",
-  dangerLight: "#f87171",
-  cyan: "#06b6d4",
-  cyanLight: "#22d3ee",
-  violet: "#8b5cf6",
-  violetLight: "#a78bfa",
-  rose: "#f43f5e",
-  roseLight: "#fb7185",
-  orange: "#f97316",
-  orangeLight: "#fb923c",
+  primary: "var(--chart-primary)",
+  primaryLight: "var(--chart-primary-light)",
+  primaryDark: "var(--chart-primary-strong)",
+  success: "var(--chart-success)",
+  successLight: "var(--chart-success-light)",
+  warning: "var(--chart-warning)",
+  warningLight: "var(--chart-warning-light)",
+  danger: "var(--chart-danger)",
+  dangerLight: "var(--chart-danger-light)",
+  cyan: "var(--chart-cyan)",
+  cyanLight: "var(--chart-cyan-light)",
+  violet: "var(--chart-violet)",
+  violetLight: "var(--chart-violet-light)",
+  rose: "var(--chart-rose)",
+  roseLight: "var(--chart-rose-light)",
+  orange: "var(--chart-orange)",
+  orangeLight: "var(--chart-orange-light)",
   text: {
-    primary: "#000000",
-    muted: "#4e4e4e",
-    dimmed: "#777169",
+    primary: "var(--text-primary)",
+    muted: "var(--text-secondary)",
+    dimmed: "var(--text-muted)",
   },
-  grid: "rgba(0, 0, 0, 0.06)",
-  border: "rgba(0, 0, 0, 0.1)",
-  surface: "#ffffff",
-  surfaceHover: "#f5f5f5",
+  grid: "var(--chart-grid)",
+  border: "var(--chart-border)",
+  surface: "var(--chart-surface)",
+  surfaceHover: "var(--chart-surface-hover)",
 } as const;
 
 export const SERIES_PALETTE = [
@@ -53,8 +53,8 @@ export const AXIS_TICK_STYLE = {
 
 export const TOOLTIP_STYLE = {
   contentStyle: {
-    backgroundColor: "#ffffff",
-    border: "1px solid #e5e5e5",
+    backgroundColor: "var(--chart-surface)",
+    border: "1px solid var(--chart-border)",
     borderRadius: "6px",
     padding: "8px 12px",
   },
@@ -69,7 +69,7 @@ export const TOOLTIP_STYLE = {
     fontSize: "11px",
     padding: "1px 0",
   },
-  cursor: { fill: "rgba(0, 0, 0, 0.03)" },
+  cursor: { fill: "var(--chart-cursor)" },
 } as const;
 
 export function formatCompact(value: number): string {

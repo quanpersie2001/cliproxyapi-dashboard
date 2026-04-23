@@ -95,7 +95,7 @@ export function GroupList({
                   <Button variant="ghost" onClick={() => onEditGroup(group)} className="px-2 py-1 text-[10px] h-auto">
                     Edit
                   </Button>
-                  <Button variant="ghost" onClick={() => onDeleteGroup(group.id)} className="px-2 py-1 text-[10px] h-auto text-red-600 hover:text-red-600 hover:bg-red-400/10">
+                  <Button variant="ghost" onClick={() => onDeleteGroup(group.id)} className="px-2 py-1 text-[10px] h-auto border-[var(--state-danger-border)] bg-[var(--state-danger-bg)] text-[var(--state-danger-text)] hover:bg-[var(--state-danger-bg)] hover:opacity-90">
                     Delete
                   </Button>
                   <button

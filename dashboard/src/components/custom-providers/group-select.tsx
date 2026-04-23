@@ -29,7 +29,7 @@ export function GroupSelect({
         value={groupId ?? ""}
         onChange={(e) => onGroupIdChange(e.target.value || null)}
         disabled={saving}
-        className="w-full px-3 py-2 text-sm rounded-md glass-input text-[var(--text-primary)] focus:outline-none focus:border-blue-400/50 focus:ring-1 focus:ring-blue-400/30 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200 bg-[var(--surface-base)] border border-[var(--surface-border)]"
+        className="w-full rounded-md border border-[var(--surface-border)] bg-[var(--surface-base)] px-3 py-2 text-sm text-[var(--text-primary)] transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-50 focus:border-[var(--state-info-border)] focus:outline-none focus:ring-1 focus:ring-[var(--state-info-border)]"
       >
         <option value="" className="bg-[var(--surface-base)] text-[var(--text-primary)]">No group</option>
         {groups.map(g => (

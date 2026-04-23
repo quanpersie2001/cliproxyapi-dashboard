@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
+import { AlertSurface } from "@/components/ui/alert-surface";
 
 interface CreatedKey {
   id: string;
@@ -52,10 +53,10 @@ export function RevealBox({ createdKey }: RevealBoxProps) {
 
   return (
     <div className="mt-3 space-y-2">
-      <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+      <AlertSurface tone="warning" className="px-3 py-2 text-xs">
         Copy your API key now -- it will not be shown again after you leave this
         page.
-      </div>
+      </AlertSurface>
       <div className="flex items-center gap-2 rounded-md border border-[var(--surface-border)] bg-[var(--surface-base)]/60 px-3 py-2">
         <code className="flex-1 truncate font-mono text-xs text-[var(--text-primary)]">
           {createdKey.key}

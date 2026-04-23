@@ -21,7 +21,7 @@ export default function GlobalError({
                 viewBox="0 0 48 48"
                 fill="none"
                 aria-hidden="true"
-                className="text-rose-500"
+                className="text-[var(--state-danger-accent)]"
               >
                 <path
                   d="M24 6L44 40H4L24 6Z"

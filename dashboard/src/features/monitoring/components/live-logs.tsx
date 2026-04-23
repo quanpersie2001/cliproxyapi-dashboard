@@ -14,6 +14,48 @@ interface LogLine {
 
 type LoggingState = "checking" | "enabled" | "disabled" | "error";
 
+function FileIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" className="size-4" aria-hidden="true">
+      <path
+        d="M5 2.75h4.25L12.25 5.75V12A1.25 1.25 0 0 1 11 13.25H5A1.25 1.25 0 0 1 3.75 12V4A1.25 1.25 0 0 1 5 2.75Z"
+        stroke="currentColor"
+        strokeWidth="1.25"
+        strokeLinejoin="round"
+      />
+      <path d="M9 2.75V5.5h2.75" stroke="currentColor" strokeWidth="1.25" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function WarningIcon() {
+  return (
+    <svg viewBox="0 0 16 16" fill="none" className="size-4" aria-hidden="true">
+      <path
+        d="M8 2.5 13 12.25H3L8 2.5Z"
+        stroke="currentColor"
+        strokeWidth="1.25"
+        strokeLinejoin="round"
+      />
+      <path d="M8 6V8.75" stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" />
+      <circle cx="8" cy="11" r=".75" fill="currentColor" />
+    </svg>
+  );
+}
+
+const LIVE_LOG_EMPTY_STATE_STYLES = {
+  warning: {
+    borderColor: "var(--state-warning-border)",
+    backgroundColor: "var(--state-warning-bg)",
+    color: "var(--state-warning-accent)",
+  },
+  danger: {
+    borderColor: "var(--state-danger-border)",
+    backgroundColor: "var(--state-danger-bg)",
+    color: "var(--state-danger-accent)",
+  },
+} as const;
+
 interface LiveLogsProps {
   logs: LogLine[];
   loggingState: LoggingState;
@@ -79,8 +121,11 @@ export function LiveLogs({
 
         {loggingState === "disabled" && (
           <div className="flex flex-col items-center justify-center py-6 gap-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-sm border border-amber-200 bg-amber-50">
-              <span className="text-xl">&#128196;</span>
+            <div
+              className="flex h-10 w-10 items-center justify-center rounded-sm border"
+              style={LIVE_LOG_EMPTY_STATE_STYLES.warning}
+            >
+              <FileIcon />
             </div>
             <div className="text-center space-y-2">
               <p className="text-sm font-medium text-[var(--text-primary)]">File logging is disabled</p>
@@ -101,8 +146,11 @@ export function LiveLogs({
 
         {loggingState === "error" && (
           <div className="flex flex-col items-center justify-center py-6 gap-4">
-            <div className="flex h-10 w-10 items-center justify-center rounded-sm border border-rose-200 bg-rose-50">
-              <span className="text-xl">&#9888;</span>
+            <div
+              className="flex h-10 w-10 items-center justify-center rounded-sm border"
+              style={LIVE_LOG_EMPTY_STATE_STYLES.danger}
+            >
+              <WarningIcon />
             </div>
             <div className="text-center space-y-2">
               <p className="text-sm font-medium text-[var(--text-primary)]">Logs unavailable</p>
@@ -125,24 +173,24 @@ export function LiveLogs({
             <div
               ref={logsContainerRef}
               onScroll={handleScroll}
-              className="h-96 overflow-auto rounded-sm border border-[var(--surface-border)] bg-[#1a1a1a] p-3 font-mono text-[10px] sm:p-4 sm:text-xs"
+              className="console-surface h-96 overflow-auto rounded-sm border p-3 font-mono text-[10px] sm:p-4 sm:text-xs"
             >
               {logs.length === 0 ? (
-                <div className="text-[var(--text-muted)]">Waiting for logs...</div>
+                <div className="console-line-muted">Waiting for logs...</div>
               ) : (
                 logs.map((log) => (
                   <div
                     key={log.id}
                     className={cn(
                       "mb-1 break-all",
-                      log.level === "error" && "text-red-400",
-                      log.level === "warn" && "text-yellow-300",
-                      log.level === "info" && "text-zinc-200",
-                      log.level === "debug" && "text-blue-300"
+                      log.level === "error" && "console-line-danger",
+                      log.level === "warn" && "console-line-warning",
+                      log.level === "info" && "console-line-info",
+                      log.level === "debug" && "console-line-debug"
                     )}
                   >
                     {log.timestamp && (
-                      <span className="text-[var(--text-muted)]">{log.timestamp} </span>
+                      <span className="console-line-muted">{log.timestamp} </span>
                     )}
                     {log.level && (
                       <span className="font-semibold uppercase">

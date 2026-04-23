@@ -173,7 +173,7 @@ export function UserPanel({ isOpen, onClose, username, isAdmin }: UserPanelProps
           {/* Session Info */}
           <div className="mb-6 rounded-md border border-[var(--surface-border)] bg-[var(--surface-muted)] px-3 py-2.5">
             <div className="flex items-center gap-2">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse-dot" />
+              <div className="w-1.5 h-1.5 rounded-full bg-[var(--state-success-accent)] animate-pulse-dot" />
               <span className="text-xs font-medium text-[var(--text-muted)]">Session active</span>
             </div>
             <p className="mt-1 text-xs text-[var(--text-muted)] pl-3.5">

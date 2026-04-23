@@ -90,13 +90,13 @@ function getLogLevel(line: string): LogLevel {
 function getLevelColor(level: LogLevel) {
   switch (level) {
     case LOG_LEVEL.ERROR:
-      return "text-red-400";
+      return "console-line-danger";
     case LOG_LEVEL.WARN:
-      return "text-yellow-300";
+      return "console-line-warning";
     case LOG_LEVEL.INFO:
-      return "text-blue-300";
+      return "console-line-debug";
     default:
-      return "text-zinc-300";
+      return "console-line-info";
   }
 }
 
@@ -232,7 +232,7 @@ export default function LogsPage() {
               </div>
           ) : (
             <div
-              className="max-h-[clamp(300px,60vh,700px)] overflow-y-auto rounded-sm border border-[var(--surface-border)] bg-[#1a1a1a] p-4 font-mono text-xs text-gray-200"
+              className="console-surface max-h-[clamp(300px,60vh,700px)] overflow-y-auto rounded-sm border p-4 font-mono text-xs"
             >
               <div className="space-y-1">
                 {pagedLogs.map((line, index) => {

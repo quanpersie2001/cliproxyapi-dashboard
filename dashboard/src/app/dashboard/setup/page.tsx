@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Badge } from "@/components/ui/badge";
+import { AlertSurface } from "@/components/ui/alert-surface";
 import { Card } from "@/components/ui/card";
 import { StepIndicator } from "@/components/setup/step-indicator";
 import { Step1Content, Step2Content } from "@/components/setup/step-contents";
@@ -91,22 +92,25 @@ export default function SetupWizardPage() {
 
         <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-[var(--surface-muted)]">
           <div
-            className="h-full rounded-full bg-gradient-to-r from-blue-500 to-emerald-500 transition-[width] duration-700"
-            style={{ width: `${(completedCount / STEPS.length) * 100}%` }}
+            className="h-full rounded-full transition-[width] duration-700"
+            style={{
+              width: `${(completedCount / STEPS.length) * 100}%`,
+              backgroundImage: "linear-gradient(90deg, var(--state-info-accent), var(--state-success-accent))",
+            }}
           />
         </div>
       </section>
 
       {error && !loading && (
-        <div className="rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-600">
+        <AlertSurface tone="danger" className="rounded-lg text-sm">
           {error}
-        </div>
+        </AlertSurface>
       )}
 
       <Card>
         {loading && !status ? (
           <div className="flex items-center justify-center py-10">
-            <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--surface-border)] border-t-blue-400" />
+            <div className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--surface-border)] border-t-[var(--state-info-accent)]" />
           </div>
         ) : (
           <div className="space-y-1">
@@ -118,24 +122,27 @@ export default function SetupWizardPage() {
               return (
                 <div key={step.id}>
                   <div
-                    className={[
-                      "flex gap-4 rounded-lg p-4",
+                    className={["flex gap-4 rounded-lg p-4", !done && !active ? "opacity-60" : ""].join(" ")}
+                    style={
                       done
-                        ? "bg-emerald-50"
+                        ? { backgroundColor: "var(--state-success-bg)" }
                         : active
-                          ? "bg-blue-50 ring-1 ring-blue-200"
-                          : "opacity-60",
-                    ].join(" ")}
+                          ? {
+                              backgroundColor: "var(--state-info-bg)",
+                              boxShadow: "inset 0 0 0 1px var(--state-info-border)",
+                            }
+                          : undefined
+                    }
                   >
                     <div className="flex flex-col items-center">
                       <StepIndicator step={step.id} done={done} active={active} />
                       {!isLast && (
                         <div
-                          className={[
-                            "mt-2 w-px flex-1",
-                            done ? "bg-emerald-500/30" : "bg-[var(--surface-muted)]",
-                          ].join(" ")}
-                          style={{ minHeight: "1.5rem" }}
+                          className="mt-2 w-px flex-1"
+                          style={{
+                            backgroundColor: done ? "var(--state-success-border)" : "var(--surface-muted)",
+                            minHeight: "1.5rem",
+                          }}
                         />
                       )}
                     </div>
@@ -143,14 +150,14 @@ export default function SetupWizardPage() {
                     <div className="flex-1 pb-2">
                       <div className="flex flex-wrap items-center justify-between gap-2">
                         <h2
-                          className={[
-                            "text-sm font-semibold",
-                            done
-                              ? "text-emerald-700"
+                          className="text-sm font-semibold"
+                          style={{
+                            color: done
+                              ? "var(--state-success-text)"
                               : active
-                                ? "text-[var(--text-primary)]"
-                                : "text-[var(--text-muted)]",
-                          ].join(" ")}
+                                ? "var(--text-primary)"
+                                : "var(--text-muted)",
+                          }}
                         >
                           {step.title}
                         </h2>

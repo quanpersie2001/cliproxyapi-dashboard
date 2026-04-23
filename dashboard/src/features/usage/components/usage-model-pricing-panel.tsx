@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
+import { AlertSurface } from "@/components/ui/alert-surface";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Modal, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@/components/ui/modal";
@@ -184,18 +185,18 @@ export function UsageModelPricingPanel({
       </div>
 
       {error ? (
-        <div className="mt-4 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+        <AlertSurface tone="warning" className="mt-4 text-sm">
           {error}
-        </div>
+        </AlertSurface>
       ) : null}
 
       <div className="mt-4 space-y-2">
         {isAdmin && previewRecords.length > 0 ? (
-          <div className="rounded-md border border-sky-200 bg-sky-50/70 p-3">
+          <AlertSurface tone="info" className="p-3">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <div className="text-sm font-medium text-sky-900">Official sync preview</div>
-                <div className="mt-1 text-xs text-sky-800">
+                <div className="text-sm font-medium text-[var(--text-primary)]">Official sync preview</div>
+                <div className="mt-1 text-xs text-[var(--text-secondary)]">
                   These entries are only loaded into the UI. Nothing is saved until you open a form and press Save.
                 </div>
               </div>
@@ -215,7 +216,7 @@ export function UsageModelPricingPanel({
                 />
               ))}
             </div>
-          </div>
+          </AlertSurface>
         ) : null}
 
         {sortedRecords.length > 0 ? (
