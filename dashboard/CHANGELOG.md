@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.6](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.5...dashboard-v0.2.6) (2026-04-23)
+
+
+### Bug Fixes
+
+* **ui:** make dashboard status surfaces theme-aware ([52dc3eb](https://github.com/quanpersie2001/cliproxyapi-dashboard/commit/52dc3ebb028a786fe39de11805ae70678c87a9df))
+
 ## [0.2.5](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.4...dashboard-v0.2.5) (2026-04-20)
 
 
