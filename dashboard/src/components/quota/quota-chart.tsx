@@ -1,23 +1,9 @@
 "use client";
 
-import { RadialBarChart, RadialBar, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend } from "recharts";
+import { RadialBarChart, RadialBar, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ReferenceLine } from "recharts";
 import { ChartContainer, ChartEmpty, CHART_COLORS, TOOLTIP_STYLE, AXIS_TICK_STYLE } from "@/components/ui/chart-theme";
-
-interface WindowCapacity {
-  id: string;
-  label: string;
-  capacity: number;
-  resetTime: string | null;
-  isShortTerm: boolean;
-}
-
-interface ProviderSummary {
-  provider: string;
-  totalAccounts: number;
-  healthyAccounts: number;
-  errorAccounts: number;
-  windowCapacities: WindowCapacity[];
-}
+import { QUOTA_WARNING_THRESHOLD } from "@/hooks/notification-utils";
+import type { ProviderSummary } from "@/app/dashboard/quota/quota-metrics";
 
 interface QuotaChartProps {
   overallCapacity: { value: number; label: string; provider: string };
@@ -27,7 +13,7 @@ interface QuotaChartProps {
 export function QuotaChart({ overallCapacity, providerSummaries }: QuotaChartProps) {
   return (
     <section className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-      <ChartContainer title="Overall Capacity" subtitle="Weighted across all providers">
+      <ChartContainer title="Overall Usable Capacity" subtitle="Weighted across healthy provider accounts">
         {providerSummaries.length === 0 ? (
           <ChartEmpty message="No provider data" />
         ) : (() => {
@@ -57,31 +43,26 @@ export function QuotaChart({ overallCapacity, providerSummaries }: QuotaChartPro
               </ResponsiveContainer>
               <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
                 <span className="text-3xl font-bold" style={{ color: gaugeColor }}>{pct}%</span>
-                <span className="mt-0.5 text-[10px] uppercase tracking-widest" style={{ color: CHART_COLORS.text.dimmed }}>Capacity</span>
+                <span className="mt-0.5 text-[10px] uppercase tracking-widest" style={{ color: CHART_COLORS.text.dimmed }}>Usable</span>
               </div>
             </div>
           );
         })()}
       </ChartContainer>
 
-      <ChartContainer title="Provider Capacity" subtitle="Long-term & short-term window minimum per provider">
+      <ChartContainer title="Provider Usable Quota" subtitle="Effective usable quota with short-term headroom context">
         {providerSummaries.length === 0 ? (
           <ChartEmpty message="No provider data" />
         ) : (() => {
-          const barData = providerSummaries.map((s) => {
-            const longTerm = s.windowCapacities.filter((w) => !w.isShortTerm);
-            const shortTerm = s.windowCapacities.filter((w) => w.isShortTerm);
-            const longMin = longTerm.length > 0 ? Math.round(Math.min(...longTerm.map((w) => w.capacity)) * 100) : null;
-            const shortMin = shortTerm.length > 0 ? Math.round(Math.min(...shortTerm.map((w) => w.capacity)) * 100) : null;
-            return {
-              provider: s.provider,
-              longTerm: longMin,
-              shortTerm: shortMin,
-              healthy: s.healthyAccounts,
-              total: s.totalAccounts,
-              issues: s.errorAccounts,
-            };
-          });
+          const barData = providerSummaries.map((summary) => ({
+            provider: summary.provider,
+            effective: summary.effectiveCapacity === null ? null : Math.round(summary.effectiveCapacity * 100),
+            shortTermHeadroom: summary.shortTermMin === null ? null : Math.round(summary.shortTermMin * 100),
+            healthy: summary.healthyAccounts,
+            total: summary.totalAccounts,
+            issues: summary.errorAccounts,
+            hasLongTermWindows: summary.hasLongTermWindows,
+          }));
           return (
             <div className="h-48">
               <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0} initialDimension={{ width: 320, height: 200 }}>
@@ -98,7 +79,7 @@ export function QuotaChart({ overallCapacity, providerSummaries }: QuotaChartPro
                     tick={AXIS_TICK_STYLE}
                     tickLine={false}
                     axisLine={{ stroke: CHART_COLORS.border }}
-                    tickFormatter={(v) => `${v}%`}
+                    tickFormatter={(value) => `${value}%`}
                   />
                   <YAxis
                     type="category"
@@ -108,23 +89,30 @@ export function QuotaChart({ overallCapacity, providerSummaries }: QuotaChartPro
                     axisLine={false}
                     width={72}
                   />
+                  <ReferenceLine x={Math.round(QUOTA_WARNING_THRESHOLD * 100)} stroke={CHART_COLORS.rose} strokeDasharray="4 4" />
                   <Tooltip
                     {...TOOLTIP_STYLE}
                     formatter={(value, name, props) => {
                       if (value === null) return ["-", name];
-                      const label = name === "longTerm" ? "Long-Term" : "Short-Term";
-                      const extra = name === "longTerm" ? ` (${props.payload.healthy}/${props.payload.total} healthy${props.payload.issues > 0 ? `, ${props.payload.issues} issues` : ""})` : "";
-                      return [`${value}%${extra}`, label];
+                      const label = name === "effective" ? "Effective usable" : "Short-term headroom";
+                      const effectiveExtra = ` (${props.payload.healthy}/${props.payload.total} healthy${props.payload.issues > 0 ? `, ${props.payload.issues} issues` : ""})`;
+                      const shortTermExtra = name === "shortTermHeadroom"
+                        && props.payload.hasLongTermWindows
+                        && props.payload.effective !== null
+                        && Number(value) > props.payload.effective
+                        ? " (context only; gated by long-term)"
+                        : "";
+                      return [`${value}%${name === "effective" ? effectiveExtra : shortTermExtra}`, label];
                     }}
                   />
                   <Legend
                     verticalAlign="top"
                     height={24}
-                    formatter={(value: string) => value === "longTerm" ? "Long-Term" : "Short-Term"}
+                    formatter={(value: string) => value === "effective" ? "Effective usable" : "Short-term headroom"}
                     wrapperStyle={{ fontSize: 10, color: CHART_COLORS.text.dimmed }}
                   />
-                  <Bar dataKey="longTerm" radius={[0, 3, 3, 0]} fill={CHART_COLORS.success} />
-                  <Bar dataKey="shortTerm" radius={[0, 3, 3, 0]} fill={CHART_COLORS.cyan} />
+                  <Bar dataKey="effective" radius={[0, 3, 3, 0]} fill={CHART_COLORS.success} />
+                  <Bar dataKey="shortTermHeadroom" radius={[0, 3, 3, 0]} fill={CHART_COLORS.cyan} fillOpacity={0.7} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

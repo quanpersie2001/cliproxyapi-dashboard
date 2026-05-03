@@ -1,45 +1,24 @@
 "use client";
 
-import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
 import dynamic from "next/dynamic";
+import { Button } from "@/components/ui/button";
 import { HelpTooltip } from "@/components/ui/tooltip";
+import { QuotaDetails } from "@/components/quota/quota-details";
+import { QUOTA_WARNING_THRESHOLD } from "@/hooks/notification-utils";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
+import { useEffect, useState } from "react";
+import {
+  calcOverallCapacity,
+  calcProviderSummary,
+  countLowCapacityProviders,
+  type QuotaAccount,
+  type QuotaResponse,
+} from "./quota-metrics";
+
 const QuotaChart = dynamic(
   () => import("@/components/quota/quota-chart").then(mod => ({ default: mod.QuotaChart })),
   { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-lg bg-[var(--surface-muted)]" /> }
 );
-import { QuotaDetails } from "@/components/quota/quota-details";
-
-interface QuotaModel {
-  id: string;
-  displayName: string;
-  remainingFraction?: number | null;
-  resetTime: string | null;
-}
-
-interface QuotaGroup {
-  id: string;
-  label: string;
-  remainingFraction?: number | null;
-  resetTime: string | null;
-  models: QuotaModel[];
-}
-
-interface QuotaAccount {
-  auth_index: string;
-  provider: string;
-  email?: string | null;
-  supported: boolean;
-  plan?: string | null;
-  error?: string;
-  groups?: QuotaGroup[];
-  raw?: unknown;
-}
-
-interface QuotaResponse {
-  accounts: QuotaAccount[];
-}
 
 const PROVIDERS = {
   ALL: "all",
@@ -50,160 +29,6 @@ const PROVIDERS = {
 } as const;
 
 type ProviderType = (typeof PROVIDERS)[keyof typeof PROVIDERS];
-
-function normalizeFraction(value: unknown): number | null {
-  if (typeof value !== "number" || Number.isNaN(value) || !Number.isFinite(value)) {
-    return null;
-  }
-  if (value < 0) return 0;
-  if (value > 1) return 1;
-  return value;
-}
-
-function isShortTermGroup(group: QuotaGroup): boolean {
-  const id = group.id.toLowerCase();
-  const label = group.label.toLowerCase();
-  return (
-    id.includes("five-hour") ||
-    id.includes("primary") ||
-    id.includes("request") ||
-    id.includes("token") ||
-    label.includes("5h") ||
-    label.includes("5m") ||
-    label.includes("request") ||
-    label.includes("token")
-  );
-}
-
-interface WindowCapacity {
-  id: string;
-  label: string;
-  capacity: number;
-  resetTime: string | null;
-  isShortTerm: boolean;
-}
-
-interface ProviderSummary {
-  provider: string;
-  totalAccounts: number;
-  healthyAccounts: number;
-  errorAccounts: number;
-  windowCapacities: WindowCapacity[];
-}
-
-function calcProviderSummary(accounts: QuotaAccount[]): ProviderSummary {
-  const totalAccounts = accounts.length;
-  const healthy = accounts.filter(
-    (a) => a.supported && !a.error && a.groups && a.groups.length > 0
-  );
-  const errorAccounts = totalAccounts - healthy.length;
-
-  const allWindowIds = new Set<string>();
-  for (const a of healthy) {
-    for (const g of a.groups ?? []) {
-      if (g.id !== "extra-usage") allWindowIds.add(g.id);
-    }
-  }
-
-  const windowCapacities: WindowCapacity[] = [];
-
-  for (const windowId of allWindowIds) {
-    const relevantAccounts = healthy.filter((a) =>
-      a.groups?.some((g) => g.id === windowId)
-    );
-    if (relevantAccounts.length === 0) continue;
-
-    const scores = relevantAccounts.map((a) => {
-      const group = a.groups?.find((g) => g.id === windowId);
-      return normalizeFraction(group?.remainingFraction);
-    }).filter((score): score is number => score !== null);
-
-    if (scores.length === 0) {
-      continue;
-    }
-
-    const exhaustedProduct = scores.reduce((prod, score) => prod * (1 - score), 1);
-    const capacity = 1 - exhaustedProduct;
-
-    let earliestReset: string | null = null;
-    let minResetTime = Infinity;
-    let label = "";
-    let isShortTerm = false;
-
-    for (const a of relevantAccounts) {
-      const g = a.groups?.find((g) => g.id === windowId);
-      if (g) {
-        if (!label) {
-          label = g.label;
-          isShortTerm = isShortTermGroup(g);
-        }
-        if (g.resetTime) {
-          const t = new Date(g.resetTime).getTime();
-          if (t < minResetTime) {
-            minResetTime = t;
-            earliestReset = g.resetTime;
-          }
-        }
-      }
-    }
-
-    windowCapacities.push({
-      id: windowId,
-      label,
-      capacity: Math.max(0, Math.min(1, capacity)),
-      resetTime: earliestReset,
-      isShortTerm,
-    });
-  }
-
-  windowCapacities.sort((a, b) => {
-    if (a.isShortTerm !== b.isShortTerm) return a.isShortTerm ? 1 : -1;
-    return a.label.localeCompare(b.label);
-  });
-
-  return {
-    provider: accounts[0]?.provider ?? "unknown",
-    totalAccounts,
-    healthyAccounts: healthy.length,
-    errorAccounts,
-    windowCapacities,
-  };
-}
-
-function calcOverallCapacity(summaries: ProviderSummary[]): { value: number; label: string; provider: string } {
-  if (summaries.length === 0) return { value: 0, label: "No Data", provider: "" };
-
-  let weightedCapacity = 0;
-  let weightedAccounts = 0;
-
-  for (const summary of summaries) {
-    if (summary.healthyAccounts === 0) {
-      continue;
-    }
-
-    const longTerm = summary.windowCapacities.filter((w) => !w.isShortTerm);
-    const shortTerm = summary.windowCapacities.filter((w) => w.isShortTerm);
-    const relevantWindows = longTerm.length > 0 ? longTerm : shortTerm;
-
-    if (relevantWindows.length === 0) {
-      continue;
-    }
-
-    const providerCapacity = Math.min(...relevantWindows.map((w) => w.capacity));
-    weightedCapacity += providerCapacity * summary.healthyAccounts;
-    weightedAccounts += summary.healthyAccounts;
-  }
-
-  if (weightedAccounts === 0) {
-    return { value: 0, label: "No Data", provider: "" };
-  }
-
-  return {
-    value: weightedCapacity / weightedAccounts,
-    label: "Weighted capacity",
-    provider: "all",
-  };
-}
 
 export default function QuotaPage() {
   const [quotaData, setQuotaData] = useState<QuotaResponse | null>(null);
@@ -258,9 +83,7 @@ export default function QuotaPage() {
 
   const overallCapacity = calcOverallCapacity(providerSummaries);
 
-  const lowCapacityCount = providerSummaries.filter(
-    (s) => s.windowCapacities.some((w) => w.capacity < 0.2) && s.totalAccounts > 0
-  ).length;
+  const lowCapacityCount = countLowCapacityProviders(providerSummaries);
 
   const providerFilters = [
     { key: PROVIDERS.ALL, label: "All" },
@@ -317,11 +140,11 @@ export default function QuotaPage() {
               <p className="mt-0.5 text-xs font-semibold text-[var(--text-primary)]">{activeAccounts}</p>
             </div>
             <div className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-base)] px-2.5 py-2">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">Overall Capacity <HelpTooltip content="Weighted average of remaining quota across all active provider accounts" /></p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">Overall Capacity <HelpTooltip content="Weighted average of provider effective usable quota across healthy accounts." /></p>
               <p className="mt-0.5 text-xs font-semibold text-[var(--text-primary)]">{Math.round(overallCapacity.value * 100)}%</p>
             </div>
             <div className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-base)] px-2.5 py-2">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">Low Capacity <HelpTooltip content="Number of accounts with remaining quota below 20%" /></p>
+              <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">Low Capacity <HelpTooltip content={`Providers whose effective usable quota is below ${Math.round(QUOTA_WARNING_THRESHOLD * 100)}%.`} /></p>
               <p className="mt-0.5 text-xs font-semibold text-[var(--text-primary)]">{lowCapacityCount}</p>
             </div>
             <div className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-base)] px-2.5 py-2">
