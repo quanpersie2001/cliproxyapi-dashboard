@@ -1,8 +1,8 @@
 {
-  "timestamp": "2026-05-04T09:00:22Z",
+  "timestamp": "2026-05-04T13:41:14Z",
   "project_root": "/Users/quannv.dev/Workspace/Personal/cliproxyapi-dashboard",
-  "requested_mode": "planning-only",
-  "recommended_mode": "planning-only",
+  "requested_mode": "execution-only",
+  "recommended_mode": "single-worker",
   "status": "PASS",
   "onboarding": "PASS",
   "tools": {
@@ -20,7 +20,7 @@
     },
     "swarm_runtime": {
       "status": "unknown",
-      "check": "not required for planning-only"
+      "check": "not required for execution-only single-worker"
     },
     "reservations": {
       "status": "ready",
@@ -37,5 +37,5 @@
   },
   "blockers": [],
   "degradations": [],
-  "next_skill": "pulse:using-pulse"
+  "next_skill": "pulse:reviewing"
 }

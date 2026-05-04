@@ -132,11 +132,6 @@ function normalizePriorityField(value: unknown): number | undefined {
 function sanitizeOAuthAuthFileJson(value: Record<string, unknown>): Record<string, unknown> {
   const next = { ...value };
 
-  delete next.excluded_models;
-  delete next.disable_cooling;
-  delete next.websocket;
-  delete next.websockets;
-
   if (typeof next.prefix === "string" && !next.prefix.trim()) {
     delete next.prefix;
   }
