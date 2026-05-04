@@ -1,7 +1,7 @@
 <div align="center">
   <img src="./dashboard/src/app/icon.svg" alt="CLIProxyAPI Dashboard logo" width="112" height="112" />
   <h1>CLIProxyAPI Dashboard</h1>
-  <p><strong>Proxy-only control plane for <a href="https://github.com/router-for-me/CLIProxyAPIPlus">CLIProxyAPIPlus</a></strong></p>
+  <p><strong>Proxy-only control plane for <a href="https://github.com/router-for-me/CLIProxyAPI">CLIProxyAPI</a></strong></p>
   <p>Next.js 16 / React 19 dashboard for provider credentials, proxy runtime settings, usage history, quotas, updates, logs, and safe container operations.</p>
 
   <p>

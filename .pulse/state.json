@@ -1,0 +1,12 @@
+{
+  "schema_version": "1.0",
+  "phase": "preflight",
+  "status": "PASS",
+  "active_skill": "pulse:using-pulse",
+  "active_feature": "",
+  "requested_mode": "planning-only",
+  "recommended_mode": "planning-only",
+  "tooling_status": ".pulse/tooling-status.json",
+  "handoff_manifest": ".pulse/handoffs/manifest.json",
+  "last_updated": "2026-05-04T09:00:22Z"
+}

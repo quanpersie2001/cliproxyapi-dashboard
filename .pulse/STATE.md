@@ -1,0 +1,9 @@
+# STATE
+focus: (none)
+phase: preflight
+preflight_status: PASS
+requested_mode: planning-only
+recommended_mode: planning-only
+tooling_status: .pulse/tooling-status.json
+resume_manifest: .pulse/handoffs/manifest.json
+last_updated: 2026-05-04T09:00:22Z
