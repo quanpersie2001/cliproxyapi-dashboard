@@ -107,7 +107,7 @@ describe("listOAuthWithOwnership", () => {
     vi.resetModules();
   });
 
-  it("keeps the default OAuth list metadata-only when masked proxy enrichment is not requested", async () => {
+  it("returns auth-file rawText together with ownership metadata in the default OAuth list", async () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,
       json: () =>
@@ -129,6 +129,11 @@ describe("listOAuthWithOwnership", () => {
             },
           ],
         }),
+      body: { cancel: vi.fn() },
+    });
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      text: () => Promise.resolve(JSON.stringify({ note: "no override" })),
       body: { cancel: vi.fn() },
     });
 
@@ -157,12 +162,13 @@ describe("listOAuthWithOwnership", () => {
           claimedAt: null,
           fileSizeBytes: null,
           modifiedAt: null,
+          rawText: "{\"note\":\"no override\"}",
           recentSuccessCount: 5,
           recentFailureCount: 1,
         },
       ],
     });
-    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
     expect(fetchMock).toHaveBeenCalledWith(
       "http://test:8317/v0/management/auth-files",
       expect.objectContaining({
@@ -193,6 +199,11 @@ describe("listOAuthWithOwnership", () => {
             },
           ],
         }),
+      body: { cancel: vi.fn() },
+    });
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      text: () => Promise.resolve(JSON.stringify({ note: "owned account" })),
       body: { cancel: vi.fn() },
     });
 
@@ -231,6 +242,7 @@ describe("listOAuthWithOwnership", () => {
           claimedAt: "2026-02-07T00:00:00.000Z",
           fileSizeBytes: null,
           modifiedAt: null,
+          rawText: "{\"note\":\"owned account\"}",
           recentSuccessCount: 0,
           recentFailureCount: 2,
         },
@@ -238,7 +250,7 @@ describe("listOAuthWithOwnership", () => {
     });
   });
 
-  it("returns bounded masked proxy summaries only for requested custom overrides", async () => {
+  it("returns masked proxy summaries from the primary OAuth list payload", async () => {
     const requestedAccounts = [
       "with-proxy",
       "without-proxy",
@@ -289,6 +301,11 @@ describe("listOAuthWithOwnership", () => {
         body: { cancel: vi.fn() },
       });
     }
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      text: () => Promise.resolve(JSON.stringify({ note: "account-12" })),
+      body: { cancel: vi.fn() },
+    });
 
     const { prisma } = await import("@/lib/db");
     const findManyMock = prisma.providerOAuthOwnership.findMany as unknown as ReturnType<typeof vi.fn>;
@@ -296,9 +313,7 @@ describe("listOAuthWithOwnership", () => {
 
     const { listOAuthWithOwnership } = await import("@/lib/providers/oauth-ops");
 
-    const result = await listOAuthWithOwnership("user-1", true, {
-      maskedProxyFor: requestedAccounts,
-    });
+    const result = await listOAuthWithOwnership("user-1", true);
 
     expect(result.ok).toBe(true);
     expect(result.accounts?.find((account) => account.accountName === "with-proxy")).toMatchObject({
@@ -312,22 +327,24 @@ describe("listOAuthWithOwnership", () => {
     ).not.toHaveProperty("maskedProxyUrl");
     expect(
       result.accounts?.find((account) => account.accountName === "malformed-proxy")
-    ).not.toHaveProperty("maskedProxyUrl");
+    ).toMatchObject({
+      maskedProxyUrl: "Invalid proxy URL",
+    });
 
     const downloadCalls = fetchMock.mock.calls
       .map(([url]) => String(url))
       .filter((url) => url.includes("/auth-files/download?name="));
 
-    expect(fetchMock).toHaveBeenCalledTimes(13);
-    expect(downloadCalls).toHaveLength(12);
+    expect(fetchMock).toHaveBeenCalledTimes(14);
+    expect(downloadCalls).toHaveLength(13);
     expect(downloadCalls).toContain(
       "http://test:8317/v0/management/auth-files/download?name=with-proxy"
     );
     expect(downloadCalls).toContain(
       "http://test:8317/v0/management/auth-files/download?name=without-proxy"
     );
-    expect(downloadCalls).not.toContain(
-      "http://test:8317/v0/management/auth-files/download?name=account-13"
+    expect(downloadCalls).toContain(
+      "http://test:8317/v0/management/auth-files/download?name=account-12"
     );
     expect(
       downloadCalls.filter((url) => url === "http://test:8317/v0/management/auth-files/download?name=with-proxy")

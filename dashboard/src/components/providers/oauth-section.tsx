@@ -120,16 +120,6 @@ function isTabVisible(): boolean {
   return document.visibilityState === "visible";
 }
 
-function getVisibleMaskedProxyAccounts(
-  accounts: OAuthAccountWithOwnership[],
-  page: number
-): string[] {
-  return accounts
-    .slice((page - 1) * OAUTH_ACCOUNT_PAGE_SIZE, page * OAUTH_ACCOUNT_PAGE_SIZE)
-    .map((account) => account.accountName)
-    .filter((accountName) => accountName.length > 0 && !/^Account \d+$/.test(accountName));
-}
-
 const validateCallbackUrl = (value: string) => {
   if (!value.trim()) {
     return { status: CALLBACK_VALIDATION.EMPTY, message: "Paste the full URL." };
@@ -300,13 +290,8 @@ export function OAuthSection({
     noCallbackClaimAttemptsRef.current = 0;
   }, []);
 
-  const fetchOAuthAccounts = useCallback(async (maskedProxyFor: string[] = []) => {
-    const url = new URL(API_ENDPOINTS.PROVIDERS.OAUTH, window.location.origin);
-    for (const accountName of maskedProxyFor) {
-      url.searchParams.append("maskedProxyFor", accountName);
-    }
-
-    const res = await fetch(`${url.pathname}${url.search}`);
+  const fetchOAuthAccounts = useCallback(async () => {
+    const res = await fetch(API_ENDPOINTS.PROVIDERS.OAUTH);
     if (!res.ok) {
       return null;
     }
@@ -336,13 +321,7 @@ export function OAuthSection({
       if (nextPage !== accountPage) {
         setAccountPage(nextPage);
       }
-
-      const visibleAccountNames = getVisibleMaskedProxyAccounts(nextAccounts, nextPage);
-      const enrichedAccounts = visibleAccountNames.length > 0
-        ? await fetchOAuthAccounts(visibleAccountNames)
-        : nextAccounts;
-
-      setAccounts(enrichedAccounts ?? nextAccounts);
+      setAccounts(nextAccounts);
       onAccountCountChange(nextAccounts.length);
       setOauthAccountsLoading(false);
     } catch {
@@ -511,33 +490,23 @@ export function OAuthSection({
 
   const openSettingsModal = async (account: OAuthAccountWithOwnership) => {
     setSettingsAccount(account);
-    setSettingsLoading(true);
+    setSettingsLoading(false);
     setSettingsSaving(false);
     setSettingsErrorMessage(null);
     setSettingsEditor(null);
 
     try {
-      const res = await fetch(API_ENDPOINTS.PROVIDERS.OAUTH_ACCOUNT_SETTINGS(account.accountName));
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        setSettingsErrorMessage(extractApiError(data, "Failed to load auth file settings."));
-        return;
-      }
-
-      if (typeof data.rawText !== "string") {
+      if (typeof account.rawText !== "string") {
         setSettingsErrorMessage("Auth file payload is missing.");
         return;
       }
 
-      const editor = createOAuthAuthFileSettingsEditor(data.rawText, account.provider);
+      const editor = createOAuthAuthFileSettingsEditor(account.rawText, account.provider);
       setSettingsEditor(editor);
     } catch (error) {
       setSettingsErrorMessage(
         error instanceof Error ? error.message : "Network error while loading auth file settings."
       );
-    } finally {
-      setSettingsLoading(false);
     }
   };
 
@@ -1126,7 +1095,7 @@ export function OAuthSection({
     : "";
   const settingsPreviewText = settingsEditor
     ? (() => {
-        if (settingsEditor.headersTouched && settingsEditor.headersError) {
+        if (settingsEditor.proxyUrlError || (settingsEditor.headersTouched && settingsEditor.headersError)) {
           try {
             return JSON.stringify(JSON.parse(settingsEditor.originalText), null, 2);
           } catch {
@@ -1145,8 +1114,10 @@ export function OAuthSection({
     ? isOAuthAuthFileSettingsDirty(settingsEditor)
     : false;
   const settingsValidationError =
-    settingsEditor?.headersTouched && settingsEditor.headersError
-      ? settingsEditor.headersError
+    settingsEditor?.proxyUrlError
+      ? settingsEditor.proxyUrlError
+      : settingsEditor?.headersTouched && settingsEditor.headersError
+        ? settingsEditor.headersError
       : null;
 
   return (

@@ -320,14 +320,20 @@ export function OAuthAccountSettingsModal({
                       label="Proxy URL"
                       helper="Per-auth upstream proxy override. Leave blank to inherit the global setting."
                     >
-                      <Input
-                        name="oauth-proxy-url"
-                        value={editor.proxyUrl}
-                        onChange={(value) => onStringFieldChange("proxyUrl", value)}
-                        placeholder="socks5://user:pass@host:port"
-                        disabled={saving}
-                        className="h-11 rounded-lg font-mono"
-                      />
+                      <div className="space-y-2">
+                        <Input
+                          name="oauth-proxy-url"
+                          value={editor.proxyUrl}
+                          onChange={(value) => onStringFieldChange("proxyUrl", value)}
+                          placeholder="socks5://user:pass@host:port"
+                          disabled={saving}
+                          aria-invalid={Boolean(editor.proxyUrlError)}
+                          className="h-11 rounded-lg font-mono"
+                        />
+                        {editor.proxyUrlError ? (
+                          <p className="text-xs text-rose-500">{editor.proxyUrlError}</p>
+                        ) : null}
+                      </div>
                     </FieldBlock>
                   </div>
 
@@ -414,15 +420,15 @@ export function OAuthAccountSettingsModal({
         ) : null}
       </ModalContent>
 
-      <ModalFooter className="gap-2 border-t-0 pt-0">
-        <Button variant="ghost" onClick={onClose} disabled={saving} className="rounded-md">
+      <ModalFooter className="mt-1 gap-2 border-t border-[var(--surface-border)] pt-3">
+        <Button variant="secondary" onClick={onClose} disabled={saving} className="min-w-24 rounded-lg">
           {dirty ? "Cancel" : "Close"}
         </Button>
         <Button
-          variant="pill"
+          variant="primary"
           onClick={onSave}
           disabled={!editor || !dirty || saving || Boolean(validationErrorMessage)}
-          className="rounded-md"
+          className="min-w-32 rounded-lg"
         >
           {saving ? "Saving..." : "Save settings"}
         </Button>

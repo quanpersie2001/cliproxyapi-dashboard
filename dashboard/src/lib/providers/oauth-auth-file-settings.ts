@@ -10,6 +10,8 @@ export interface OAuthAuthFileSettingsEditor {
   isCodexFile: boolean;
   prefix: string;
   proxyUrl: string;
+  proxyUrlTouched: boolean;
+  proxyUrlError: string | null;
   priority: string;
   headersText: string;
   headersTouched: boolean;
@@ -129,6 +131,26 @@ function normalizePriorityField(value: unknown): number | undefined {
   return priority !== undefined ? priority : undefined;
 }
 
+function validateProxyUrlValue(value: string): string | null {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    return "Proxy URL must be a valid absolute URL.";
+  }
+
+  if (!parsed.protocol || !parsed.host) {
+    return "Proxy URL must include protocol and host.";
+  }
+
+  return null;
+}
+
 function sanitizeOAuthAuthFileJson(value: Record<string, unknown>): Record<string, unknown> {
   const next = { ...value };
 
@@ -177,6 +199,9 @@ export function createOAuthAuthFileSettingsEditor(
     isCodexFile: codexFile,
     prefix: typeof json.prefix === "string" ? json.prefix : "",
     proxyUrl: typeof json.proxy_url === "string" ? json.proxy_url : "",
+    proxyUrlTouched: false,
+    proxyUrlError:
+      typeof json.proxy_url === "string" ? validateProxyUrlValue(json.proxy_url) : null,
     priority: priority !== undefined ? String(priority) : "",
     headersText: formatHeadersText(normalizeHeaders(json.headers)),
     headersTouched: false,
@@ -211,6 +236,16 @@ export function updateOAuthAuthFileSettingsEditor(
     };
   }
 
+  if (field === "proxyUrl") {
+    const nextValue = String(value);
+    return {
+      ...editor,
+      proxyUrl: nextValue,
+      proxyUrlTouched: true,
+      proxyUrlError: validateProxyUrlValue(nextValue),
+    };
+  }
+
   return {
     ...editor,
     [field]: String(value),
@@ -229,6 +264,9 @@ export function buildOAuthAuthFileSettingsPayload(
   }
 
   if (editor.proxyUrl.trim()) {
+    if (editor.proxyUrlError) {
+      throw new Error(editor.proxyUrlError);
+    }
     next.proxy_url = editor.proxyUrl;
   } else if ("proxy_url" in next) {
     delete next.proxy_url;
@@ -281,7 +319,7 @@ export function formatOAuthAuthFileSettingsPreview(
 export function isOAuthAuthFileSettingsDirty(
   editor: OAuthAuthFileSettingsEditor
 ): boolean {
-  if (editor.headersTouched && editor.headersError) {
+  if (editor.proxyUrlError || (editor.headersTouched && editor.headersError)) {
     const originalPriority = normalizePriorityField(editor.json.priority);
     const originalHeadersText = formatHeadersText(normalizeHeaders(editor.json.headers));
     const originalNote = typeof editor.json.note === "string" ? editor.json.note : "";
@@ -295,5 +333,9 @@ export function isOAuthAuthFileSettingsDirty(
     );
   }
 
-  return buildOAuthAuthFileSettingsPayload(editor) !== editor.originalText;
+  try {
+    return buildOAuthAuthFileSettingsPayload(editor) !== editor.originalText;
+  } catch {
+    return true;
+  }
 }

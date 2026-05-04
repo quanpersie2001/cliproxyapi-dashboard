@@ -63,7 +63,7 @@ describe("GET /api/providers/oauth", () => {
     });
   });
 
-  it("forwards repeated maskedProxyFor query params intact", async () => {
+  it("loads OAuth accounts with ownership from the primary list endpoint", async () => {
     const { GET } = await import("./route");
     const request = new NextRequest(
       "http://localhost/api/providers/oauth?maskedProxyFor=one&maskedProxyFor=two&maskedProxyFor=one"
@@ -72,9 +72,7 @@ describe("GET /api/providers/oauth", () => {
     const response = await GET(request);
     const body = await response.json();
 
-    expect(listOAuthWithOwnershipMock).toHaveBeenCalledWith("user-1", true, {
-      maskedProxyFor: ["one", "two", "one"],
-    });
+    expect(listOAuthWithOwnershipMock).toHaveBeenCalledWith("user-1", true);
     expect(body).toEqual({
       accounts: [{ id: "auth-file-1", accountName: "one" }],
     });

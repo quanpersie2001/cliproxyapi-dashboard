@@ -103,4 +103,31 @@ describe("oauth auth-file settings editor", () => {
       },
     });
   });
+
+  it("validates proxy URL and blocks payload generation when proxy is invalid", () => {
+    let editor = createOAuthAuthFileSettingsEditor(
+      JSON.stringify({
+        proxy_url: "socks5://user:pass@host:1080",
+      }),
+      "codex"
+    );
+
+    editor = updateOAuthAuthFileSettingsEditor(editor, "proxyUrl", "socks5://user:pass@host:portt");
+
+    expect(editor.proxyUrlError).toBe("Proxy URL must be a valid absolute URL.");
+    expect(() => buildOAuthAuthFileSettingsPayload(editor)).toThrow("Proxy URL must be a valid absolute URL.");
+  });
+
+  it("keeps valid proxy URL in payload", () => {
+    const editor = createOAuthAuthFileSettingsEditor(
+      JSON.stringify({
+        proxy_url: "socks5://user:pass@proxy-us:1080",
+      }),
+      "codex"
+    );
+
+    expect(parsePayload(buildOAuthAuthFileSettingsPayload(editor))).toEqual({
+      proxy_url: "socks5://user:pass@proxy-us:1080",
+    });
+  });
 });
