@@ -661,6 +661,65 @@ export function UsageAnalytics({
       )}
     </SummaryPanel>
   );
+  const successFailureRatioCard = (
+    <SummaryPanel
+      title="Success / Failure Ratio"
+      description="Delivery split across the active time range."
+      badge={(
+        <Badge
+          tone={totalAttempts > 0 ? (successRate >= 95 ? "success" : successRate >= 80 ? "warning" : "danger") : "neutral"}
+          size="xs"
+        >
+          {totalAttempts > 0 ? formatPercent(successRate) : "No traffic"}
+        </Badge>
+      )}
+    >
+      {totalAttempts > 0 ? (
+        <div className="flex h-[220px] flex-col justify-center gap-4 px-2">
+          <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
+            <span className="font-semibold" style={{ color: "var(--state-success-accent)" }}>
+              {totals.successCount.toLocaleString()} success
+            </span>
+            <span className="font-semibold" style={{ color: "var(--state-danger-accent)" }}>
+              {totals.failureCount.toLocaleString()} failed
+            </span>
+          </div>
+          <div className="h-4 w-full overflow-hidden rounded-full bg-[var(--surface-muted)]">
+            <div className="flex h-full">
+              {successRate > 0 ? (
+                <div
+                  className="h-full transition-[width] duration-700"
+                  style={{ width: `${successRate}%`, backgroundColor: "var(--state-success-accent)" }}
+                />
+              ) : null}
+              {failureRate > 0 ? (
+                <div
+                  className="h-full transition-[width] duration-700"
+                  style={{ width: `${failureRate}%`, backgroundColor: "var(--state-danger-accent)" }}
+                />
+              ) : null}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3 pt-2">
+            <div className="dashboard-card-surface px-3 py-2 text-center">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">Success Rate</p>
+              <p className="mt-0.5 text-lg font-bold" style={{ color: "var(--state-success-accent)" }}>
+                {successRate.toFixed(1)}%
+              </p>
+            </div>
+            <div className="dashboard-card-surface px-3 py-2 text-center">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">Failure Rate</p>
+              <p className="mt-0.5 text-lg font-bold" style={{ color: "var(--state-danger-accent)" }}>
+                {failureRate.toFixed(1)}%
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <p className="text-sm text-[var(--text-muted)]">No requests collected in the selected time range.</p>
+      )}
+    </SummaryPanel>
+  );
   const serviceHealthCard = (
     <SummaryPanel
       title="Service health"
@@ -860,7 +919,7 @@ export function UsageAnalytics({
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
         {topModelsCard}
-        {serviceHealthCard}
+        {successFailureRatioCard}
       </section>
 
       <div className="dashboard-panel-surface p-4">
@@ -898,7 +957,12 @@ export function UsageAnalytics({
         latencySummary={snapshot.data.latencySummary}
         totals={snapshot.data.totals}
         showTrafficCharts={false}
+        showSuccessFailureRatio={false}
       />
+
+      <section>
+        {serviceHealthCard}
+      </section>
 
       <section className="dashboard-panel-surface p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
