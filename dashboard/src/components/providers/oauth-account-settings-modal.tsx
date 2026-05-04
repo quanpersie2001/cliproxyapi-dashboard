@@ -41,7 +41,7 @@ function FieldBlock({
   return (
     <div className="space-y-2">
       <div className="space-y-1">
-        <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
+        <label className="text-[11px] font-semibold uppercase tracking-[0.08em] text-[var(--text-secondary)]">
           {label}
         </label>
         {helper ? (
@@ -58,24 +58,29 @@ function SectionPanel({
   description,
   action,
   children,
+  variant = "plain",
   className = "",
 }: {
   title: string;
   description: string;
   action?: ReactNode;
   children: ReactNode;
+  variant?: "plain" | "card";
   className?: string;
 }) {
   return (
     <section
-      className={`rounded-2xl border border-[var(--surface-border)] bg-[var(--surface-base)] p-4 shadow-[var(--shadow-edge)] sm:p-5 ${className}`.trim()}
+      className={`${variant === "card"
+        ? "rounded-lg border border-[var(--surface-border)] bg-[var(--surface-base)] p-4 shadow-[var(--shadow-edge)] sm:p-5"
+        : "space-y-1"
+        } ${className}`.trim()}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[11px] font-semibold uppercase tracking-[0.1em] text-[var(--text-muted)]">
+          <p className="text-sm font-semibold text-[var(--text-primary)]">
             {title}
           </p>
-          <p className="mt-2 max-w-[52ch] text-sm leading-relaxed text-[var(--text-secondary)]">
+          <p className="mt-2 max-w-[52ch] text-sm leading-relaxed text-[var(--text-muted)]">
             {description}
           </p>
         </div>
@@ -142,6 +147,15 @@ function parseStatusMessage(raw: string | null): string | null {
   }
 }
 
+function isUsageLimitMessage(value: string | null): boolean {
+  if (!value) {
+    return false;
+  }
+
+  const normalized = value.toLowerCase();
+  return normalized.includes("usage limit") && normalized.includes("reach");
+}
+
 function buildAuthFileInfoText(
   account: OAuthAccountWithOwnership | null,
   editor: OAuthAuthFileSettingsEditor | null,
@@ -199,23 +213,25 @@ export function OAuthAccountSettingsModal({
 }: OAuthAccountSettingsModalProps) {
   const provider = getOAuthProviderPresentation(account?.provider ?? "");
   const parsedStatusMessage = parseStatusMessage(account?.statusMessage ?? null);
+  const usageLimitReached = isUsageLimitMessage(parsedStatusMessage);
   const authFileInfoText = buildAuthFileInfoText(account, editor, provider.name);
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      className="max-w-6xl rounded-2xl border border-[var(--surface-border)] p-4 md:p-5"
+      className="max-w-6xl rounded-xl border border-[var(--surface-border)] p-4 md:p-5"
     >
       <ModalHeader className="mb-0 border-b-0 pb-4 pr-8">
-        <ModalTitle>
-          {account ? `Auth file settings · ${account.accountName}` : "Auth file settings"}
-        </ModalTitle>
-        <p className="mt-2 max-w-[62ch] text-sm leading-relaxed text-[var(--text-muted)]">
-          {account
-            ? `Adjust runtime overrides for ${provider.name}${account.accountEmail ? ` · ${account.accountEmail}` : ""}.`
-            : "Adjust runtime overrides for the selected OAuth auth file."}
-        </p>
+        <ModalTitle>Auth File Details</ModalTitle>
+        {usageLimitReached ? (
+          <Badge
+            tone="danger"
+            className="mt-2 flex w-full justify-start rounded-lg px-4 py-2 text-sm font-semibold leading-5"
+          >
+            The usage limit has been reached
+          </Badge>
+        ) : null}
       </ModalHeader>
 
       <ModalContent className="space-y-4 pt-2">
@@ -229,30 +245,44 @@ export function OAuthAccountSettingsModal({
           </AlertSurface>
         ) : editor ? (
           <div className="space-y-4">
-            <div className="rounded-2xl border border-[var(--surface-border)] bg-[var(--surface-base)] p-4 shadow-[var(--shadow-edge)]">
-              <div className="flex flex-wrap items-center gap-2">
-                <Badge tone="info" size="xs" className="rounded-sm">
-                  Provider: {provider.name}
-                </Badge>
-                <Badge tone="neutral" size="xs" className="rounded-sm">
-                  Size: {formatFileSize(account?.fileSizeBytes ?? null)}
-                </Badge>
-                <Badge tone="neutral" size="xs" className="rounded-sm">
-                  Modified: {formatModifiedAt(account?.modifiedAt ?? null)}
-                </Badge>
+            <div className="rounded-lg border border-[var(--surface-border)] bg-[var(--surface-base)] p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.09em] text-[var(--text-secondary)]">
+                Metadata
+              </p>
+              <div className="mt-3 space-y-3">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <p className="text-[11px] uppercase tracking-[0.08em] text-[var(--text-muted)]">File</p>
+                    <p className="mt-1 truncate text-sm font-medium text-[var(--text-primary)]">
+                      {account?.accountName ?? "Unknown"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] uppercase tracking-[0.08em] text-[var(--text-muted)]">Email</p>
+                    <p className="mt-1 truncate text-sm font-medium text-[var(--text-primary)]">
+                      {account?.accountEmail || "Not exposed"}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Badge tone="info" size="xs" className="rounded-sm">
+                    Provider: {provider.name}
+                  </Badge>
+                  <Badge tone="neutral" size="xs" className="rounded-sm">
+                    Size: {formatFileSize(account?.fileSizeBytes ?? null)}
+                  </Badge>
+                  <Badge tone="neutral" size="xs" className="rounded-sm">
+                    Modified: {formatModifiedAt(account?.modifiedAt ?? null)}
+                  </Badge>
+                </div>
               </div>
-
-              {parsedStatusMessage && account?.status !== "active" ? (
-                <AlertSurface tone="warning" accent className="mt-4 rounded-lg px-3 py-2 text-xs">
-                  {parsedStatusMessage}
-                </AlertSurface>
-              ) : null}
             </div>
 
             <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(320px,0.9fr)]">
               <SectionPanel
                 title="Editable Settings"
                 description="Update the auth-file fields that operators are expected to tune for routing, proxying, and note-taking."
+                variant="card"
                 className="h-full"
               >
                 <div className="space-y-5">
@@ -314,7 +344,7 @@ export function OAuthAccountSettingsModal({
                         rows={7}
                         spellCheck={false}
                         aria-invalid={Boolean(editor.headersError)}
-                        className="w-full resize-y rounded-xl border border-[var(--surface-border)] bg-[var(--surface-muted)]/50 px-3 py-3 font-mono text-sm leading-6 text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--surface-border-strong)] aria-[invalid=true]:border-rose-400"
+                        className="w-full resize-y rounded-lg border border-[var(--surface-border)] bg-[var(--surface-muted)]/50 px-3 py-3 font-mono text-sm leading-6 text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--surface-border-strong)] aria-[invalid=true]:border-rose-400"
                       />
                       {editor.headersError ? (
                         <p className="text-xs text-rose-500">{editor.headersError}</p>
@@ -336,7 +366,7 @@ export function OAuthAccountSettingsModal({
                       placeholder="Reserved for high-priority fallback traffic"
                       disabled={saving}
                       rows={4}
-                      className="w-full resize-y rounded-xl border border-[var(--surface-border)] bg-[var(--surface-muted)]/50 px-3 py-3 text-sm leading-6 text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--surface-border-strong)]"
+                      className="w-full resize-y rounded-lg border border-[var(--surface-border)] bg-[var(--surface-muted)]/50 px-3 py-3 text-sm leading-6 text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--surface-border-strong)]"
                     />
                   </FieldBlock>
                 </div>
@@ -346,8 +376,9 @@ export function OAuthAccountSettingsModal({
                 <SectionPanel
                   title="Auth File Info"
                   description="Snapshot metadata for the selected OAuth auth file."
+                  variant="card"
                 >
-                  <pre className="max-h-56 overflow-auto whitespace-pre-wrap break-all rounded-xl border border-[var(--surface-border)] bg-[var(--surface-muted)]/50 p-3 text-xs leading-6 text-[var(--text-primary)]">
+                  <pre className="max-h-56 overflow-auto whitespace-pre-wrap break-all rounded-lg border border-[var(--surface-border)] bg-[var(--surface-muted)]/50 p-3 text-xs leading-6 text-[var(--text-primary)]">
                     {authFileInfoText}
                   </pre>
                 </SectionPanel>
@@ -355,6 +386,7 @@ export function OAuthAccountSettingsModal({
                 <SectionPanel
                   title="JSON Preview"
                   description="This is the content that will be uploaded back to the proxy."
+                  variant="card"
                   action={
                     <Button
                       variant="ghost"
@@ -372,7 +404,7 @@ export function OAuthAccountSettingsModal({
                     </AlertSurface>
                   ) : null}
 
-                  <pre className="max-h-[420px] overflow-auto whitespace-pre-wrap break-all rounded-xl border border-[var(--surface-border)] bg-[var(--surface-muted)]/50 p-3 text-xs leading-6 text-[var(--text-primary)]">
+                  <pre className="max-h-[420px] overflow-auto whitespace-pre-wrap break-all rounded-lg bg-[var(--surface-muted)]/50 p-3 text-xs leading-6 text-[var(--text-primary)]">
                     {previewText}
                   </pre>
                 </SectionPanel>
