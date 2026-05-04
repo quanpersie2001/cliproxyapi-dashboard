@@ -1,9 +1,9 @@
 {
   "schema_version": "1.0",
   "feature_key": "oauth-config-ui-ux",
-  "phase": "execution/phase-1",
-  "gate": "execution-ready",
-  "status": "phase-1-br-wpd-1-closed-br-wpd-2-ready",
-  "current_bead": "br-wpd.2",
-  "updated_at": "2026-05-04T13:18:53Z"
+  "phase": "review/phase-1",
+  "gate": "review-ready",
+  "status": "phase-1-execution-complete-review-ready",
+  "current_bead": null,
+  "updated_at": "2026-05-04T13:25:32Z"
 }
