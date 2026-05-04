@@ -40,6 +40,31 @@ describe("oauth auth-file settings editor", () => {
     });
   });
 
+  it("preserves untouched headers subtree when editing only note", () => {
+    let editor = createOAuthAuthFileSettingsEditor(
+      JSON.stringify({
+        prefix: "demo",
+        note: "night traffic",
+        headers: {
+          "X-Zebra": "1",
+          Authorization: " Bearer x ",
+        },
+      }),
+      "codex"
+    );
+
+    editor = updateOAuthAuthFileSettingsEditor(editor, "note", "night traffic - backup");
+
+    expect(parsePayload(buildOAuthAuthFileSettingsPayload(editor))).toEqual({
+      prefix: "demo",
+      note: "night traffic - backup",
+      headers: {
+        "X-Zebra": "1",
+        Authorization: " Bearer x ",
+      },
+    });
+  });
+
   it("preserves hidden advanced fields when editing headers", () => {
     let editor = createOAuthAuthFileSettingsEditor(
       JSON.stringify({

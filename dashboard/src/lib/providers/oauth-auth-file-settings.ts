@@ -151,13 +151,6 @@ function sanitizeOAuthAuthFileJson(value: Record<string, unknown>): Record<strin
     delete next.note;
   }
 
-  const headers = normalizeHeaders(next.headers);
-  if (Object.keys(headers).length > 0) {
-    next.headers = headers;
-  } else if ("headers" in next) {
-    delete next.headers;
-  }
-
   return next;
 }
 
@@ -257,15 +250,17 @@ export function buildOAuthAuthFileSettingsPayload(
     }
   }
 
-  const { value: headers, error } = parseHeadersText(editor.headersText);
-  if (error) {
-    throw new Error(error);
-  }
+  if (editor.headersTouched) {
+    const { value: headers, error } = parseHeadersText(editor.headersText);
+    if (error) {
+      throw new Error(error);
+    }
 
-  if (headers && Object.keys(headers).length > 0) {
-    next.headers = headers;
-  } else if ("headers" in next) {
-    delete next.headers;
+    if (headers && Object.keys(headers).length > 0) {
+      next.headers = headers;
+    } else if ("headers" in next) {
+      delete next.headers;
+    }
   }
 
   return JSON.stringify(next);
