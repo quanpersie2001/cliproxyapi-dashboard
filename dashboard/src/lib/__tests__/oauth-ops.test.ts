@@ -232,6 +232,7 @@ describe("listOAuthWithOwnership", () => {
       "with-proxy",
       "without-proxy",
       "broken-json",
+      "malformed-proxy",
       "account-4",
       "account-5",
       "account-6",
@@ -267,6 +268,7 @@ describe("listOAuthWithOwnership", () => {
       ["with-proxy", JSON.stringify({ proxy_url: "socks5://user:pass@proxy-us:1080" })],
       ["without-proxy", JSON.stringify({ note: "no override" })],
       ["broken-json", "{not-json"],
+      ["malformed-proxy", JSON.stringify({ proxy_url: "socks5://user:p@ss@proxy-us:1080" })],
     ]);
 
     for (const accountName of requestedAccounts.slice(0, 12)) {
@@ -296,6 +298,9 @@ describe("listOAuthWithOwnership", () => {
     ).not.toHaveProperty("maskedProxyUrl");
     expect(
       result.accounts?.find((account) => account.accountName === "broken-json")
+    ).not.toHaveProperty("maskedProxyUrl");
+    expect(
+      result.accounts?.find((account) => account.accountName === "malformed-proxy")
     ).not.toHaveProperty("maskedProxyUrl");
 
     const downloadCalls = fetchMock.mock.calls

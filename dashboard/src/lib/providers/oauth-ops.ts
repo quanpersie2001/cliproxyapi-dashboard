@@ -93,17 +93,44 @@ function normalizeMaskedProxyRequests(values: string[] | undefined): string[] {
   return normalized;
 }
 
-function maskProxyUrlCredentials(proxyUrl: string): string {
+function maskProxyUrlCredentials(proxyUrl: string): string | null {
   const trimmed = proxyUrl.trim();
+  if (!trimmed) {
+    return null;
+  }
+
   const schemeSeparatorIndex = trimmed.indexOf("://");
   const authorityStart = schemeSeparatorIndex >= 0 ? schemeSeparatorIndex + 3 : 0;
-  const credentialsEnd = trimmed.indexOf("@", authorityStart);
+  const authorityEndCandidates = [trimmed.indexOf("/", authorityStart), trimmed.indexOf("?", authorityStart), trimmed.indexOf("#", authorityStart)].filter(
+    (index) => index >= 0
+  );
+  const authorityEnd =
+    authorityEndCandidates.length > 0 ? Math.min(...authorityEndCandidates) : trimmed.length;
+  const authority = trimmed.slice(authorityStart, authorityEnd);
+  const atCount = authority.split("@").length - 1;
 
-  if (credentialsEnd < 0) {
+  if (atCount === 0) {
     return trimmed;
   }
 
-  return `${trimmed.slice(0, authorityStart)}***${trimmed.slice(credentialsEnd)}`;
+  // Fail closed when userinfo is not canonical to avoid exposing credential fragments.
+  if (atCount > 1) {
+    return null;
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    return null;
+  }
+
+  const hasUserInfo = parsed.username.length > 0 || parsed.password.length > 0;
+  if (!hasUserInfo) {
+    return null;
+  }
+
+  return `${parsed.protocol}//***@${parsed.host}${parsed.pathname}${parsed.search}${parsed.hash}`;
 }
 
 async function loadMaskedProxyUrlForAccount(accountName: string): Promise<string | null> {
