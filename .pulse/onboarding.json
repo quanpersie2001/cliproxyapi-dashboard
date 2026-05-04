@@ -1,0 +1,34 @@
+{
+  "schema_version": "1.0",
+  "plugin": "pulse",
+  "plugin_version": "3.5.0",
+  "installed_at": "2026-05-04T09:00:02.346Z",
+  "status": "complete",
+  "managed_assets": {
+    "agents_mode": "appended_managed_block",
+    "config_changes": [
+      "set_project_doc_max_bytes",
+      "enable_codex_hooks_feature",
+      "compact_prompt_installed"
+    ],
+    "legacy_hook_cleanup": [],
+    "legacy_hook_scripts_removed": [],
+    "legacy_support_scripts_removed": [],
+    "support_scripts": [
+      ".pulse/scripts/pulse_status.mjs",
+      ".pulse/scripts/pulse_state.mjs",
+      ".pulse/scripts/pulse_dependencies.mjs",
+      ".pulse/scripts/pulse_reservations.mjs",
+      ".pulse/scripts/pulse_session_context.mjs"
+    ],
+    "state_file": ".pulse/state.json",
+    "checkpoints_root": ".pulse/checkpoints",
+    "memory_root": ".pulse/memory",
+    "memory_directories": [
+      ".pulse/memory/learnings",
+      ".pulse/memory/corrections",
+      ".pulse/memory/ratchet"
+    ]
+  },
+  "notes": []
+}
