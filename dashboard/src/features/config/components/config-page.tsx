@@ -493,7 +493,9 @@ export function ConfigPage() {
             errors.push("Failed to fetch current config.yaml for YAML update");
           } else {
             const rawYaml = await rawYamlResponse.text();
-            const mergedYaml = mergeConfigYaml(rawYaml, yamlChanges);
+            const mergedYaml = mergeConfigYaml(rawYaml, yamlChanges, {
+              replaceKeys: "oauth-model-alias" in yamlChanges ? ["oauth-model-alias"] : [],
+            });
             const yamlResponse = await fetch(API_ENDPOINTS.MANAGEMENT.CONFIG_YAML, {
               method: "PUT",
               headers: { "Content-Type": "text/yaml" },

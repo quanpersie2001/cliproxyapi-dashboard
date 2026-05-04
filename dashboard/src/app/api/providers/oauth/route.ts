@@ -29,7 +29,7 @@ function isValidOAuthProvider(provider: string): provider is OAuthProvider {
   return Object.values(OAUTH_PROVIDER).includes(provider as OAuthProvider);
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const session = await verifySession();
   if (!session) {
     return Errors.unauthorized();
@@ -42,7 +42,6 @@ export async function GET() {
     });
 
     const isAdmin = user?.isAdmin ?? false;
-
     const result = await listOAuthWithOwnership(session.userId, isAdmin);
 
     if (!result.ok) {

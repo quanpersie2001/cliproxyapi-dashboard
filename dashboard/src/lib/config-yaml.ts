@@ -28,11 +28,16 @@ export function parseConfigYaml(rawYaml: string): ConfigYamlObject {
   return parsed;
 }
 
-export function mergeConfigYaml(rawYaml: string, changes: ConfigYamlObject): string {
+export function mergeConfigYaml(
+  rawYaml: string,
+  changes: ConfigYamlObject,
+  options?: { replaceKeys?: string[] }
+): string {
   const mergedConfig = { ...parseConfigYaml(rawYaml) };
+  const replaceKeys = new Set(options?.replaceKeys ?? []);
 
   for (const [key, value] of Object.entries(changes)) {
-    if (isPlainObject(value) && isPlainObject(mergedConfig[key])) {
+    if (!replaceKeys.has(key) && isPlainObject(value) && isPlainObject(mergedConfig[key])) {
       mergedConfig[key] = {
         ...(mergedConfig[key] as ConfigYamlObject),
         ...value,

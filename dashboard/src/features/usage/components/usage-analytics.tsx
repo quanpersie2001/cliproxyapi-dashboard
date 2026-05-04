@@ -519,6 +519,15 @@ export function UsageAnalytics({
     () => calculateTotalCost(snapshot.data.costBreakdown.totalsByModel, modelPriceLookup),
     [modelPriceLookup, snapshot.data.costBreakdown.totalsByModel]
   );
+  const selectedChartLines = useMemo(
+    () => chartLines.map((line, index) => ({
+      value: line,
+      label: line === "all" ? "All models" : line,
+      color: SERIES_COLORS[index % SERIES_COLORS.length],
+      seriesId: `L${index + 1}`,
+    })),
+    [chartLines]
+  );
   const requestTrendData = useMemo(
     () => mergeSelectedTrendLines(snapshot.data.requestTrend[requestsPeriod], chartLines),
     [chartLines, requestsPeriod, snapshot.data.requestTrend]
@@ -658,6 +667,65 @@ export function UsageAnalytics({
         </div>
       ) : (
         <p className="text-sm text-[var(--text-muted)]">No model usage has been collected yet.</p>
+      )}
+    </SummaryPanel>
+  );
+  const successFailureRatioCard = (
+    <SummaryPanel
+      title="Success / Failure Ratio"
+      description="Delivery split across the active time range."
+      badge={(
+        <Badge
+          tone={totalAttempts > 0 ? (successRate >= 95 ? "success" : successRate >= 80 ? "warning" : "danger") : "neutral"}
+          size="xs"
+        >
+          {totalAttempts > 0 ? formatPercent(successRate) : "No traffic"}
+        </Badge>
+      )}
+    >
+      {totalAttempts > 0 ? (
+        <div className="flex h-[220px] flex-col justify-center gap-4 px-2">
+          <div className="flex items-center justify-between text-xs text-[var(--text-muted)]">
+            <span className="font-semibold" style={{ color: "var(--state-success-accent)" }}>
+              {totals.successCount.toLocaleString()} success
+            </span>
+            <span className="font-semibold" style={{ color: "var(--state-danger-accent)" }}>
+              {totals.failureCount.toLocaleString()} failed
+            </span>
+          </div>
+          <div className="h-4 w-full overflow-hidden rounded-full bg-[var(--surface-muted)]">
+            <div className="flex h-full">
+              {successRate > 0 ? (
+                <div
+                  className="h-full transition-[width] duration-700"
+                  style={{ width: `${successRate}%`, backgroundColor: "var(--state-success-accent)" }}
+                />
+              ) : null}
+              {failureRate > 0 ? (
+                <div
+                  className="h-full transition-[width] duration-700"
+                  style={{ width: `${failureRate}%`, backgroundColor: "var(--state-danger-accent)" }}
+                />
+              ) : null}
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-3 pt-2">
+            <div className="dashboard-card-surface px-3 py-2 text-center">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">Success Rate</p>
+              <p className="mt-0.5 text-lg font-bold" style={{ color: "var(--state-success-accent)" }}>
+                {successRate.toFixed(1)}%
+              </p>
+            </div>
+            <div className="dashboard-card-surface px-3 py-2 text-center">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">Failure Rate</p>
+              <p className="mt-0.5 text-lg font-bold" style={{ color: "var(--state-danger-accent)" }}>
+                {failureRate.toFixed(1)}%
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <p className="text-sm text-[var(--text-muted)]">No requests collected in the selected time range.</p>
       )}
     </SummaryPanel>
   );
@@ -860,7 +928,7 @@ export function UsageAnalytics({
 
       <section className="grid gap-4 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
         {topModelsCard}
-        {serviceHealthCard}
+        {successFailureRatioCard}
       </section>
 
       <div className="dashboard-panel-surface p-4">
@@ -898,14 +966,19 @@ export function UsageAnalytics({
         latencySummary={snapshot.data.latencySummary}
         totals={snapshot.data.totals}
         showTrafficCharts={false}
+        showSuccessFailureRatio={false}
       />
+
+      <section>
+        {serviceHealthCard}
+      </section>
 
       <section className="dashboard-panel-surface p-4">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <h2 className="text-sm font-semibold text-[var(--text-primary)]">Chart line selection</h2>
             <p className="mt-1 text-xs text-[var(--text-muted)]">
-              Choose which model lines should appear in request and token trends.
+              Choose which model lines should appear in request and token trends. Each line keeps the same color and label in both charts.
             </p>
           </div>
           <Button variant="secondary" onClick={addChartLine} disabled={chartLines.length >= MAX_CHART_LINES}>
@@ -913,13 +986,17 @@ export function UsageAnalytics({
           </Button>
         </div>
         <div className="mt-4 space-y-2">
-          {chartLines.map((line, index) => (
-            <div key={`${line}-${index}`} className="dashboard-card-surface flex flex-col gap-2 p-3 lg:flex-row lg:items-center">
-              <div className="w-full text-xs font-medium text-[var(--text-muted)] lg:w-24">
-                Line {index + 1}
+          {selectedChartLines.map((line, index) => (
+            <div key={`${line.value}-${index}`} className="dashboard-card-surface flex flex-col gap-3 p-3 lg:flex-row lg:items-center">
+              <div className="flex w-full items-center gap-3 lg:w-52 lg:shrink-0">
+                <span className="inline-flex items-center gap-2 rounded-full border border-[var(--surface-border)] bg-[var(--surface-muted)] px-2.5 py-1 text-[11px] font-semibold text-[var(--text-secondary)]">
+                  <span className="h-0.5 w-6 rounded-full" style={{ backgroundColor: line.color }} />
+                  {line.seriesId}
+                </span>
+                <span className="min-w-0 truncate text-xs text-[var(--text-muted)]">{line.label}</span>
               </div>
               <SelectField
-                value={line}
+                value={line.value}
                 onChange={(value) => updateChartLine(index, value)}
                 options={[{ value: "all", label: "All models" }, ...modelNames.map((model) => ({ value: model, label: model }))]}
                 className="w-full lg:flex-1"
@@ -950,7 +1027,21 @@ export function UsageAnalytics({
               By Day
             </Button>
           </div>
-          <ResponsiveContainer width="100%" height="85%">
+          <div className="-mx-1 mb-3 overflow-x-auto px-1 pb-1">
+            <div className="flex min-w-max gap-2">
+              {selectedChartLines.map((line) => (
+                <span
+                  key={`request-legend-${line.seriesId}-${line.value}`}
+                  className="inline-flex items-center gap-2 rounded-full border border-[var(--surface-border)] bg-[var(--surface-muted)] px-2.5 py-1 text-[11px] text-[var(--text-secondary)]"
+                >
+                  <span className="h-0.5 w-6 shrink-0 rounded-full" style={{ backgroundColor: line.color }} />
+                  <span className="font-semibold text-[var(--text-primary)]">{line.seriesId}</span>
+                  <span>{line.label}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height="72%">
             <LineChart data={requestTrendData} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
               <CartesianGrid stroke={CHART_COLORS.grid} />
               <XAxis dataKey="displayLabel" tick={AXIS_TICK_STYLE} tickLine={false} axisLine={false} minTickGap={20} />
@@ -960,15 +1051,15 @@ export function UsageAnalytics({
                 formatter={(value) => [formatCompact(Number(value)), "Requests"]}
                 labelFormatter={(label) => String(label)}
               />
-              {chartLines.map((line, index) => (
+              {selectedChartLines.map((line) => (
                 <Line
-                  key={`request-line-${line}-${index}`}
+                  key={`request-line-${line.seriesId}-${line.value}`}
                   type="monotone"
-                  dataKey={line}
-                  stroke={SERIES_COLORS[index % SERIES_COLORS.length]}
+                  dataKey={line.value}
+                  stroke={line.color}
                   strokeWidth={2}
                   dot={false}
-                  name={line === "all" ? "All models" : line}
+                  name={`${line.seriesId} • ${line.label}`}
                 />
               ))}
             </LineChart>
@@ -992,7 +1083,21 @@ export function UsageAnalytics({
               By Day
             </Button>
           </div>
-          <ResponsiveContainer width="100%" height="85%">
+          <div className="-mx-1 mb-3 overflow-x-auto px-1 pb-1">
+            <div className="flex min-w-max gap-2">
+              {selectedChartLines.map((line) => (
+                <span
+                  key={`token-legend-${line.seriesId}-${line.value}`}
+                  className="inline-flex items-center gap-2 rounded-full border border-[var(--surface-border)] bg-[var(--surface-muted)] px-2.5 py-1 text-[11px] text-[var(--text-secondary)]"
+                >
+                  <span className="h-0.5 w-6 shrink-0 rounded-full" style={{ backgroundColor: line.color }} />
+                  <span className="font-semibold text-[var(--text-primary)]">{line.seriesId}</span>
+                  <span>{line.label}</span>
+                </span>
+              ))}
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height="72%">
             <LineChart data={tokenTrendData} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
               <CartesianGrid stroke={CHART_COLORS.grid} />
               <XAxis dataKey="displayLabel" tick={AXIS_TICK_STYLE} tickLine={false} axisLine={false} minTickGap={20} />
@@ -1002,15 +1107,15 @@ export function UsageAnalytics({
                 formatter={(value) => [formatCompact(Number(value)), "Tokens"]}
                 labelFormatter={(label) => String(label)}
               />
-              {chartLines.map((line, index) => (
+              {selectedChartLines.map((line) => (
                 <Line
-                  key={`token-line-${line}-${index}`}
+                  key={`token-line-${line.seriesId}-${line.value}`}
                   type="monotone"
-                  dataKey={line}
-                  stroke={SERIES_COLORS[index % SERIES_COLORS.length]}
+                  dataKey={line.value}
+                  stroke={line.color}
                   strokeWidth={2}
                   dot={false}
-                  name={line === "all" ? "All models" : line}
+                  name={`${line.seriesId} • ${line.label}`}
                 />
               ))}
             </LineChart>

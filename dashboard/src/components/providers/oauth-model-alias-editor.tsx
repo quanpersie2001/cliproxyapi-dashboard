@@ -506,9 +506,13 @@ export function OAuthModelAliasEditor({ showToast }: OAuthModelAliasEditorProps)
         }
 
         const rawYaml = await rawYamlResponse.text();
-        const mergedYaml = mergeConfigYaml(rawYaml, {
-          "oauth-model-alias": stripOAuthModelAliasIds(normalizedAliases),
-        });
+        const mergedYaml = mergeConfigYaml(
+          rawYaml,
+          {
+            "oauth-model-alias": stripOAuthModelAliasIds(normalizedAliases),
+          },
+          { replaceKeys: ["oauth-model-alias"] }
+        );
 
         const saveResponse = await fetch(API_ENDPOINTS.MANAGEMENT.CONFIG_YAML, {
           method: "PUT",

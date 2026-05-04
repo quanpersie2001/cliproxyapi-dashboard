@@ -18,6 +18,8 @@ import {
   type OAuthAccountWithOwnership,
 } from "./management-api";
 
+const INVALID_MASKED_PROXY_LABEL = "Invalid proxy URL";
+
 function readOptionalString(value: unknown): string | null {
   if (typeof value !== "string") {
     return null;
@@ -64,6 +66,128 @@ function readOptionalIsoDate(value: unknown): string | null {
 
   const date = new Date(textValue);
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+function readRecentRequestCount(value: unknown): number {
+  const count = readOptionalNumber(value);
+  return count !== null && count > 0 ? Math.floor(count) : 0;
+}
+
+function readRecentRequestTotals(
+  value: unknown
+): { recentSuccessCount: number; recentFailureCount: number } {
+  if (!Array.isArray(value)) {
+    return { recentSuccessCount: 0, recentFailureCount: 0 };
+  }
+
+  return value.reduce(
+    (totals, entry) => {
+      if (!isRecord(entry)) {
+        return totals;
+      }
+
+      totals.recentSuccessCount += readRecentRequestCount(entry.success);
+      totals.recentFailureCount += readRecentRequestCount(entry.failed);
+      return totals;
+    },
+    { recentSuccessCount: 0, recentFailureCount: 0 }
+  );
+}
+
+function maskProxyUrlCredentials(proxyUrl: string): string | null {
+  const trimmed = proxyUrl.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const schemeSeparatorIndex = trimmed.indexOf("://");
+  const authorityStart = schemeSeparatorIndex >= 0 ? schemeSeparatorIndex + 3 : 0;
+  const authorityEndCandidates = [trimmed.indexOf("/", authorityStart), trimmed.indexOf("?", authorityStart), trimmed.indexOf("#", authorityStart)].filter(
+    (index) => index >= 0
+  );
+  const authorityEnd =
+    authorityEndCandidates.length > 0 ? Math.min(...authorityEndCandidates) : trimmed.length;
+  const authority = trimmed.slice(authorityStart, authorityEnd);
+  const atCount = authority.split("@").length - 1;
+
+  if (atCount === 0) {
+    return trimmed;
+  }
+
+  // Fail closed when userinfo is not canonical to avoid exposing credential fragments.
+  if (atCount > 1) {
+    return null;
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(trimmed);
+  } catch {
+    return null;
+  }
+
+  const hasUserInfo = parsed.username.length > 0 || parsed.password.length > 0;
+  if (!hasUserInfo) {
+    return trimmed;
+  }
+
+  return `${parsed.protocol}//***@${parsed.host}${parsed.pathname}${parsed.search}${parsed.hash}`;
+}
+
+async function loadMaskedProxyUrlForAccount(
+  accountName: string
+): Promise<{ rawText: string | null; maskedProxyUrl: string | null }> {
+  const endpoint = `${MANAGEMENT_BASE_URL}/auth-files/download?name=${encodeURIComponent(accountName)}`;
+
+  let response: Response;
+  try {
+    response = await fetchWithTimeout(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${MANAGEMENT_API_KEY}` },
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      logger.warn(
+        { accountName, endpoint, timeoutMs: FETCH_TIMEOUT_MS },
+        "Fetch timeout - loadMaskedProxyUrlForAccount GET"
+      );
+      return { rawText: null, maskedProxyUrl: null };
+    }
+
+    logger.warn({ err: error, accountName, endpoint }, "Failed to load OAuth auth file for masked proxy summary");
+    return { rawText: null, maskedProxyUrl: null };
+  }
+
+  if (!response.ok) {
+    await response.body?.cancel();
+    return { rawText: null, maskedProxyUrl: null };
+  }
+
+  let rawText: string;
+  try {
+    rawText = await response.text();
+  } catch {
+    return { rawText: null, maskedProxyUrl: null };
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(rawText) as unknown;
+  } catch {
+    return { rawText, maskedProxyUrl: null };
+  }
+
+  if (!isRecord(parsed)) {
+    return { rawText, maskedProxyUrl: null };
+  }
+
+  const proxyUrl = readOptionalString(parsed.proxy_url);
+  if (!proxyUrl) {
+    return { rawText, maskedProxyUrl: null };
+  }
+
+  const maskedProxyUrl = maskProxyUrlCredentials(proxyUrl) ?? INVALID_MASKED_PROXY_LABEL;
+  return { rawText, maskedProxyUrl };
 }
 
 export async function contributeOAuthAccount(
@@ -349,6 +473,10 @@ export async function listOAuthWithOwnership(
       modified?: number | string;
       updated_at?: number | string;
       last_refresh?: number | string;
+      recent_requests?: Array<{
+        success?: number | string;
+        failed?: number | string;
+      }>;
     }>;
 
     const accountNames = authFiles.map((file) => file.name);
@@ -361,6 +489,27 @@ export async function listOAuthWithOwnership(
     });
 
     const ownershipMap = new Map(ownerships.map((o) => [o.accountName, o]));
+    const downloadableAccountNames: string[] = [];
+    for (const file of authFiles) {
+      const normalizedAccountName = readOptionalString(file.name);
+      if (!normalizedAccountName) {
+        continue;
+      }
+
+      const ownership = ownershipMap.get(normalizedAccountName);
+      const isOwn = ownership?.userId === userId;
+      if (isOwn || isAdmin) {
+        downloadableAccountNames.push(normalizedAccountName);
+      }
+    }
+
+    const downloadedDetails = await Promise.all(
+      downloadableAccountNames.map(async (accountName) => {
+        const details = await loadMaskedProxyUrlForAccount(accountName);
+        return [accountName, details] as const;
+      })
+    );
+    const downloadedDetailsMap = new Map(downloadedDetails);
 
     const accountsWithOwnership: OAuthAccountWithOwnership[] = authFiles.map((file, index) => {
       const normalizedAccountName = readOptionalString(file.name) ?? "";
@@ -374,6 +523,9 @@ export async function listOAuthWithOwnership(
           : ownership?.provider ?? providerFromApi ?? "unknown";
       const statusFromApi = readOptionalString(file.status);
       const isDisabled = file.disabled === true || statusFromApi?.toLowerCase() === "disabled";
+      const { recentSuccessCount, recentFailureCount } = readRecentRequestTotals(
+        isRecord(file) ? file.recent_requests : undefined
+      );
 
       return {
         id: canSeeDetails
@@ -400,6 +552,14 @@ export async function listOAuthWithOwnership(
             ?? readOptionalIsoDate(file.updated_at)
             ?? readOptionalIsoDate(file.last_refresh)
           : null,
+        rawText: canSeeDetails
+          ? (downloadedDetailsMap.get(normalizedAccountName)?.rawText ?? null)
+          : null,
+        recentSuccessCount,
+        recentFailureCount,
+        ...(downloadedDetailsMap.get(normalizedAccountName)?.maskedProxyUrl
+          ? { maskedProxyUrl: downloadedDetailsMap.get(normalizedAccountName)?.maskedProxyUrl ?? undefined }
+          : {}),
       };
     });
 

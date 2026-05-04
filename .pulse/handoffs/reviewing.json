@@ -1,0 +1,39 @@
+{
+  "schema_version": "2.0",
+  "handoff_id": "reviewing-2026-05-04T13:31:12Z",
+  "owner_type": "phase",
+  "owner_id": "reviewing",
+  "skill": "pulse:reviewing",
+  "feature": "oauth-config-ui-ux",
+  "phase": "review/phase-1",
+  "status": "consumed",
+  "paused_at": "2026-05-04T13:41:14Z",
+  "reason": "p1_fixed",
+  "next_action": "Rerun pulse:reviewing for Phase 1 with the new br-wpd.3 regression evidence.",
+  "read_first": [
+    ".pulse/STATE.md",
+    "history/oauth-config-ui-ux/CONTEXT.md",
+    "history/oauth-config-ui-ux/approach.md",
+    "history/oauth-config-ui-ux/verification/br-wpd.1.md",
+    "history/oauth-config-ui-ux/verification/br-wpd.2.md"
+  ],
+  "summary": "The blocking P1 regression in br-wpd.3 is fixed and verified; Phase 1 can return to Gate 4 review.",
+  "payload": {
+    "transfer": {
+      "status": "The blocking save-path regression is fixed, verified, and ready for focused review follow-up.",
+      "completed": [
+        "Independent reruns passed for cd dashboard && npm run typecheck and cd dashboard && npm run lint",
+        "Artifact verification passed for br-wpd.1 and br-wpd.2 evidence files",
+        "br-wpd.3 landed a hidden-field preservation fix with new regression evidence in history/oauth-config-ui-ux/verification/br-wpd.3.md"
+      ],
+      "in_flight": [
+        "Rerun pulse:reviewing for Phase 1 and confirm Gate 4 can clear with the new preservation proof"
+      ],
+      "blockers": [],
+      "resume_notes": [
+        "Gate 4 should now use br-wpd.3.md as the canonical preservation evidence for the former data-loss path",
+        "Do not close epic br-wpd until the resumed review confirms no remaining P1 blockers"
+      ]
+    }
+  }
+}

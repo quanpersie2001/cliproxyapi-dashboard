@@ -35,8 +35,8 @@ import {
   formatOAuthAuthFileSettingsPreview,
   isOAuthAuthFileSettingsDirty,
   OAUTH_AUTH_FILE_MAX_BYTES,
-  type DisableCoolingMode,
   type OAuthAuthFileSettingsEditor,
+  updateOAuthAuthFileSettingsEditor,
 } from "@/lib/providers/oauth-auth-file-settings";
 
 type ShowToast = ReturnType<typeof useToast>["showToast"];
@@ -151,6 +151,57 @@ const validateCallbackUrl = (value: string) => {
   };
 };
 
+type SaveOAuthAuthFileSettingsResult =
+  | { ok: true; payload: string }
+  | { ok: false; error: string };
+
+export async function saveOAuthAuthFileSettings(
+  accountName: string,
+  editor: OAuthAuthFileSettingsEditor,
+  fetchImpl: typeof fetch = fetch
+): Promise<SaveOAuthAuthFileSettingsResult> {
+  let payload: string;
+  try {
+    payload = buildOAuthAuthFileSettingsPayload(editor);
+  } catch (error) {
+    return {
+      ok: false,
+      error:
+        error instanceof Error ? error.message : "Custom Headers must be valid JSON before saving.",
+    };
+  }
+
+  if (new Blob([payload]).size > OAUTH_AUTH_FILE_MAX_BYTES) {
+    return {
+      ok: false,
+      error: "Auth file content exceeds the 1MB limit.",
+    };
+  }
+
+  try {
+    const res = await fetchImpl(API_ENDPOINTS.PROVIDERS.OAUTH_ACCOUNT_SETTINGS(accountName), {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fileContent: payload }),
+    });
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: extractApiError(data, "Failed to save auth file settings."),
+      };
+    }
+
+    return { ok: true, payload };
+  } catch {
+    return {
+      ok: false,
+      error: "Network error while saving auth file settings.",
+    };
+  }
+}
+
 export function OAuthSection({
   showToast,
   currentUser,
@@ -239,6 +290,16 @@ export function OAuthSection({
     noCallbackClaimAttemptsRef.current = 0;
   }, []);
 
+  const fetchOAuthAccounts = useCallback(async () => {
+    const res = await fetch(API_ENDPOINTS.PROVIDERS.OAUTH);
+    if (!res.ok) {
+      return null;
+    }
+
+    const data = await res.json();
+    return Array.isArray(data.accounts) ? (data.accounts as OAuthAccountWithOwnership[]) : [];
+  }, []);
+
   const loadAccounts = useCallback(async () => {
     if (!showAccountList) {
       setAccounts([]);
@@ -248,15 +309,18 @@ export function OAuthSection({
 
     setOauthAccountsLoading(true);
     try {
-      const res = await fetch(API_ENDPOINTS.PROVIDERS.OAUTH);
-      if (!res.ok) {
+      const nextAccounts = await fetchOAuthAccounts();
+      if (!nextAccounts) {
         showToast("Failed to load OAuth accounts", "error");
         setOauthAccountsLoading(false);
         return;
       }
 
-      const data = await res.json();
-      const nextAccounts = Array.isArray(data.accounts) ? data.accounts : [];
+      const totalPages = Math.max(1, Math.ceil(nextAccounts.length / OAUTH_ACCOUNT_PAGE_SIZE));
+      const nextPage = Math.min(accountPage, totalPages);
+      if (nextPage !== accountPage) {
+        setAccountPage(nextPage);
+      }
       setAccounts(nextAccounts);
       onAccountCountChange(nextAccounts.length);
       setOauthAccountsLoading(false);
@@ -265,7 +329,7 @@ export function OAuthSection({
       showToast("Network error", "error");
       setOauthErrorMessage("Network error while loading accounts.");
     }
-  }, [onAccountCountChange, showAccountList, showToast]);
+  }, [accountPage, fetchOAuthAccounts, onAccountCountChange, showAccountList, showToast]);
 
   const loadAccountStats = useCallback(async () => {
     if (!showAccountList) {
@@ -426,33 +490,23 @@ export function OAuthSection({
 
   const openSettingsModal = async (account: OAuthAccountWithOwnership) => {
     setSettingsAccount(account);
-    setSettingsLoading(true);
+    setSettingsLoading(false);
     setSettingsSaving(false);
     setSettingsErrorMessage(null);
     setSettingsEditor(null);
 
     try {
-      const res = await fetch(API_ENDPOINTS.PROVIDERS.OAUTH_ACCOUNT_SETTINGS(account.accountName));
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        setSettingsErrorMessage(extractApiError(data, "Failed to load auth file settings."));
-        return;
-      }
-
-      if (typeof data.rawText !== "string") {
+      if (typeof account.rawText !== "string") {
         setSettingsErrorMessage("Auth file payload is missing.");
         return;
       }
 
-      const editor = createOAuthAuthFileSettingsEditor(data.rawText, account.provider);
+      const editor = createOAuthAuthFileSettingsEditor(account.rawText, account.provider);
       setSettingsEditor(editor);
     } catch (error) {
       setSettingsErrorMessage(
         error instanceof Error ? error.message : "Network error while loading auth file settings."
       );
-    } finally {
-      setSettingsLoading(false);
     }
   };
 
@@ -465,35 +519,17 @@ export function OAuthSection({
   };
 
   const updateSettingsField = (
-    field: "prefix" | "proxyUrl" | "priority" | "excludedModelsText" | "note",
+    field: "prefix" | "proxyUrl" | "priority" | "headersText" | "note",
     value: string
   ) => {
+    setSettingsErrorMessage(null);
     setSettingsEditor((current) => {
       if (!current) {
         return current;
       }
 
-      if (field === "note") {
-        return {
-          ...current,
-          note: value,
-          noteTouched: true,
-        };
-      }
-
-      return {
-        ...current,
-        [field]: value,
-      };
+      return updateOAuthAuthFileSettingsEditor(current, field, value);
     });
-  };
-
-  const updateSettingsDisableCooling = (value: DisableCoolingMode) => {
-    setSettingsEditor((current) => (current ? { ...current, disableCooling: value } : current));
-  };
-
-  const updateSettingsWebsockets = (value: boolean) => {
-    setSettingsEditor((current) => (current ? { ...current, websockets: value } : current));
   };
 
   const copySettingsPreview = async () => {
@@ -514,35 +550,21 @@ export function OAuthSection({
       return;
     }
 
-    const payload = buildOAuthAuthFileSettingsPayload(settingsEditor);
-    if (new Blob([payload]).size > OAUTH_AUTH_FILE_MAX_BYTES) {
-      setSettingsErrorMessage("Auth file content exceeds the 1MB limit.");
-      return;
-    }
-
     setSettingsSaving(true);
     setSettingsErrorMessage(null);
 
     try {
-      const res = await fetch(API_ENDPOINTS.PROVIDERS.OAUTH_ACCOUNT_SETTINGS(settingsAccount.accountName), {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileContent: payload }),
-      });
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        setSettingsErrorMessage(extractApiError(data, "Failed to save auth file settings."));
+      const result = await saveOAuthAuthFileSettings(settingsAccount.accountName, settingsEditor);
+      if (!result.ok) {
+        setSettingsErrorMessage(result.error);
         return;
       }
 
-      setSettingsEditor(createOAuthAuthFileSettingsEditor(payload, settingsAccount.provider));
+      setSettingsEditor(createOAuthAuthFileSettingsEditor(result.payload, settingsAccount.provider));
       showToast("Auth file settings saved", "success");
       await loadAccounts();
       await refreshProviders();
       void loadAccountStats();
-    } catch {
-      setSettingsErrorMessage("Network error while saving auth file settings.");
     } finally {
       setSettingsSaving(false);
     }
@@ -1072,11 +1094,31 @@ export function OAuthSection({
     ? getOAuthProviderById(importProviderId)?.name || importProviderId
     : "";
   const settingsPreviewText = settingsEditor
-    ? formatOAuthAuthFileSettingsPreview(settingsEditor)
+    ? (() => {
+        if (settingsEditor.proxyUrlError || (settingsEditor.headersTouched && settingsEditor.headersError)) {
+          try {
+            return JSON.stringify(JSON.parse(settingsEditor.originalText), null, 2);
+          } catch {
+            return settingsEditor.originalText;
+          }
+        }
+
+        try {
+          return formatOAuthAuthFileSettingsPreview(settingsEditor);
+        } catch {
+          return settingsEditor.originalText;
+        }
+      })()
     : "";
   const settingsDirty = settingsEditor
     ? isOAuthAuthFileSettingsDirty(settingsEditor)
     : false;
+  const settingsValidationError =
+    settingsEditor?.proxyUrlError
+      ? settingsEditor.proxyUrlError
+      : settingsEditor?.headersTouched && settingsEditor.headersError
+        ? settingsEditor.headersError
+      : null;
 
   return (
     <>
@@ -1491,12 +1533,11 @@ export function OAuthSection({
         errorMessage={settingsErrorMessage}
         previewText={settingsPreviewText}
         dirty={settingsDirty}
+        validationErrorMessage={settingsValidationError}
         onClose={closeSettingsModal}
         onCopyPreview={copySettingsPreview}
         onSave={saveSettings}
         onStringFieldChange={updateSettingsField}
-        onDisableCoolingChange={updateSettingsDisableCooling}
-        onWebsocketsChange={updateSettingsWebsockets}
       />
     </>
   );

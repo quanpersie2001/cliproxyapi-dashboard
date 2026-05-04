@@ -91,6 +91,35 @@ describe("mergeConfigYaml", () => {
     expect(merged).toContain("addr: 127.0.0.1:8316");
   });
 
+  it("replaces configured nested keys wholesale when callers opt in", () => {
+    const rawYaml = [
+      "oauth-model-alias:",
+      "  claude:",
+      "    - name: sonnet",
+      "      alias: chat",
+      "  openai:",
+      "    - name: gpt-4.1",
+      "      alias: chat",
+      "",
+    ].join("\n");
+
+    const merged = mergeConfigYaml(
+      rawYaml,
+      {
+        "oauth-model-alias": {
+          claude: [{ name: "sonnet", alias: "assistant" }],
+        },
+      },
+      { replaceKeys: ["oauth-model-alias"] }
+    );
+
+    expect(parseConfigYaml(merged)).toEqual({
+      "oauth-model-alias": {
+        claude: [{ name: "sonnet", alias: "assistant" }],
+      },
+    });
+  });
+
   it("throws on invalid YAML input instead of silently dropping data", () => {
     expect(() =>
       mergeConfigYaml(":\n  bad: [unterminated", { debug: true })

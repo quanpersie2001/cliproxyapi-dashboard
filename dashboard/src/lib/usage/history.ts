@@ -3,6 +3,11 @@ import { Prisma } from "@/generated/prisma/client";
 import { usageCache } from "@/lib/cache";
 import { prisma } from "@/lib/db";
 import { logger } from "@/lib/logger";
+import {
+  MANAGEMENT_API_KEY,
+  MANAGEMENT_BASE_URL,
+  fetchWithTimeout,
+} from "@/lib/providers/management-api";
 import type {
   ApiBreakdown,
   CredentialBreakdown,
@@ -118,6 +123,12 @@ interface ResolvedSourceInfo {
   sourceType?: string;
 }
 
+interface AuthFileLookupEntry {
+  authIndex: string;
+  fileName: string;
+  email: string;
+}
+
 interface GetUsageHistorySnapshotOptions {
   userId: string;
   fromDate: Date;
@@ -209,6 +220,61 @@ const usageRecordSelectWithEndpoint = {
 
 function toDateParam(date: Date): string {
   return date.toISOString().slice(0, 10);
+}
+
+function readAuthFileLookupString(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+async function loadAuthFilesByIndex(): Promise<Map<string, AuthFileLookupEntry>> {
+  try {
+    const response = await fetchWithTimeout(`${MANAGEMENT_BASE_URL}/auth-files`, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${MANAGEMENT_API_KEY}` },
+    });
+
+    if (!response.ok) {
+      await response.body?.cancel();
+      logger.warn(
+        { status: response.status, statusText: response.statusText },
+        "Failed to fetch auth-files during usage history resolution"
+      );
+      return new Map();
+    }
+
+    const payload: unknown = await response.json();
+    const rawEntries = Array.isArray(payload)
+      ? payload
+      : Array.isArray((payload as { auth_files?: unknown[] })?.auth_files)
+        ? (payload as { auth_files: unknown[] }).auth_files
+        : Array.isArray((payload as { files?: unknown[] })?.files)
+          ? (payload as { files: unknown[] }).files
+          : [];
+
+    const authFilesByIndex = new Map<string, AuthFileLookupEntry>();
+    for (const rawEntry of rawEntries) {
+      if (!rawEntry || typeof rawEntry !== "object") {
+        continue;
+      }
+
+      const entry = rawEntry as Record<string, unknown>;
+      const authIndex = readAuthFileLookupString(entry.auth_index);
+      if (!authIndex) {
+        continue;
+      }
+
+      authFilesByIndex.set(authIndex, {
+        authIndex,
+        fileName: readAuthFileLookupString(entry.file_name ?? entry.name),
+        email: readAuthFileLookupString(entry.email),
+      });
+    }
+
+    return authFilesByIndex;
+  } catch (error) {
+    logger.warn({ err: error }, "Failed to load auth-files for usage history resolution");
+    return new Map();
+  }
 }
 
 function toSafeNumber(value: unknown): number {
@@ -762,7 +828,8 @@ function buildSourceResolver(input: {
     name: string;
     prefix: string | null;
   }>;
-}): (rawSource: string) => ResolvedSourceInfo {
+  authFilesByIndex: Map<string, AuthFileLookupEntry>;
+}): (rawSource: string, authIndex?: string) => ResolvedSourceInfo {
   const oauthByLookup = new Map<string, { id: string; provider: string; accountName: string }>();
   for (const ownership of input.oauthOwnerships) {
     oauthByLookup.set(ownership.accountName.toLowerCase(), {
@@ -776,6 +843,21 @@ function buildSourceResolver(input: {
         provider: ownership.provider,
         accountName: ownership.accountName,
       });
+    }
+  }
+
+  const oauthByAuthIndex = new Map<string, { id: string; provider: string; accountName: string }>();
+  for (const [authIndex, authFile] of input.authFilesByIndex) {
+    const candidates = [authFile.fileName, authFile.email]
+      .map((candidate) => candidate.trim().toLowerCase())
+      .filter((candidate) => candidate.length > 0);
+
+    for (const candidate of candidates) {
+      const oauth = oauthByLookup.get(candidate);
+      if (oauth) {
+        oauthByAuthIndex.set(authIndex, oauth);
+        break;
+      }
     }
   }
 
@@ -815,41 +897,52 @@ function buildSourceResolver(input: {
     }
   }
 
-  return (rawSource: string): ResolvedSourceInfo => {
+  return (rawSource: string, authIndex?: string): ResolvedSourceInfo => {
     const trimmed = rawSource.trim();
+    if (trimmed) {
+      const lower = trimmed.toLowerCase();
+      const oauth = oauthByLookup.get(lower);
+      if (oauth) {
+        return {
+          sourceId: `oauth:${oauth.id}`,
+          sourceDisplay: oauth.accountName,
+          sourceType: oauth.provider,
+        };
+      }
+
+      const customProvider = customProviderByLookup.get(lower);
+      if (customProvider) {
+        return {
+          sourceId: `custom:${customProvider.id}`,
+          sourceDisplay: customProvider.name,
+          sourceType: "custom-provider",
+        };
+      }
+
+      const maskedSource = maskRawUsageSource(trimmed);
+      const providerKey = providerKeyByLookup.get(lower) ?? providerKeyByLookup.get(maskedSource.toLowerCase());
+      if (providerKey) {
+        return {
+          sourceId: `key:${providerKey.keyHash}`,
+          sourceDisplay: providerKey.name === "Unnamed Key" ? providerKey.keyIdentifier : providerKey.name,
+          sourceType: providerKey.provider,
+        };
+      }
+    }
+
+    const oauthByIndex = authIndex ? oauthByAuthIndex.get(authIndex) : undefined;
+    if (oauthByIndex) {
+      return {
+        sourceId: `oauth:${oauthByIndex.id}`,
+        sourceDisplay: oauthByIndex.accountName,
+        sourceType: oauthByIndex.provider,
+      };
+    }
+
     if (!trimmed) {
       return {
         sourceId: "empty:",
         sourceDisplay: "Unknown",
-      };
-    }
-
-    const lower = trimmed.toLowerCase();
-    const oauth = oauthByLookup.get(lower);
-    if (oauth) {
-      return {
-        sourceId: `oauth:${oauth.id}`,
-        sourceDisplay: oauth.accountName,
-        sourceType: oauth.provider,
-      };
-    }
-
-    const customProvider = customProviderByLookup.get(lower);
-    if (customProvider) {
-      return {
-        sourceId: `custom:${customProvider.id}`,
-        sourceDisplay: customProvider.name,
-        sourceType: "custom-provider",
-      };
-    }
-
-    const maskedSource = maskRawUsageSource(trimmed);
-    const providerKey = providerKeyByLookup.get(lower) ?? providerKeyByLookup.get(maskedSource.toLowerCase());
-    if (providerKey) {
-      return {
-        sourceId: `key:${providerKey.keyHash}`,
-        sourceDisplay: providerKey.name === "Unnamed Key" ? providerKey.keyIdentifier : providerKey.name,
-        sourceType: providerKey.provider,
       };
     }
 
@@ -862,11 +955,11 @@ function buildSourceResolver(input: {
 
 function buildRequestEvent(
   record: UsageRecordRow,
-  resolveSource: (rawSource: string) => ResolvedSourceInfo,
+  resolveSource: (rawSource: string, authIndex?: string) => ResolvedSourceInfo,
   exposeUsername: boolean,
   endpointAvailable: boolean
 ): RequestEvent {
-  const source = resolveSource(record.source);
+  const source = resolveSource(record.source, record.authIndex);
   const username = record.user?.username ?? undefined;
 
   return {
@@ -1094,10 +1187,10 @@ async function buildKeyUsage(
 
 async function buildCredentialBreakdown(
   whereClause: Prisma.UsageRecordWhereInput,
-  resolveSource: (rawSource: string) => ResolvedSourceInfo
+  resolveSource: (rawSource: string, authIndex?: string) => ResolvedSourceInfo
 ): Promise<CredentialBreakdown[]> {
   const rows = await prisma.usageRecord.groupBy({
-    by: ["source", "failed"],
+    by: ["source", "authIndex", "failed"],
     where: whereClause,
     _count: { _all: true },
     _sum: { totalTokens: true },
@@ -1105,7 +1198,7 @@ async function buildCredentialBreakdown(
   const breakdownMap: Record<string, CredentialBreakdown> = {};
 
   for (const row of rows) {
-    const resolved = resolveSource(row.source);
+    const resolved = resolveSource(row.source, row.authIndex);
     if (!breakdownMap[resolved.sourceId]) {
       breakdownMap[resolved.sourceId] = {
         sourceId: resolved.sourceId,
@@ -1233,6 +1326,7 @@ export async function getUsageHistorySnapshot(
       prisma.collectorState.findFirst({
         orderBy: { updatedAt: "desc" },
       }),
+      loadAuthFilesByIndex(),
       prisma.providerOAuthOwnership.findMany({
         where: ownershipWhere,
         select: {
@@ -1298,7 +1392,7 @@ export async function getUsageHistorySnapshot(
     );
 
     const [
-      [collectorState, oauthOwnerships, providerKeys, customProviders],
+      [collectorState, authFilesByIndex, oauthOwnerships, providerKeys, customProviders],
       dayBuckets,
       hourBuckets,
       limitedRecords,
@@ -1318,6 +1412,7 @@ export async function getUsageHistorySnapshot(
     ]);
 
     const resolveSource = buildSourceResolver({
+      authFilesByIndex,
       oauthOwnerships,
       providerKeys,
       customProviders,

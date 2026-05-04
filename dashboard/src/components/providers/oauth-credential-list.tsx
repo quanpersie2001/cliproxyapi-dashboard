@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { Network } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertSurface } from "@/components/ui/alert-surface";
@@ -22,6 +23,10 @@ interface OAuthAccountWithOwnership {
   claimedAt: string | null;
   fileSizeBytes: number | null;
   modifiedAt: string | null;
+  maskedProxyUrl?: string;
+  rawText?: string | null;
+  recentSuccessCount?: number;
+  recentFailureCount?: number;
 }
 
 export interface OAuthAccountUsageStats {
@@ -108,6 +113,15 @@ function formatModifiedAt(value: string | null): string {
   }).format(date);
 }
 
+function isUsageLimitMessage(value: string | null): boolean {
+  if (!value) {
+    return false;
+  }
+
+  const normalized = value.toLowerCase();
+  return normalized.includes("usage limit") && normalized.includes("reach");
+}
+
 function OAuthStatusBadge({
   status,
   statusMessage,
@@ -118,33 +132,34 @@ function OAuthStatusBadge({
   unavailable: boolean;
 }) {
   const message = parseStatusMessage(statusMessage);
-
-  if (status === "active" && !unavailable) {
-    return (
-      <Badge tone="success" size="xs" dot title="Token is valid and working" className="rounded-sm">
-        Active
-      </Badge>
-    );
-  }
-
-  if (status === "error" || unavailable) {
-    return (
-      <Badge
-        tone="danger"
-        size="xs"
-        dot
-        title={message || "Account has an error"}
-        className="rounded-sm"
-      >
-        {message ? (message.length > 40 ? `${message.slice(0, 40)}…` : message) : "Error"}
-      </Badge>
-    );
-  }
+  const usageLimitReached = isUsageLimitMessage(message);
 
   if (status === "disabled") {
     return (
       <Badge tone="neutral" size="xs" dot title="Account is disabled" className="rounded-sm">
         Disabled
+      </Badge>
+    );
+  }
+
+  if (usageLimitReached) {
+    return (
+      <Badge
+        tone="danger"
+        size="xs"
+        dot
+        title={message || "Usage limit reached"}
+        className="rounded-sm"
+      >
+        Limit Reached
+      </Badge>
+    );
+  }
+
+  if (status === "active" && !unavailable) {
+    return (
+      <Badge tone="success" size="xs" dot title="Token is valid and working" className="rounded-sm">
+        Active
       </Badge>
     );
   }
@@ -344,15 +359,28 @@ export function OAuthCredentialList({
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {accounts.map((account) => {
             const providerPresentation = getOAuthProviderPresentation(account.provider);
-            const stats = accountStats[account.accountName] ?? { successCount: 0, failureCount: 0 };
+            const fallbackStats = {
+              successCount: account.recentSuccessCount ?? 0,
+              failureCount: account.recentFailureCount ?? 0,
+            };
+            const historyStats = accountStats[account.accountName];
+            const historyTotal = historyStats
+              ? historyStats.successCount + historyStats.failureCount
+              : 0;
+            const fallbackTotal = fallbackStats.successCount + fallbackStats.failureCount;
+            const stats =
+              historyStats && (historyTotal > 0 || fallbackTotal === 0)
+                ? historyStats
+                : fallbackStats;
             const canOperate = Boolean(currentUser && (account.isOwn || currentUser.isAdmin));
             const statusMessage = parseStatusMessage(account.statusMessage);
             const isEnabled = account.status !== "disabled";
+            const showStatusDetail = Boolean(statusMessage) && (account.status !== "active" || account.unavailable);
 
             return (
               <div
                 key={`${account.id}-${account.accountName}`}
-                className="min-h-[236px] overflow-hidden rounded-xl border border-[var(--surface-border)] bg-[var(--surface-base)] shadow-[var(--shadow-edge)] hover:border-[var(--surface-border-strong)]"
+                className="min-h-[236px] overflow-hidden rounded-lg border border-[var(--surface-border)] bg-[var(--surface-base)] shadow-[var(--shadow-edge)] hover:border-[var(--surface-border-strong)]"
                 style={{
                   backgroundImage: `radial-gradient(circle at top left, ${providerPresentation.theme.bg} 0%, transparent 58%)`,
                 }}
@@ -383,9 +411,23 @@ export function OAuthCredentialList({
                           />
                         </div>
 
-                        <p className="truncate text-sm text-[var(--text-muted)]">
-                          {account.accountEmail ?? "Email not exposed by provider"}
-                        </p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="truncate text-sm text-[var(--text-muted)]">
+                            {account.accountEmail ?? "Email not exposed by provider"}
+                          </p>
+
+                          {account.maskedProxyUrl ? (
+                            <Badge
+                              tone="info"
+                              size="xs"
+                              className="inline-flex max-w-full items-center gap-1 rounded-sm px-2 py-0.5 align-middle"
+                              title={account.maskedProxyUrl}
+                            >
+                              <Network className="size-3 shrink-0" strokeWidth={1.8} />
+                              <span className="max-w-[13rem] truncate">{account.maskedProxyUrl}</span>
+                            </Badge>
+                          ) : null}
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -416,10 +458,9 @@ export function OAuthCredentialList({
                     </div>
                   </div>
 
-                  {statusMessage && account.status !== "active" ? (
+                  {showStatusDetail ? (
                     <AlertSurface
-                      tone="warning"
-                      accent
+                      tone="danger"
                       className="rounded-lg px-3 py-2 text-xs leading-relaxed shadow-[var(--shadow-edge)]"
                     >
                       <p className="break-words font-medium">{statusMessage}</p>
@@ -439,21 +480,20 @@ export function OAuthCredentialList({
                           />
 
                           <ActionButton
+                            title="Edit auth file settings"
+                            label="Config"
+                            icon={<SettingsIcon />}
+                            busy={inspectingSettingsAccountName === account.accountName}
+                            onClick={() => onOpenSettings(account)}
+                          />
+
+                          <ActionButton
                             title="Download auth file"
                             label="Download auth file"
                             icon={<DownloadIcon />}
                             busy={downloadingAccountName === account.accountName}
                             iconOnly
                             onClick={() => onDownload(account)}
-                          />
-
-                          <ActionButton
-                            title="Edit auth file settings"
-                            label="Edit auth file settings"
-                            icon={<SettingsIcon />}
-                            busy={inspectingSettingsAccountName === account.accountName}
-                            iconOnly
-                            onClick={() => onOpenSettings(account)}
                           />
 
                           <ActionButton

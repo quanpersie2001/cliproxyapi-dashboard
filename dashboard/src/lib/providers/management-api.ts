@@ -103,6 +103,10 @@ export interface OAuthAccountWithOwnership {
   claimedAt: string | null;
   fileSizeBytes: number | null;
   modifiedAt: string | null;
+  maskedProxyUrl?: string;
+  rawText?: string | null;
+  recentSuccessCount?: number;
+  recentFailureCount?: number;
 }
 
 export interface ListOAuthResult {

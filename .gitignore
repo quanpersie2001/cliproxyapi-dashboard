@@ -122,3 +122,6 @@ infrastructure/.env
 # Local reference repositories
 references/
 .gitnexus
+
+# bv (beads viewer) local config and caches
+.bv/

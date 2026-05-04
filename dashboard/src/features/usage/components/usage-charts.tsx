@@ -52,6 +52,7 @@ interface UsageChartsProps {
   latencySummary?: LatencySummary;
   totals: Totals;
   showTrafficCharts?: boolean;
+  showSuccessFailureRatio?: boolean;
 }
 
 function formatLatencyTick(timestamp: string): string {
@@ -82,6 +83,7 @@ export function UsageCharts({
   latencySummary,
   totals,
   showTrafficCharts = true,
+  showSuccessFailureRatio = true,
 }: UsageChartsProps) {
   const uid = useId();
   const gradInputId = `${uid}-gradInput`;
@@ -233,7 +235,7 @@ export function UsageCharts({
         );
       })() : null}
 
-      {totals.totalRequests > 0 ? (() => {
+      {showSuccessFailureRatio && totals.totalRequests > 0 ? (() => {
         const total = totals.successCount + totals.failureCount;
         const successPct = total > 0 ? (totals.successCount / total) * 100 : 0;
         const failPct = total > 0 ? (totals.failureCount / total) * 100 : 0;
