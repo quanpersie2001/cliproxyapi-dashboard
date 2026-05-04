@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.8](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.7...dashboard-v0.2.8) (2026-05-04)
+
+
+### Bug Fixes
+
+* **ui:** add overscroll-y-none to dashboard client layout ([91387a8](https://github.com/quanpersie2001/cliproxyapi-dashboard/commit/91387a8f8a73c5f96c763b03f56bb9b3d283e21d))
+
 ## [0.2.7](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.6...dashboard-v0.2.7) (2026-05-04)
 
 
