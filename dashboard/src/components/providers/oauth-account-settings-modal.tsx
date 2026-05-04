@@ -8,10 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Modal, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@/components/ui/modal";
 import type { OAuthAccountWithOwnership } from "@/components/providers/oauth-credential-list";
 import { getOAuthProviderPresentation } from "@/components/providers/oauth-provider-meta";
-import type {
-  DisableCoolingMode,
-  OAuthAuthFileSettingsEditor,
-} from "@/lib/providers/oauth-auth-file-settings";
+import type { OAuthAuthFileSettingsEditor } from "@/lib/providers/oauth-auth-file-settings";
 
 interface OAuthAccountSettingsModalProps {
   isOpen: boolean;
@@ -22,15 +19,14 @@ interface OAuthAccountSettingsModalProps {
   errorMessage: string | null;
   previewText: string;
   dirty: boolean;
+  validationErrorMessage: string | null;
   onClose: () => void;
   onCopyPreview: () => void;
   onSave: () => void;
   onStringFieldChange: (
-    field: "prefix" | "proxyUrl" | "priority" | "excludedModelsText" | "note",
+    field: "prefix" | "proxyUrl" | "priority" | "headersText" | "note",
     value: string
   ) => void;
-  onDisableCoolingChange: (value: DisableCoolingMode) => void;
-  onWebsocketsChange: (value: boolean) => void;
 }
 
 function FieldBlock({
@@ -162,12 +158,11 @@ export function OAuthAccountSettingsModal({
   errorMessage,
   previewText,
   dirty,
+  validationErrorMessage,
   onClose,
   onCopyPreview,
   onSave,
   onStringFieldChange,
-  onDisableCoolingChange,
-  onWebsocketsChange,
 }: OAuthAccountSettingsModalProps) {
   const provider = getOAuthProviderPresentation(account?.provider ?? "");
   const parsedStatusMessage = parseStatusMessage(account?.statusMessage ?? null);
@@ -239,10 +234,21 @@ export function OAuthAccountSettingsModal({
                     This is the content that will be uploaded back to the proxy.
                   </p>
                 </div>
-                <Button variant="ghost" onClick={onCopyPreview} disabled={saving} className="rounded-md">
+                <Button
+                  variant="ghost"
+                  onClick={onCopyPreview}
+                  disabled={saving || !previewText || Boolean(validationErrorMessage)}
+                  className="rounded-md"
+                >
                   Copy
                 </Button>
               </div>
+
+              {validationErrorMessage ? (
+                <AlertSurface tone="danger" className="mt-3 rounded-lg px-3 py-2 text-xs">
+                  {validationErrorMessage}
+                </AlertSurface>
+              ) : null}
 
               <pre className="mt-3 max-h-[420px] overflow-auto whitespace-pre-wrap break-all rounded-lg border border-[var(--surface-border)] bg-[var(--surface-muted)]/50 p-3 text-xs leading-6 text-[var(--text-primary)]">
                 {previewText}
@@ -292,55 +298,29 @@ export function OAuthAccountSettingsModal({
               </FieldBlock>
 
               <FieldBlock
-                label="Excluded models"
-                helper="One model id per line. These models will be ignored for this auth file."
+                label="Custom Headers"
+                helper="JSON object of extra headers stored in the auth file."
               >
-                <textarea
-                  value={editor.excludedModelsText}
-                  onChange={(event) => onStringFieldChange("excludedModelsText", event.target.value)}
-                  placeholder={"gpt-4.1\nclaude-sonnet-4"}
-                  disabled={saving}
-                  rows={6}
-                  spellCheck={false}
-                  className="w-full resize-y rounded-md border border-[var(--surface-border)] bg-[var(--surface-muted)]/50 px-3 py-2 font-mono text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--surface-border-strong)]"
-                />
+                <div className="space-y-2">
+                  <textarea
+                    value={editor.headersText}
+                    onChange={(event) => onStringFieldChange("headersText", event.target.value)}
+                    placeholder={'{\n  "x-tenant": "priority"\n}'}
+                    disabled={saving}
+                    rows={6}
+                    spellCheck={false}
+                    aria-invalid={Boolean(editor.headersError)}
+                    className="w-full resize-y rounded-md border border-[var(--surface-border)] bg-[var(--surface-muted)]/50 px-3 py-2 font-mono text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--surface-border-strong)] aria-[invalid=true]:border-rose-400"
+                  />
+                  {editor.headersError ? (
+                    <p className="text-xs text-rose-500">{editor.headersError}</p>
+                  ) : (
+                    <p className="text-xs text-[var(--text-muted)]">
+                      Use a JSON object with string values only.
+                    </p>
+                  )}
+                </div>
               </FieldBlock>
-
-              <FieldBlock
-                label="Disable cooling"
-                helper="Choose whether this file opts out of cooling delays or inherits the global behavior."
-              >
-                <select
-                  value={editor.disableCooling}
-                  onChange={(event) => onDisableCoolingChange(event.target.value as DisableCoolingMode)}
-                  disabled={saving}
-                  className="w-full rounded-md border border-[var(--surface-border)] bg-[var(--surface-muted)]/50 px-3 py-2 text-sm text-[var(--text-primary)] outline-none transition-colors focus:border-[var(--surface-border-strong)]"
-                >
-                  <option value="inherit">Inherit global setting</option>
-                  <option value="true">Force disabled</option>
-                  <option value="false">Force enabled</option>
-                </select>
-              </FieldBlock>
-
-              {editor.isCodexFile ? (
-                <FieldBlock
-                  label="WebSockets"
-                  helper="Codex auth files can opt into WebSocket transport."
-                >
-                  <label className="flex cursor-pointer items-center justify-between rounded-md border border-[var(--surface-border)] bg-[var(--surface-muted)]/50 px-3 py-2.5">
-                    <span className="text-sm text-[var(--text-primary)]">
-                      {editor.websockets ? "Enabled" : "Disabled"}
-                    </span>
-                    <input
-                      type="checkbox"
-                      checked={editor.websockets}
-                      disabled={saving}
-                      onChange={(event) => onWebsocketsChange(event.target.checked)}
-                      className="size-4 accent-emerald-500"
-                    />
-                  </label>
-                </FieldBlock>
-              ) : null}
 
               <FieldBlock
                 label="Note"
@@ -367,7 +347,7 @@ export function OAuthAccountSettingsModal({
         <Button
           variant="pill"
           onClick={onSave}
-          disabled={!editor || !dirty || saving}
+          disabled={!editor || !dirty || saving || Boolean(validationErrorMessage)}
           className="rounded-md"
         >
           {saving ? "Saving..." : "Save settings"}

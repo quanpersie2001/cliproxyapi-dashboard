@@ -1,10 +1,8 @@
 const INTEGER_STRING_PATTERN = /^[+-]?\d+$/;
-const TRUTHY_TEXT_VALUES = new Set(["true", "1", "yes", "y", "on"]);
-const FALSY_TEXT_VALUES = new Set(["false", "0", "no", "n", "off"]);
 
 export const OAUTH_AUTH_FILE_MAX_BYTES = 1024 * 1024;
 
-export type DisableCoolingMode = "inherit" | "true" | "false";
+type OAuthAuthFileHeaders = Record<string, string>;
 
 export interface OAuthAuthFileSettingsEditor {
   originalText: string;
@@ -13,9 +11,9 @@ export interface OAuthAuthFileSettingsEditor {
   prefix: string;
   proxyUrl: string;
   priority: string;
-  excludedModelsText: string;
-  disableCooling: DisableCoolingMode;
-  websockets: boolean;
+  headersText: string;
+  headersTouched: boolean;
+  headersError: string | null;
   note: string;
   noteTouched: boolean;
 }
@@ -24,12 +22,10 @@ export type OAuthAuthFileSettingsField =
   | "prefix"
   | "proxyUrl"
   | "priority"
-  | "excludedModelsText"
-  | "disableCooling"
-  | "websockets"
+  | "headersText"
   | "note";
 
-export type OAuthAuthFileSettingsFieldValue = string | boolean;
+export type OAuthAuthFileSettingsFieldValue = string;
 
 function normalizeProviderKey(value: string): string {
   return value.trim().toLowerCase();
@@ -58,67 +54,115 @@ function parsePriorityValue(value: unknown): number | undefined {
   return Number.isSafeInteger(parsed) ? parsed : undefined;
 }
 
-function normalizeExcludedModels(value: unknown): string[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
-
-  const seen = new Set<string>();
-  const normalized: string[] = [];
-
-  for (const entry of value) {
-    const model = String(entry ?? "").trim().toLowerCase();
-    if (!model || seen.has(model)) {
-      continue;
-    }
-    seen.add(model);
-    normalized.push(model);
-  }
-
-  return normalized.sort((left, right) => left.localeCompare(right));
+function isRecordObject(value: unknown): value is Record<string, unknown> {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
-function parseExcludedModelsText(value: string): string[] {
-  return normalizeExcludedModels(value.split(/[\n,]+/));
+function normalizeHeaders(value: unknown): OAuthAuthFileHeaders {
+  if (!isRecordObject(value)) {
+    return {};
+  }
+
+  return Object.entries(value)
+    .sort(([left], [right]) => left.localeCompare(right))
+    .reduce<OAuthAuthFileHeaders>((result, [key, rawValue]) => {
+      if (typeof rawValue !== "string") {
+        return result;
+      }
+
+      const name = key.trim();
+      const headerValue = rawValue.trim();
+
+      if (!name || !headerValue) {
+        return result;
+      }
+
+      result[name] = headerValue;
+      return result;
+    }, {});
 }
 
-function parseOptionalBoolean(value: unknown): boolean | undefined {
-  if (typeof value === "boolean") {
-    return value;
+function formatHeadersText(value: OAuthAuthFileHeaders): string {
+  if (Object.keys(value).length === 0) {
+    return "";
   }
 
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return value !== 0;
-  }
-
-  if (typeof value !== "string") {
-    return undefined;
-  }
-
-  const normalized = value.trim().toLowerCase();
-  if (!normalized) {
-    return undefined;
-  }
-  if (TRUTHY_TEXT_VALUES.has(normalized)) {
-    return true;
-  }
-  if (FALSY_TEXT_VALUES.has(normalized)) {
-    return false;
-  }
-  return undefined;
+  return JSON.stringify(value, null, 2);
 }
 
-function readCodexAuthFileWebsockets(value: Record<string, unknown>): boolean {
-  return parseOptionalBoolean(value.websockets) ?? false;
+function validateHeadersValue(value: unknown): string | null {
+  if (!isRecordObject(value)) {
+    return "Custom Headers must be a JSON object.";
+  }
+
+  return Object.values(value).every((item) => typeof item === "string")
+    ? null
+    : "Custom Headers values must be strings.";
 }
 
-function applyCodexAuthFileWebsockets(
-  value: Record<string, unknown>,
-  websockets: boolean
-): Record<string, unknown> {
+function parseHeadersText(text: string): {
+  value: OAuthAuthFileHeaders | null;
+  error: string | null;
+} {
+  const trimmed = text.trim();
+  if (!trimmed) {
+    return { value: null, error: null };
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text) as unknown;
+  } catch {
+    return { value: null, error: "Custom Headers must be valid JSON." };
+  }
+
+  const error = validateHeadersValue(parsed);
+  if (error) {
+    return { value: null, error };
+  }
+
+  return { value: normalizeHeaders(parsed), error: null };
+}
+
+function normalizePriorityField(value: unknown): number | undefined {
+  const priority = parsePriorityValue(value);
+  return priority !== undefined ? priority : undefined;
+}
+
+function sanitizeOAuthAuthFileJson(value: Record<string, unknown>): Record<string, unknown> {
   const next = { ...value };
+
+  delete next.excluded_models;
+  delete next.disable_cooling;
   delete next.websocket;
-  next.websockets = websockets;
+  delete next.websockets;
+
+  if (typeof next.prefix === "string" && !next.prefix.trim()) {
+    delete next.prefix;
+  }
+
+  if (typeof next.proxy_url === "string" && !next.proxy_url.trim()) {
+    delete next.proxy_url;
+  }
+
+  const priority = normalizePriorityField(next.priority);
+  if (priority !== undefined) {
+    next.priority = priority;
+  } else if ("priority" in next) {
+    delete next.priority;
+  }
+
+  if (typeof next.note === "string" && !next.note.trim()) {
+    delete next.note;
+  }
+
+  const headers = normalizeHeaders(next.headers);
+  if (Object.keys(headers).length > 0) {
+    next.headers = headers;
+  } else if ("headers" in next) {
+    delete next.headers;
+  }
+
   return next;
 }
 
@@ -133,18 +177,11 @@ export function createOAuthAuthFileSettingsEditor(
     throw new Error("Auth file must contain a JSON object.");
   }
 
-  const json = { ...(parsed as Record<string, unknown>) };
+  const json = sanitizeOAuthAuthFileJson(parsed as Record<string, unknown>);
   const codexFile = isCodexProvider(provider);
 
-  if (codexFile) {
-    const normalizedWebsockets = readCodexAuthFileWebsockets(json);
-    delete json.websocket;
-    json.websockets = normalizedWebsockets;
-  }
-
   const originalText = JSON.stringify(json);
-  const priority = parsePriorityValue(json.priority);
-  const disableCoolingValue = parseOptionalBoolean(json.disable_cooling);
+  const priority = normalizePriorityField(json.priority);
 
   return {
     originalText,
@@ -153,10 +190,9 @@ export function createOAuthAuthFileSettingsEditor(
     prefix: typeof json.prefix === "string" ? json.prefix : "",
     proxyUrl: typeof json.proxy_url === "string" ? json.proxy_url : "",
     priority: priority !== undefined ? String(priority) : "",
-    excludedModelsText: normalizeExcludedModels(json.excluded_models).join("\n"),
-    disableCooling:
-      disableCoolingValue === undefined ? "inherit" : disableCoolingValue ? "true" : "false",
-    websockets: readCodexAuthFileWebsockets(json),
+    headersText: formatHeadersText(normalizeHeaders(json.headers)),
+    headersTouched: false,
+    headersError: null,
     note: typeof json.note === "string" ? json.note : "",
     noteTouched: false,
   };
@@ -167,15 +203,23 @@ export function updateOAuthAuthFileSettingsEditor(
   field: OAuthAuthFileSettingsField,
   value: OAuthAuthFileSettingsFieldValue
 ): OAuthAuthFileSettingsEditor {
-  if (field === "websockets") {
-    return { ...editor, websockets: Boolean(value) };
-  }
-
   if (field === "note") {
     return {
       ...editor,
       note: String(value),
       noteTouched: true,
+    };
+  }
+
+  if (field === "headersText") {
+    const nextValue = String(value);
+    const { error } = parseHeadersText(nextValue);
+
+    return {
+      ...editor,
+      headersText: nextValue,
+      headersTouched: true,
+      headersError: error,
     };
   }
 
@@ -188,14 +232,18 @@ export function updateOAuthAuthFileSettingsEditor(
 export function buildOAuthAuthFileSettingsPayload(
   editor: OAuthAuthFileSettingsEditor
 ): string {
-  const next: Record<string, unknown> = { ...editor.json };
+  const next = sanitizeOAuthAuthFileJson(editor.json);
 
-  if ("prefix" in next || editor.prefix.trim()) {
+  if (editor.prefix.trim()) {
     next.prefix = editor.prefix;
+  } else if ("prefix" in next) {
+    delete next.prefix;
   }
 
-  if ("proxy_url" in next || editor.proxyUrl.trim()) {
+  if (editor.proxyUrl.trim()) {
     next.proxy_url = editor.proxyUrl;
+  } else if ("proxy_url" in next) {
+    delete next.proxy_url;
   }
 
   const parsedPriority = parsePriorityValue(editor.priority);
@@ -203,21 +251,6 @@ export function buildOAuthAuthFileSettingsPayload(
     next.priority = parsedPriority;
   } else if ("priority" in next) {
     delete next.priority;
-  }
-
-  const excludedModels = parseExcludedModelsText(editor.excludedModelsText);
-  if (excludedModels.length > 0) {
-    next.excluded_models = excludedModels;
-  } else if ("excluded_models" in next) {
-    delete next.excluded_models;
-  }
-
-  if (editor.disableCooling === "true") {
-    next.disable_cooling = true;
-  } else if (editor.disableCooling === "false") {
-    next.disable_cooling = false;
-  } else if ("disable_cooling" in next) {
-    delete next.disable_cooling;
   }
 
   if (editor.noteTouched) {
@@ -229,11 +262,18 @@ export function buildOAuthAuthFileSettingsPayload(
     }
   }
 
-  const payload = editor.isCodexFile
-    ? applyCodexAuthFileWebsockets(next, editor.websockets)
-    : next;
+  const { value: headers, error } = parseHeadersText(editor.headersText);
+  if (error) {
+    throw new Error(error);
+  }
 
-  return JSON.stringify(payload);
+  if (headers && Object.keys(headers).length > 0) {
+    next.headers = headers;
+  } else if ("headers" in next) {
+    delete next.headers;
+  }
+
+  return JSON.stringify(next);
 }
 
 export function formatOAuthAuthFileSettingsPreview(
@@ -251,5 +291,19 @@ export function formatOAuthAuthFileSettingsPreview(
 export function isOAuthAuthFileSettingsDirty(
   editor: OAuthAuthFileSettingsEditor
 ): boolean {
+  if (editor.headersTouched && editor.headersError) {
+    const originalPriority = normalizePriorityField(editor.json.priority);
+    const originalHeadersText = formatHeadersText(normalizeHeaders(editor.json.headers));
+    const originalNote = typeof editor.json.note === "string" ? editor.json.note : "";
+
+    return (
+      editor.prefix !== (typeof editor.json.prefix === "string" ? editor.json.prefix : "") ||
+      editor.proxyUrl !== (typeof editor.json.proxy_url === "string" ? editor.json.proxy_url : "") ||
+      editor.priority !== (originalPriority !== undefined ? String(originalPriority) : "") ||
+      editor.headersText !== originalHeadersText ||
+      (editor.noteTouched && editor.note !== originalNote)
+    );
+  }
+
   return buildOAuthAuthFileSettingsPayload(editor) !== editor.originalText;
 }

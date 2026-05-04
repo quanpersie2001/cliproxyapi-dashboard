@@ -1,12 +1,49 @@
 {
   "schema_version": "1.0",
-  "phase": "preflight",
-  "status": "PASS",
-  "active_skill": "pulse:using-pulse",
-  "active_feature": "",
-  "requested_mode": "planning-only",
-  "recommended_mode": "planning-only",
+  "phase": "execution/phase-1",
+  "status": "READY_FOR_EXECUTION",
+  "active_skill": "pulse:executing",
+  "active_feature": "oauth-config-ui-ux",
+  "requested_mode": "execution-only",
+  "recommended_mode": "single-worker",
   "tooling_status": ".pulse/tooling-status.json",
   "handoff_manifest": ".pulse/handoffs/manifest.json",
-  "last_updated": "2026-05-04T09:00:22Z"
+  "context": "history/oauth-config-ui-ux/CONTEXT.md",
+  "locked_decisions": [
+    "D1",
+    "D2",
+    "D3",
+    "D4",
+    "D5",
+    "D6",
+    "D7",
+    "D8",
+    "D9",
+    "D10",
+    "D11",
+    "D12",
+    "D13"
+  ],
+  "approval_status": "APPROVED",
+  "approved_phase": "Phase 1 - Clear OAuth Settings Editing",
+  "current_phase_to_prepare": "Phase 1 - Clear OAuth Settings Editing",
+  "artifacts_written": [
+    "history/oauth-config-ui-ux/discovery.md",
+    "history/oauth-config-ui-ux/approach.md",
+    "history/oauth-config-ui-ux/phase-plan.md",
+    "history/oauth-config-ui-ux/phase-1-contract.md",
+    "history/oauth-config-ui-ux/phase-1-story-map.md"
+  ],
+  "beads_created": [
+    "br-wpd",
+    "br-wpd.1",
+    "br-wpd.2"
+  ],
+  "current_bead": "br-wpd.2",
+  "verification_artifacts": [
+    "history/oauth-config-ui-ux/verification/br-wpd.1.md"
+  ],
+  "blockers": [],
+  "next_skill": "pulse:executing",
+  "last_updated": "2026-05-04T13:18:53Z"
 }

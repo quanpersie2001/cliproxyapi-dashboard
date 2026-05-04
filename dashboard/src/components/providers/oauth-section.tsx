@@ -35,8 +35,8 @@ import {
   formatOAuthAuthFileSettingsPreview,
   isOAuthAuthFileSettingsDirty,
   OAUTH_AUTH_FILE_MAX_BYTES,
-  type DisableCoolingMode,
   type OAuthAuthFileSettingsEditor,
+  updateOAuthAuthFileSettingsEditor,
 } from "@/lib/providers/oauth-auth-file-settings";
 
 type ShowToast = ReturnType<typeof useToast>["showToast"];
@@ -465,35 +465,17 @@ export function OAuthSection({
   };
 
   const updateSettingsField = (
-    field: "prefix" | "proxyUrl" | "priority" | "excludedModelsText" | "note",
+    field: "prefix" | "proxyUrl" | "priority" | "headersText" | "note",
     value: string
   ) => {
+    setSettingsErrorMessage(null);
     setSettingsEditor((current) => {
       if (!current) {
         return current;
       }
 
-      if (field === "note") {
-        return {
-          ...current,
-          note: value,
-          noteTouched: true,
-        };
-      }
-
-      return {
-        ...current,
-        [field]: value,
-      };
+      return updateOAuthAuthFileSettingsEditor(current, field, value);
     });
-  };
-
-  const updateSettingsDisableCooling = (value: DisableCoolingMode) => {
-    setSettingsEditor((current) => (current ? { ...current, disableCooling: value } : current));
-  };
-
-  const updateSettingsWebsockets = (value: boolean) => {
-    setSettingsEditor((current) => (current ? { ...current, websockets: value } : current));
   };
 
   const copySettingsPreview = async () => {
@@ -514,7 +496,16 @@ export function OAuthSection({
       return;
     }
 
-    const payload = buildOAuthAuthFileSettingsPayload(settingsEditor);
+    let payload: string;
+    try {
+      payload = buildOAuthAuthFileSettingsPayload(settingsEditor);
+    } catch (error) {
+      setSettingsErrorMessage(
+        error instanceof Error ? error.message : "Custom Headers must be valid JSON before saving."
+      );
+      return;
+    }
+
     if (new Blob([payload]).size > OAUTH_AUTH_FILE_MAX_BYTES) {
       setSettingsErrorMessage("Auth file content exceeds the 1MB limit.");
       return;
@@ -1072,11 +1063,29 @@ export function OAuthSection({
     ? getOAuthProviderById(importProviderId)?.name || importProviderId
     : "";
   const settingsPreviewText = settingsEditor
-    ? formatOAuthAuthFileSettingsPreview(settingsEditor)
+    ? (() => {
+        if (settingsEditor.headersTouched && settingsEditor.headersError) {
+          try {
+            return JSON.stringify(JSON.parse(settingsEditor.originalText), null, 2);
+          } catch {
+            return settingsEditor.originalText;
+          }
+        }
+
+        try {
+          return formatOAuthAuthFileSettingsPreview(settingsEditor);
+        } catch {
+          return settingsEditor.originalText;
+        }
+      })()
     : "";
   const settingsDirty = settingsEditor
     ? isOAuthAuthFileSettingsDirty(settingsEditor)
     : false;
+  const settingsValidationError =
+    settingsEditor?.headersTouched && settingsEditor.headersError
+      ? settingsEditor.headersError
+      : null;
 
   return (
     <>
@@ -1491,12 +1500,11 @@ export function OAuthSection({
         errorMessage={settingsErrorMessage}
         previewText={settingsPreviewText}
         dirty={settingsDirty}
+        validationErrorMessage={settingsValidationError}
         onClose={closeSettingsModal}
         onCopyPreview={copySettingsPreview}
         onSave={saveSettings}
         onStringFieldChange={updateSettingsField}
-        onDisableCoolingChange={updateSettingsDisableCooling}
-        onWebsocketsChange={updateSettingsWebsockets}
       />
     </>
   );
