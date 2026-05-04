@@ -68,6 +68,32 @@ function readOptionalIsoDate(value: unknown): string | null {
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
 }
 
+function readRecentRequestCount(value: unknown): number {
+  const count = readOptionalNumber(value);
+  return count !== null && count > 0 ? Math.floor(count) : 0;
+}
+
+function readRecentRequestTotals(
+  value: unknown
+): { recentSuccessCount: number; recentFailureCount: number } {
+  if (!Array.isArray(value)) {
+    return { recentSuccessCount: 0, recentFailureCount: 0 };
+  }
+
+  return value.reduce(
+    (totals, entry) => {
+      if (!isRecord(entry)) {
+        return totals;
+      }
+
+      totals.recentSuccessCount += readRecentRequestCount(entry.success);
+      totals.recentFailureCount += readRecentRequestCount(entry.failed);
+      return totals;
+    },
+    { recentSuccessCount: 0, recentFailureCount: 0 }
+  );
+}
+
 function normalizeMaskedProxyRequests(values: string[] | undefined): string[] {
   if (!values || values.length === 0) {
     return [];
@@ -459,6 +485,10 @@ export async function listOAuthWithOwnership(
       modified?: number | string;
       updated_at?: number | string;
       last_refresh?: number | string;
+      recent_requests?: Array<{
+        success?: number | string;
+        failed?: number | string;
+      }>;
     }>;
 
     const accountNames = authFiles.map((file) => file.name);
@@ -506,6 +536,9 @@ export async function listOAuthWithOwnership(
           : ownership?.provider ?? providerFromApi ?? "unknown";
       const statusFromApi = readOptionalString(file.status);
       const isDisabled = file.disabled === true || statusFromApi?.toLowerCase() === "disabled";
+      const { recentSuccessCount, recentFailureCount } = readRecentRequestTotals(
+        isRecord(file) ? file.recent_requests : undefined
+      );
 
       return {
         id: canSeeDetails
@@ -532,6 +565,8 @@ export async function listOAuthWithOwnership(
             ?? readOptionalIsoDate(file.updated_at)
             ?? readOptionalIsoDate(file.last_refresh)
           : null,
+        recentSuccessCount,
+        recentFailureCount,
         ...(maskedProxyUrlMap.has(normalizedAccountName)
           ? { maskedProxyUrl: maskedProxyUrlMap.get(normalizedAccountName) }
           : {}),

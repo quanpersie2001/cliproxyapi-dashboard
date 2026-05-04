@@ -120,6 +120,16 @@ function isTabVisible(): boolean {
   return document.visibilityState === "visible";
 }
 
+function getVisibleMaskedProxyAccounts(
+  accounts: OAuthAccountWithOwnership[],
+  page: number
+): string[] {
+  return accounts
+    .slice((page - 1) * OAUTH_ACCOUNT_PAGE_SIZE, page * OAUTH_ACCOUNT_PAGE_SIZE)
+    .map((account) => account.accountName)
+    .filter((accountName) => accountName.length > 0 && !/^Account \d+$/.test(accountName));
+}
+
 const validateCallbackUrl = (value: string) => {
   if (!value.trim()) {
     return { status: CALLBACK_VALIDATION.EMPTY, message: "Paste the full URL." };
@@ -290,6 +300,21 @@ export function OAuthSection({
     noCallbackClaimAttemptsRef.current = 0;
   }, []);
 
+  const fetchOAuthAccounts = useCallback(async (maskedProxyFor: string[] = []) => {
+    const url = new URL(API_ENDPOINTS.PROVIDERS.OAUTH, window.location.origin);
+    for (const accountName of maskedProxyFor) {
+      url.searchParams.append("maskedProxyFor", accountName);
+    }
+
+    const res = await fetch(`${url.pathname}${url.search}`);
+    if (!res.ok) {
+      return null;
+    }
+
+    const data = await res.json();
+    return Array.isArray(data.accounts) ? (data.accounts as OAuthAccountWithOwnership[]) : [];
+  }, []);
+
   const loadAccounts = useCallback(async () => {
     if (!showAccountList) {
       setAccounts([]);
@@ -299,16 +324,25 @@ export function OAuthSection({
 
     setOauthAccountsLoading(true);
     try {
-      const res = await fetch(API_ENDPOINTS.PROVIDERS.OAUTH);
-      if (!res.ok) {
+      const nextAccounts = await fetchOAuthAccounts();
+      if (!nextAccounts) {
         showToast("Failed to load OAuth accounts", "error");
         setOauthAccountsLoading(false);
         return;
       }
 
-      const data = await res.json();
-      const nextAccounts = Array.isArray(data.accounts) ? data.accounts : [];
-      setAccounts(nextAccounts);
+      const totalPages = Math.max(1, Math.ceil(nextAccounts.length / OAUTH_ACCOUNT_PAGE_SIZE));
+      const nextPage = Math.min(accountPage, totalPages);
+      if (nextPage !== accountPage) {
+        setAccountPage(nextPage);
+      }
+
+      const visibleAccountNames = getVisibleMaskedProxyAccounts(nextAccounts, nextPage);
+      const enrichedAccounts = visibleAccountNames.length > 0
+        ? await fetchOAuthAccounts(visibleAccountNames)
+        : nextAccounts;
+
+      setAccounts(enrichedAccounts ?? nextAccounts);
       onAccountCountChange(nextAccounts.length);
       setOauthAccountsLoading(false);
     } catch {
@@ -316,7 +350,7 @@ export function OAuthSection({
       showToast("Network error", "error");
       setOauthErrorMessage("Network error while loading accounts.");
     }
-  }, [onAccountCountChange, showAccountList, showToast]);
+  }, [accountPage, fetchOAuthAccounts, onAccountCountChange, showAccountList, showToast]);
 
   const loadAccountStats = useCallback(async () => {
     if (!showAccountList) {

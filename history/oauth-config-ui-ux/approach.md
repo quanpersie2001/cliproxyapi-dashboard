@@ -47,18 +47,18 @@ Keep the current OAuth ownership, raw-text settings load, and full-file save pip
 ## 4. Risk Map
 | Component | Risk Level | Reason | Validation Owner | Spike Question | Affected Beads |
 |---|---|---|---|---|---|
-| OAuth list proxy summary contract | HIGH | The current `/auth-files` list payload used by `listOAuthWithOwnership` does not expose proxy summary fields, so a naive solution could trigger extra upstream fan-out or leak raw credentials. | validating | Can the dashboard produce an optional masked custom proxy display without browser-side auth-file downloads and without sending raw credentials to the client? | Phase 2 card contract and card UI beads |
+| OAuth list proxy summary contract | HIGH | The list route still needs a new additive field and bounded enrichment path, so execution must preserve secret masking and avoid default full-list fan-out. | validating | `YES` — the dashboard can derive a masked custom proxy display on the server without browser-side auth-file downloads and without full-list upstream fan-out. | `br-wpd.6`, `br-wpd.4`, `br-wpd.5` |
 | OAuth headers JSON editing | MEDIUM | The modal needs new validation state that blocks invalid JSON saves while keeping preview generation predictable. | n/a | n/a | Phase 1 editor and modal beads |
 | Split modal layout | MEDIUM | Long JSON preview content and auth-file metadata must remain legible at desktop width and collapse cleanly at smaller widths. | n/a | n/a | Phase 1 modal layout bead |
 | Card status simplification | MEDIUM | The new `Limit Reached` mapping must remain accurate even when `statusMessage` is JSON-wrapped or provider-specific. | n/a | n/a | Phase 2 card UI bead |
 
 For the HIGH row above:
-- Option 1: Reuse an existing upstream list field if `/auth-files` metadata already contains a proxy override value.
-- Option 2: Add a server-only enrichment step that derives a masked proxy summary before the list route responds.
-- Option 3: Add a same-surface summary fetch for visible accounts only, still server-owned and masked, if the main list route cannot safely enrich in one pass.
-- Recommended option: Prefer Option 1, fall back to Option 3 before Option 2 if validating shows that full list enrichment would create avoidable upstream fan-out.
-- User-visible decision to lock: The card may show a masked custom proxy badge only when the summary is available, but it must never show raw credentials or invent inherited/global proxy states.
-- `testing_mode` expectation if this remains HIGH in execution: `tdd-required` for the contract and masking logic.
+- `br-wpd.6` already closed the spike with **YES**.
+- Keep the default `GET /api/providers/oauth` response fast and metadata-only.
+- Add optional bounded enrichment on the same route via repeated `maskedProxyFor` query params, scoped to the visible account set only.
+- Deduplicate and cap enrichment to **12 unique account names** per request to match `OAUTH_ACCOUNT_PAGE_SIZE`.
+- For each requested account only, download the raw auth file server-side, parse `proxy_url`, mask credentials, and return `maskedProxyUrl`; omit the field when the file cannot be fetched, parsed, or does not contain a custom override.
+- `testing_mode` expectation for execution remains `tdd-required` because masking and omission rules are now the non-regression boundary.
 
 ## 5. Proposed File Structure
 ```text
@@ -68,6 +68,7 @@ dashboard/src/components/providers/
   oauth-section.tsx                    # modal field handlers and settings modal prop surface
 
 dashboard/src/lib/providers/
+  management-api.ts                    # shared OAuth account summary type
   oauth-auth-file-settings.ts          # editor fields, headers validation, payload serialization
   oauth-ops.ts                         # optional masked custom proxy summary on list contract
 
@@ -90,5 +91,4 @@ dashboard/src/app/api/providers/oauth/
 | `dashboard/src/components/providers/oauth-section.tsx` | Account reload, provider refresh, and settings save already converge after a successful PATCH. | Planning preserves the current orchestration boundary and avoids introducing new save workflows. |
 
 ## 8. Open Questions for Validating
-- [ ] Which proxy-summary strategy should execution lock for Phase 2 after validating checks performance and secret-handling tradeoffs?
-- [ ] Should the `Limit Reached` mapping key off a specific normalized message pattern only, or should validating require a broader provider-agnostic matcher before execution?
+- [ ] Does the final `Limit Reached` matcher stay narrow enough that only usage-limit cases map to the badge while all other provider errors remain in the lower detail panel?

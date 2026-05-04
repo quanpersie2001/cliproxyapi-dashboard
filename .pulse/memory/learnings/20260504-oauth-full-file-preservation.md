@@ -1,12 +1,12 @@
 ---
 date: 2026-05-04
 feature: oauth-config-ui-ux
-categories: [pattern, decision]
+categories: [pattern, decision, failure]
 severity: critical
-tags: [oauth, config, review, pulse]
-applies_when: working on a full-file config editor or creating a new execution bead from a review finding in this repo family
-scope: [dashboard/src/lib/providers/oauth-auth-file-settings.ts, .beads/issues.jsonl]
-signals: [hidden fields disappear after unrelated edits, review bead exists as prose without files or verify fields]
+tags: [oauth, config, review, pulse, testing]
+applies_when: working on a full-file config editor or capturing review-created follow-up execution and verification work in this repo family
+scope: [dashboard/src/lib/providers/oauth-auth-file-settings.ts, dashboard/src/components/providers/oauth-section.tsx, dashboard/src/app/api/providers/oauth/route.ts, .beads/issues.jsonl]
+signals: [hidden fields disappear after unrelated edits, untouched headers drift on note-only saves, repeated query params lack direct boundary coverage, review bead exists as prose without files or verify fields]
 ---
 
 # Learning: Preserve Hidden Keys In Full-File Editors
@@ -60,3 +60,57 @@ When creating a new bead from a review finding, write the same execution schema 
 **Propagation:** planner-only
 **Embed-in-bead-when:** A planner or reviewer turns a finding into a follow-up implementation bead.
 **Bead hint:** Review follow-up beads must be executable, not just descriptive. Include file scope, verify steps, evidence path, and testing mode before execution resumes.
+
+---
+
+# Learning: Preserve Untouched Structured Subtrees In Full-File Editors
+
+**Category:** failure
+**Severity:** standard
+**Tags:** [oauth, config, headers]
+**Applicable-when:** A full-file editor parses a structured sub-object like `headers` into form state, but operators can save unrelated fields without editing that sub-object.
+
+## What Happened
+
+After `br-wpd.3` fixed hidden-key loss, review bead `br-obt` found a second full-file drift path in `dashboard/src/lib/providers/oauth-auth-file-settings.ts`. `sanitizeOAuthAuthFileJson()` normalized `headers` before the editor was even created, and `buildOAuthAuthFileSettingsPayload()` rewrote that normalized object back into the saved payload even when the operator changed only `note`, `prefix`, `proxy_url`, or `priority`. The runtime semantics might survive, but the full-file editor still mutated untouched config on an unrelated save.
+
+## Root Cause / Key Insight
+
+The implementation preserved the presence of the structured subtree but not the fidelity of the originally loaded parsed subtree. In full-file editors, “field is present” and “field was touched” are separate contracts. Untouched structured data should remain stable enough that unrelated saves do not create operator-unrequested config drift.
+
+## Recommendation for Future Work
+
+Track touched state for structured fields like `headers`, and when untouched preserve the originally loaded parsed subtree instead of rewriting it through a normalization path. Add a regression that edits an unrelated visible field and proves the untouched structured subtree stays stable.
+
+## Propagation Guidance
+
+**Propagation:** bead-local
+**Embed-in-bead-when:** A bead changes parse/serialize behavior for a full-file editor that contains optional structured sub-objects.
+**Bead hint:** This save path still writes the whole document. Preserve untouched structured subtrees unless the operator actually edited them, and add a note-only round-trip regression.
+
+---
+
+# Learning: Boundary Tests Need To Cover Route Fan-Out And Local Save Aborts
+
+**Category:** failure
+**Severity:** standard
+**Tags:** [testing, route, ui]
+**Applicable-when:** A feature adds repeated query-parameter route behavior or a client-side early-return validation path that prevents a request from being sent.
+
+## What Happened
+
+`br-wpd.4` and `br-wpd.1` locked helper-level behavior for masked proxy enrichment and headers JSON validation, and manual UAT proved the happy path, but review bead `br-pp5` still found two missing boundary proofs. There was no focused route test that repeated `maskedProxyFor` values were forwarded intact to `listOAuthWithOwnership()`, and no focused UI-level proof that invalid headers abort save before any PATCH request is sent. The code was readable, but the user-facing contract was still not locked down.
+
+## Root Cause / Key Insight
+
+Verification stayed too close to helper functions and manual checks. Additive boundary behavior can drift during small refactors even when lower-level helpers remain green, so helper coverage alone was not sufficient evidence for the real route and save contracts.
+
+## Recommendation for Future Work
+
+When adding route-level query contracts or local validation guards that short-circuit saves, add at least one focused boundary test at the route or UI layer in addition to helper tests. Treat “the helper is tested” as insufficient proof for user-facing boundary behavior.
+
+## Propagation Guidance
+
+**Propagation:** planner-only
+**Embed-in-bead-when:** A planner or reviewer sees a bead that adds repeated query params, bounded route enrichment, or a validation path that returns before the network call.
+**Bead hint:** Require one direct boundary test for the route or UI contract; helper-only coverage is not enough for this change shape.

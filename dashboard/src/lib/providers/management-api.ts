@@ -104,6 +104,8 @@ export interface OAuthAccountWithOwnership {
   fileSizeBytes: number | null;
   modifiedAt: string | null;
   maskedProxyUrl?: string;
+  recentSuccessCount?: number;
+  recentFailureCount?: number;
 }
 
 export interface ListOAuthResult {

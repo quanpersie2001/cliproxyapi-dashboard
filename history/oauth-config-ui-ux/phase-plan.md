@@ -80,6 +80,6 @@ On `/dashboard/providers`, operators should be able to scan OAuth account state 
 
 ## 7. Approval Summary
 - Approval status: `APPROVED`
-- Approved phase to prepare next: `Phase 1 - Clear OAuth Settings Editing`
-- Approved at: `2026-05-04T11:48:05Z`
-- Current phase to prepare next: `Phase 1 - Clear OAuth Settings Editing`
+- Approved phase to prepare next: `Phase 2 - Scan-Ready OAuth Account Cards`
+- Approved at: `2026-05-04T14:24:53Z`
+- Current phase to prepare next: `Phase 2 - Scan-Ready OAuth Account Cards`

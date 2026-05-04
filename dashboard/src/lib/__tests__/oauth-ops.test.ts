@@ -118,6 +118,10 @@ describe("listOAuthWithOwnership", () => {
               name: "codex-account",
               provider: "codex",
               email: "user@example.com",
+              recent_requests: [
+                { time: "00:00-00:10", success: 2, failed: 1 },
+                { time: "00:10-00:20", success: "3", failed: "0" },
+              ],
               status: "active",
               disabled: false,
               status_message: null,
@@ -153,6 +157,8 @@ describe("listOAuthWithOwnership", () => {
           claimedAt: null,
           fileSizeBytes: null,
           modifiedAt: null,
+          recentSuccessCount: 5,
+          recentFailureCount: 1,
         },
       ],
     });
@@ -177,6 +183,9 @@ describe("listOAuthWithOwnership", () => {
               name: "codex-account",
               provider: "unknown",
               email: "",
+              recent_requests: [
+                { time: "00:00-00:10", success: 0, failed: 2 },
+              ],
               status: "active",
               disabled: true,
               status_message: null,
@@ -222,6 +231,8 @@ describe("listOAuthWithOwnership", () => {
           claimedAt: "2026-02-07T00:00:00.000Z",
           fileSizeBytes: null,
           modifiedAt: null,
+          recentSuccessCount: 0,
+          recentFailureCount: 2,
         },
       ],
     });
