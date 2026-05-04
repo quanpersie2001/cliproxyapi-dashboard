@@ -1,9 +1,8 @@
 {
   "schema_version": "1.0",
   "feature_key": "oauth-config-ui-ux",
-  "phase": "review/phase-1",
-  "gate": "ready-for-reviewing",
-  "status": "phase-1-ready-for-reviewing",
-  "current_bead": "",
-  "updated_at": "2026-05-04T13:41:14Z"
+  "phase": "compounding/phase-1",
+  "gate": "compounding-complete",
+  "status": "phase-1-compounding-complete",
+  "updated_at": "2026-05-04T14:10:36Z"
 }

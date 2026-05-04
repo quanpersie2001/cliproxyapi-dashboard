@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0",
-  "phase": "review/phase-1",
-  "status": "READY_FOR_REVIEWING",
-  "active_skill": "pulse:reviewing",
+  "phase": "compounding/phase-1",
+  "status": "COMPOUNDING_COMPLETE",
+  "active_skill": "pulse:compounding",
   "active_feature": "oauth-config-ui-ux",
   "requested_mode": "execution-only",
   "recommended_mode": "single-worker",
@@ -32,8 +32,16 @@
     "history/oauth-config-ui-ux/approach.md",
     "history/oauth-config-ui-ux/phase-plan.md",
     "history/oauth-config-ui-ux/phase-1-contract.md",
-    "history/oauth-config-ui-ux/phase-1-story-map.md"
+    "history/oauth-config-ui-ux/phase-1-story-map.md",
+    "history/oauth-config-ui-ux/lifecycle-summary.md"
   ],
+  "learnings_written": [
+    ".pulse/memory/learnings/20260504-oauth-full-file-preservation.md",
+    ".pulse/memory/corrections/20260504-prisma-generate-serial-checks.md",
+    ".pulse/memory/critical-patterns.md"
+  ],
+  "critical_promotions": 1,
+  "bead_local_learnings": 0,
   "beads_created": [
     "br-wpd",
     "br-wpd.1",
@@ -47,6 +55,6 @@
   ],
   "blockers": [],
   "review_beads": [],
-  "next_skill": "pulse:reviewing",
-  "last_updated": "2026-05-04T13:41:14Z"
+  "next_skill": "pulse:planning",
+  "last_updated": "2026-05-04T14:10:36Z"
 }
