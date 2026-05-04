@@ -151,6 +151,57 @@ const validateCallbackUrl = (value: string) => {
   };
 };
 
+type SaveOAuthAuthFileSettingsResult =
+  | { ok: true; payload: string }
+  | { ok: false; error: string };
+
+export async function saveOAuthAuthFileSettings(
+  accountName: string,
+  editor: OAuthAuthFileSettingsEditor,
+  fetchImpl: typeof fetch = fetch
+): Promise<SaveOAuthAuthFileSettingsResult> {
+  let payload: string;
+  try {
+    payload = buildOAuthAuthFileSettingsPayload(editor);
+  } catch (error) {
+    return {
+      ok: false,
+      error:
+        error instanceof Error ? error.message : "Custom Headers must be valid JSON before saving.",
+    };
+  }
+
+  if (new Blob([payload]).size > OAUTH_AUTH_FILE_MAX_BYTES) {
+    return {
+      ok: false,
+      error: "Auth file content exceeds the 1MB limit.",
+    };
+  }
+
+  try {
+    const res = await fetchImpl(API_ENDPOINTS.PROVIDERS.OAUTH_ACCOUNT_SETTINGS(accountName), {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fileContent: payload }),
+    });
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      return {
+        ok: false,
+        error: extractApiError(data, "Failed to save auth file settings."),
+      };
+    }
+
+    return { ok: true, payload };
+  } catch {
+    return {
+      ok: false,
+      error: "Network error while saving auth file settings.",
+    };
+  }
+}
+
 export function OAuthSection({
   showToast,
   currentUser,
@@ -496,44 +547,21 @@ export function OAuthSection({
       return;
     }
 
-    let payload: string;
-    try {
-      payload = buildOAuthAuthFileSettingsPayload(settingsEditor);
-    } catch (error) {
-      setSettingsErrorMessage(
-        error instanceof Error ? error.message : "Custom Headers must be valid JSON before saving."
-      );
-      return;
-    }
-
-    if (new Blob([payload]).size > OAUTH_AUTH_FILE_MAX_BYTES) {
-      setSettingsErrorMessage("Auth file content exceeds the 1MB limit.");
-      return;
-    }
-
     setSettingsSaving(true);
     setSettingsErrorMessage(null);
 
     try {
-      const res = await fetch(API_ENDPOINTS.PROVIDERS.OAUTH_ACCOUNT_SETTINGS(settingsAccount.accountName), {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileContent: payload }),
-      });
-      const data = await res.json().catch(() => ({}));
-
-      if (!res.ok) {
-        setSettingsErrorMessage(extractApiError(data, "Failed to save auth file settings."));
+      const result = await saveOAuthAuthFileSettings(settingsAccount.accountName, settingsEditor);
+      if (!result.ok) {
+        setSettingsErrorMessage(result.error);
         return;
       }
 
-      setSettingsEditor(createOAuthAuthFileSettingsEditor(payload, settingsAccount.provider));
+      setSettingsEditor(createOAuthAuthFileSettingsEditor(result.payload, settingsAccount.provider));
       showToast("Auth file settings saved", "success");
       await loadAccounts();
       await refreshProviders();
       void loadAccountStats();
-    } catch {
-      setSettingsErrorMessage("Network error while saving auth file settings.");
     } finally {
       setSettingsSaving(false);
     }
