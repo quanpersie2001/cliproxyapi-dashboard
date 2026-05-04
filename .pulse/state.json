@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0",
-  "phase": "compounding/phase-1",
-  "status": "COMPOUNDING_COMPLETE",
-  "active_skill": "pulse:compounding",
+  "phase": "executing/phase-2",
+  "status": "EXECUTING_ACTIVE",
+  "active_skill": "pulse:executing",
   "active_feature": "oauth-config-ui-ux",
   "requested_mode": "execution-only",
   "recommended_mode": "single-worker",
@@ -25,15 +25,18 @@
     "D13"
   ],
   "approval_status": "APPROVED",
-  "approved_phase": "Phase 1 - Clear OAuth Settings Editing",
-  "current_phase_to_prepare": "Phase 1 - Clear OAuth Settings Editing",
+  "approved_phase": "Phase 2 - Scan-Ready OAuth Account Cards",
+  "current_phase_to_prepare": "Phase 2 - Scan-Ready OAuth Account Cards",
   "artifacts_written": [
     "history/oauth-config-ui-ux/discovery.md",
     "history/oauth-config-ui-ux/approach.md",
     "history/oauth-config-ui-ux/phase-plan.md",
     "history/oauth-config-ui-ux/phase-1-contract.md",
     "history/oauth-config-ui-ux/phase-1-story-map.md",
-    "history/oauth-config-ui-ux/lifecycle-summary.md"
+    "history/oauth-config-ui-ux/lifecycle-summary.md",
+    "history/oauth-config-ui-ux/phase-2-contract.md",
+    "history/oauth-config-ui-ux/phase-2-story-map.md",
+    ".spikes/oauth-config-ui-ux/br-wpd.6/FINDINGS.md"
   ],
   "learnings_written": [
     ".pulse/memory/learnings/20260504-oauth-full-file-preservation.md",
@@ -45,16 +48,22 @@
   "beads_created": [
     "br-wpd",
     "br-wpd.1",
-    "br-wpd.2"
+    "br-wpd.2",
+    "br-wpd.3",
+    "br-wpd.4",
+    "br-wpd.5",
+    "br-wpd.6"
   ],
   "current_bead": "",
   "verification_artifacts": [
     "history/oauth-config-ui-ux/verification/br-wpd.1.md",
     "history/oauth-config-ui-ux/verification/br-wpd.2.md",
-    "history/oauth-config-ui-ux/verification/br-wpd.3.md"
+    "history/oauth-config-ui-ux/verification/br-wpd.3.md",
+    "history/oauth-config-ui-ux/verification/br-wpd.4.md",
+    "history/oauth-config-ui-ux/verification/br-wpd.5.md"
   ],
   "blockers": [],
   "review_beads": [],
-  "next_skill": "pulse:planning",
-  "last_updated": "2026-05-04T14:10:36Z"
+  "next_skill": "pulse:executing",
+  "last_updated": "2026-05-04T15:22:11Z"
 }

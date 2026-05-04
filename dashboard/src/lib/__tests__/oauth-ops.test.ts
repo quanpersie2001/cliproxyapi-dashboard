@@ -107,6 +107,65 @@ describe("listOAuthWithOwnership", () => {
     vi.resetModules();
   });
 
+  it("keeps the default OAuth list metadata-only when masked proxy enrichment is not requested", async () => {
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          files: [
+            {
+              id: "auth-file-1",
+              name: "codex-account",
+              provider: "codex",
+              email: "user@example.com",
+              status: "active",
+              disabled: false,
+              status_message: null,
+              unavailable: false,
+            },
+          ],
+        }),
+      body: { cancel: vi.fn() },
+    });
+
+    const { prisma } = await import("@/lib/db");
+    const findManyMock = prisma.providerOAuthOwnership.findMany as unknown as ReturnType<typeof vi.fn>;
+    findManyMock.mockResolvedValueOnce([]);
+
+    const { listOAuthWithOwnership } = await import("@/lib/providers/oauth-ops");
+
+    const result = await listOAuthWithOwnership("user-1", true);
+
+    expect(result).toEqual({
+      ok: true,
+      accounts: [
+        {
+          id: "auth-file-1",
+          accountName: "codex-account",
+          accountEmail: "user@example.com",
+          provider: "codex",
+          ownerUsername: null,
+          ownerUserId: null,
+          isOwn: false,
+          status: "active",
+          statusMessage: null,
+          unavailable: false,
+          claimedAt: null,
+          fileSizeBytes: null,
+          modifiedAt: null,
+        },
+      ],
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(fetchMock).toHaveBeenCalledWith(
+      "http://test:8317/v0/management/auth-files",
+      expect.objectContaining({
+        method: "GET",
+        headers: { Authorization: "Bearer 1234567890123456" },
+      })
+    );
+  });
+
   it("preserves provider and email from ownership and maps disabled auth files correctly", async () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,
@@ -166,6 +225,97 @@ describe("listOAuthWithOwnership", () => {
         },
       ],
     });
+  });
+
+  it("returns bounded masked proxy summaries only for requested custom overrides", async () => {
+    const requestedAccounts = [
+      "with-proxy",
+      "without-proxy",
+      "broken-json",
+      "account-4",
+      "account-5",
+      "account-6",
+      "account-7",
+      "account-8",
+      "account-9",
+      "account-10",
+      "account-11",
+      "account-12",
+      "account-13",
+      "with-proxy",
+    ];
+
+    fetchMock.mockResolvedValueOnce({
+      ok: true,
+      json: () =>
+        Promise.resolve({
+          files: requestedAccounts.slice(0, 13).map((name, index) => ({
+            id: `auth-file-${index + 1}`,
+            name,
+            provider: "codex",
+            email: "",
+            status: "active",
+            disabled: false,
+            status_message: null,
+            unavailable: false,
+          })),
+        }),
+      body: { cancel: vi.fn() },
+    });
+
+    const downloadBodies = new Map<string, string>([
+      ["with-proxy", JSON.stringify({ proxy_url: "socks5://user:pass@proxy-us:1080" })],
+      ["without-proxy", JSON.stringify({ note: "no override" })],
+      ["broken-json", "{not-json"],
+    ]);
+
+    for (const accountName of requestedAccounts.slice(0, 12)) {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        text: () => Promise.resolve(downloadBodies.get(accountName) ?? JSON.stringify({ note: accountName })),
+        body: { cancel: vi.fn() },
+      });
+    }
+
+    const { prisma } = await import("@/lib/db");
+    const findManyMock = prisma.providerOAuthOwnership.findMany as unknown as ReturnType<typeof vi.fn>;
+    findManyMock.mockResolvedValueOnce([]);
+
+    const { listOAuthWithOwnership } = await import("@/lib/providers/oauth-ops");
+
+    const result = await listOAuthWithOwnership("user-1", true, {
+      maskedProxyFor: requestedAccounts,
+    });
+
+    expect(result.ok).toBe(true);
+    expect(result.accounts?.find((account) => account.accountName === "with-proxy")).toMatchObject({
+      maskedProxyUrl: "socks5://***@proxy-us:1080",
+    });
+    expect(
+      result.accounts?.find((account) => account.accountName === "without-proxy")
+    ).not.toHaveProperty("maskedProxyUrl");
+    expect(
+      result.accounts?.find((account) => account.accountName === "broken-json")
+    ).not.toHaveProperty("maskedProxyUrl");
+
+    const downloadCalls = fetchMock.mock.calls
+      .map(([url]) => String(url))
+      .filter((url) => url.includes("/auth-files/download?name="));
+
+    expect(fetchMock).toHaveBeenCalledTimes(13);
+    expect(downloadCalls).toHaveLength(12);
+    expect(downloadCalls).toContain(
+      "http://test:8317/v0/management/auth-files/download?name=with-proxy"
+    );
+    expect(downloadCalls).toContain(
+      "http://test:8317/v0/management/auth-files/download?name=without-proxy"
+    );
+    expect(downloadCalls).not.toContain(
+      "http://test:8317/v0/management/auth-files/download?name=account-13"
+    );
+    expect(
+      downloadCalls.filter((url) => url === "http://test:8317/v0/management/auth-files/download?name=with-proxy")
+    ).toHaveLength(1);
   });
 });
 

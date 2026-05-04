@@ -18,6 +18,8 @@ import {
   type OAuthAccountWithOwnership,
 } from "./management-api";
 
+const MASKED_PROXY_QUERY_LIMIT = 12;
+
 function readOptionalString(value: unknown): string | null {
   if (typeof value !== "string") {
     return null;
@@ -64,6 +66,86 @@ function readOptionalIsoDate(value: unknown): string | null {
 
   const date = new Date(textValue);
   return Number.isNaN(date.getTime()) ? null : date.toISOString();
+}
+
+function normalizeMaskedProxyRequests(values: string[] | undefined): string[] {
+  if (!values || values.length === 0) {
+    return [];
+  }
+
+  const normalized: string[] = [];
+  const seen = new Set<string>();
+
+  for (const value of values) {
+    const accountName = readOptionalString(value);
+    if (!accountName || seen.has(accountName)) {
+      continue;
+    }
+
+    seen.add(accountName);
+    normalized.push(accountName);
+
+    if (normalized.length >= MASKED_PROXY_QUERY_LIMIT) {
+      break;
+    }
+  }
+
+  return normalized;
+}
+
+function maskProxyUrlCredentials(proxyUrl: string): string {
+  const trimmed = proxyUrl.trim();
+  const schemeSeparatorIndex = trimmed.indexOf("://");
+  const authorityStart = schemeSeparatorIndex >= 0 ? schemeSeparatorIndex + 3 : 0;
+  const credentialsEnd = trimmed.indexOf("@", authorityStart);
+
+  if (credentialsEnd < 0) {
+    return trimmed;
+  }
+
+  return `${trimmed.slice(0, authorityStart)}***${trimmed.slice(credentialsEnd)}`;
+}
+
+async function loadMaskedProxyUrlForAccount(accountName: string): Promise<string | null> {
+  const endpoint = `${MANAGEMENT_BASE_URL}/auth-files/download?name=${encodeURIComponent(accountName)}`;
+
+  let response: Response;
+  try {
+    response = await fetchWithTimeout(endpoint, {
+      method: "GET",
+      headers: { Authorization: `Bearer ${MANAGEMENT_API_KEY}` },
+    });
+  } catch (error) {
+    if (error instanceof Error && error.name === "AbortError") {
+      logger.warn(
+        { accountName, endpoint, timeoutMs: FETCH_TIMEOUT_MS },
+        "Fetch timeout - loadMaskedProxyUrlForAccount GET"
+      );
+      return null;
+    }
+
+    logger.warn({ err: error, accountName, endpoint }, "Failed to load OAuth auth file for masked proxy summary");
+    return null;
+  }
+
+  if (!response.ok) {
+    await response.body?.cancel();
+    return null;
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(await response.text()) as unknown;
+  } catch {
+    return null;
+  }
+
+  if (!isRecord(parsed)) {
+    return null;
+  }
+
+  const proxyUrl = readOptionalString(parsed.proxy_url);
+  return proxyUrl ? maskProxyUrlCredentials(proxyUrl) : null;
 }
 
 export async function contributeOAuthAccount(
@@ -296,7 +378,8 @@ export async function importOAuthCredential(
 
 export async function listOAuthWithOwnership(
   userId: string,
-  isAdmin: boolean = false
+  isAdmin: boolean = false,
+  options?: { maskedProxyFor?: string[] }
 ): Promise<ListOAuthResult> {
   if (!MANAGEMENT_API_KEY) {
     return { ok: false, error: "Management API key not configured" };
@@ -361,6 +444,28 @@ export async function listOAuthWithOwnership(
     });
 
     const ownershipMap = new Map(ownerships.map((o) => [o.accountName, o]));
+    const authFileNames = new Set(
+      authFiles
+        .map((file) => readOptionalString(file.name))
+        .filter((value): value is string => value !== null)
+    );
+    const requestedMaskedProxyNames = normalizeMaskedProxyRequests(options?.maskedProxyFor).filter(
+      (accountName) => authFileNames.has(accountName)
+    );
+    const visibleRequestedProxyNames = requestedMaskedProxyNames.filter((accountName) => {
+      const ownership = ownershipMap.get(accountName);
+      const isOwn = ownership?.userId === userId;
+      return isOwn || isAdmin;
+    });
+    const maskedProxyEntries = await Promise.all(
+      visibleRequestedProxyNames.map(async (accountName) => {
+        const maskedProxyUrl = await loadMaskedProxyUrlForAccount(accountName);
+        return [accountName, maskedProxyUrl] as const;
+      })
+    );
+    const maskedProxyUrlMap = new Map(
+      maskedProxyEntries.filter((entry): entry is [string, string] => entry[1] !== null)
+    );
 
     const accountsWithOwnership: OAuthAccountWithOwnership[] = authFiles.map((file, index) => {
       const normalizedAccountName = readOptionalString(file.name) ?? "";
@@ -400,6 +505,9 @@ export async function listOAuthWithOwnership(
             ?? readOptionalIsoDate(file.updated_at)
             ?? readOptionalIsoDate(file.last_refresh)
           : null,
+        ...(maskedProxyUrlMap.has(normalizedAccountName)
+          ? { maskedProxyUrl: maskedProxyUrlMap.get(normalizedAccountName) }
+          : {}),
       };
     });
 
