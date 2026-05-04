@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0",
-  "phase": "reviewing",
-  "status": "REVIEWING_COMPLETE",
-  "active_skill": "pulse:reviewing",
+  "phase": "compounding",
+  "status": "COMPOUNDING_COMPLETE",
+  "active_skill": "pulse:compounding",
   "active_feature": "oauth-config-ui-ux",
   "requested_mode": "review-only",
   "recommended_mode": "single-worker",
@@ -41,12 +41,14 @@
   ],
   "learnings_written": [
     ".pulse/memory/learnings/20260504-oauth-full-file-preservation.md",
+    ".pulse/memory/learnings/20260505-oauth-review-followup-closeout.md",
     ".pulse/memory/corrections/20260504-prisma-generate-serial-checks.md",
     ".pulse/memory/corrections/20260505-fail-closed-masked-url-display.md",
+    ".pulse/memory/corrections/20260505-route-test-harness-server-only-env.md",
     ".pulse/memory/critical-patterns.md"
   ],
   "critical_promotions": 1,
-  "bead_local_learnings": 1,
+  "bead_local_learnings": 2,
   "beads_created": [
     "br-wpd",
     "br-wpd.1",
@@ -71,7 +73,7 @@
   ],
   "blockers": [],
   "review_beads": [],
-  "next_skill": "pulse:compounding",
-  "gate": "gate-4-pass",
-  "last_updated": "2026-05-04T18:21:49Z"
+  "next_skill": "pulse:using-pulse",
+  "gate": "compounding-complete",
+  "last_updated": "2026-05-04T18:26:42Z"
 }
