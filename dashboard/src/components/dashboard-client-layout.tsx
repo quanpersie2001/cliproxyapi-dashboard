@@ -25,7 +25,7 @@ export function DashboardClientLayout({ children }: DashboardClientLayoutProps) 
           <DashboardNav />
           <main
             id="main-content"
-            className={`min-h-0 min-w-0 overflow-y-auto px-3 pb-4 pt-16 ${isAnalyticsHeavyRoute ? "lg:px-8 lg:pb-8 lg:pt-6 xl:px-10" : "lg:px-6 lg:pb-6 lg:pt-6"}`}
+            className={`min-h-0 min-w-0 overflow-y-auto overscroll-y-none px-3 pb-4 pt-16 ${isAnalyticsHeavyRoute ? "lg:px-8 lg:pb-8 lg:pt-6 xl:px-10" : "lg:px-6 lg:pb-6 lg:pt-6"}`}
           >
             <div className="w-full min-w-0">
               <DashboardShell>{children}</DashboardShell>
