@@ -103,10 +103,11 @@ function runCoordinator() {
     });
 
     child.on("exit", (code, signal) => {
+      children.delete(name);
+
       if (!shuttingDown) {
         if (name === "collector") {
           const collectorExitCode = normalizeExitCode(code, signal);
-          children.delete(name);
           console.error(
             `[bootstrap] collector exited (${collectorExitCode}); server stays online`,
           );

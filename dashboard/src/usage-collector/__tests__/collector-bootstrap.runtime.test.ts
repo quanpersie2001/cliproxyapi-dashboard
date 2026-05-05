@@ -152,6 +152,102 @@ setTimeout(() => {
     expect(harnessResult.spawnCount).toBe(2);
     expect(harnessResult.serverKillCalls).toBe(0);
   });
+
+  it("completes shutdown when server exits first and collector exits during shutdown", () => {
+    const harnessResultRaw = execFileSync(
+      "node",
+      [
+        "-e",
+        `
+const cp = require("node:child_process");
+const { EventEmitter } = require("node:events");
+const path = require("node:path");
+
+const spawned = [];
+const killCalls = [];
+const exitCalls = [];
+const childrenByName = new Map();
+
+function createChild(name) {
+  const child = new EventEmitter();
+  child.killed = false;
+  child.exitCode = null;
+  child.kill = (signal) => {
+    killCalls.push({ name, signal });
+    child.killed = true;
+    if (name === "collector") {
+      setImmediate(() => child.emit("exit", 0, null));
+    }
+    return true;
+  };
+  return child;
+}
+
+cp.spawn = (command, args) => {
+  const name = spawned.length === 0 ? "server" : "collector";
+  const child = createChild(name);
+  spawned.push({ name, command, args });
+  childrenByName.set(name, child);
+
+  if (name === "collector") {
+    setImmediate(() => {
+      const server = childrenByName.get("server");
+      if (server) {
+        server.emit("exit", 1, null);
+      }
+    });
+  }
+
+  return child;
+};
+
+process.exit = (code) => {
+  exitCalls.push(typeof code === "number" ? code : 0);
+};
+
+require(path.join(process.cwd(), "collector-bootstrap.js"));
+
+setTimeout(() => {
+  const report = {
+    spawnCount: spawned.length,
+    serverKillCalls: killCalls.filter((entry) => entry.name === "server").length,
+    collectorKillCalls: killCalls.filter((entry) => entry.name === "collector").length,
+    exitCalls
+  };
+  process.stdout.write(JSON.stringify(report));
+}, 50);
+        `,
+      ],
+      {
+        cwd: DASHBOARD_ROOT,
+        env: {
+          ...process.env,
+          USAGE_COLLECTOR_SHUTDOWN_GRACE_MS: "25",
+        },
+        encoding: "utf8",
+      }
+    );
+
+    const reportLine = harnessResultRaw
+      .trim()
+      .split("\n")
+      .findLast((line) => line.trim().startsWith("{"));
+    if (!reportLine) {
+      throw new Error(`missing harness JSON report: ${harnessResultRaw}`);
+    }
+
+    const harnessResult = JSON.parse(reportLine) as {
+      spawnCount: number;
+      serverKillCalls: number;
+      collectorKillCalls: number;
+      exitCalls: number[];
+    };
+
+    expect(harnessResult.spawnCount).toBe(2);
+    expect(harnessResult.collectorKillCalls).toBe(1);
+    expect(harnessResult.exitCalls.length).toBe(1);
+    expect(harnessResult.exitCalls[0]).toBe(1);
+  });
 });
 
 async function waitFor(
