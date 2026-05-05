@@ -5,7 +5,9 @@
     "outDir": "./dist-collector",
     "rootDir": "./src",
     "incremental": false,
-    "tsBuildInfoFile": "./.next/cache/collector.tsbuildinfo"
+    "tsBuildInfoFile": "./.next/cache/collector.tsbuildinfo",
+    "module": "commonjs",
+    "moduleResolution": "node"
   },
   "include": [
     "src/usage-collector/**/*.ts"

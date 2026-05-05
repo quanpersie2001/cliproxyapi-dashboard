@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+const Module = require("node:module");
+const path = require("node:path");
 const { spawn } = require("node:child_process");
 
 const COLLECTOR_MODE_FLAG = "--collector";
@@ -7,26 +9,76 @@ const GRACEFUL_SHUTDOWN_MS = parsePositiveInt(
   process.env.USAGE_COLLECTOR_SHUTDOWN_GRACE_MS,
   10000,
 );
+let aliasResolutionEnabled = false;
 
 if (process.argv.includes(COLLECTOR_MODE_FLAG)) {
-  runCollectorPlaceholder();
+  runCollectorWorkerProcess().catch((error) => {
+    const message = error instanceof Error ? error.stack || error.message : String(error);
+    console.error(`[usage-collector] runtime failed: ${message}`);
+    process.exit(1);
+  });
 } else {
   runCoordinator();
 }
 
-function runCollectorPlaceholder() {
-  console.log("[usage-collector] placeholder started");
+async function runCollectorWorkerProcess() {
+  neutralizeServerOnlyModule();
+  enableCollectorAliasResolution();
+  const runtimeModulePath = path.join(__dirname, "usage-collector", "runtime-main.js");
+  const runtimeModule = require(runtimeModulePath);
+  if (typeof runtimeModule.runCollectorRuntime !== "function") {
+    throw new Error("collector runtime export runCollectorRuntime() not found");
+  }
 
-  const heartbeat = setInterval(() => {}, 60000);
+  const signal = { aborted: false };
 
-  const stop = (signal) => {
-    clearInterval(heartbeat);
-    console.log(`[usage-collector] placeholder stopping (${signal})`);
-    process.exit(0);
+  const stop = (reason) => {
+    if (signal.aborted) {
+      return;
+    }
+    signal.aborted = true;
+    console.log(`[usage-collector] stopping (${reason})`);
   };
 
   process.on("SIGINT", () => stop("SIGINT"));
   process.on("SIGTERM", () => stop("SIGTERM"));
+
+  await runtimeModule.runCollectorRuntime({ signal });
+  process.exit(0);
+}
+
+function neutralizeServerOnlyModule() {
+  try {
+    const serverOnlyPath = require.resolve("server-only");
+    require.cache[serverOnlyPath] = {
+      id: serverOnlyPath,
+      filename: serverOnlyPath,
+      loaded: true,
+      exports: {},
+    };
+  } catch {
+    // Optional in non-Next runtimes.
+  }
+}
+
+function enableCollectorAliasResolution() {
+  if (aliasResolutionEnabled) {
+    return;
+  }
+
+  const collectorRoot = __dirname;
+  const originalResolveFilename = Module._resolveFilename;
+
+  Module._resolveFilename = function patchedResolveFilename(request, parent, isMain, options) {
+    if (typeof request === "string" && request.startsWith("@/")) {
+      const mappedPath = path.join(collectorRoot, request.slice(2));
+      return originalResolveFilename.call(this, mappedPath, parent, isMain, options);
+    }
+
+    return originalResolveFilename.call(this, request, parent, isMain, options);
+  };
+
+  aliasResolutionEnabled = true;
 }
 
 function runCoordinator() {
