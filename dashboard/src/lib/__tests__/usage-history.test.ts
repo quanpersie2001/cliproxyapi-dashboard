@@ -67,7 +67,7 @@ describe("getUsageHistorySnapshot", () => {
     usageCache.get.mockReturnValue(null);
   });
 
-  it("resolves OAuth usage rows by authIndex when the stored source is blank", async () => {
+  it("keeps usage-history compatibility for event-backed OAuth rows with blank source", async () => {
     prisma.user.findUnique.mockResolvedValue({
       id: "user-1",
       isAdmin: false,
@@ -118,6 +118,7 @@ describe("getUsageHistorySnapshot", () => {
     });
 
     const requestRecord = {
+      eventKey: "evt-1",
       apiKeyId: null,
       userId: "user-1",
       authIndex: "auth-o1",
