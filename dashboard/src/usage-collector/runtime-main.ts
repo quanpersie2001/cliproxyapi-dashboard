@@ -98,7 +98,7 @@ export async function runCollectorRuntime(
   }
 }
 
-function createRespQueueClientFactory(): RespQueueClientFactory {
+export function createRespQueueClientFactory(): RespQueueClientFactory {
   return {
     async create({ address, signal }) {
       const socket = await connectRespSocket(address, signal);
@@ -196,8 +196,12 @@ class RespSocketReader {
 
   public constructor(private readonly socket: net.Socket) {
     socket.on("data", (chunk: Buffer) => {
-      this.buffer = Buffer.concat([this.buffer, chunk]);
-      this.flush();
+      try {
+        this.buffer = Buffer.concat([this.buffer, chunk]);
+        this.flush();
+      } catch (error) {
+        this.fail(toRuntimeError(error));
+      }
     });
 
     socket.on("error", (error) => {
@@ -216,7 +220,14 @@ class RespSocketReader {
       return Promise.reject(this.terminalError);
     }
 
-    const parsed = tryParseRespValue(this.buffer, 0);
+    let parsed: ParseResult | null;
+    try {
+      parsed = tryParseRespValue(this.buffer, 0);
+    } catch (error) {
+      const runtimeError = toRuntimeError(error);
+      this.fail(runtimeError);
+      return Promise.reject(runtimeError);
+    }
     if (parsed) {
       this.buffer = this.buffer.subarray(parsed.next);
       return Promise.resolve(parsed.value);
@@ -229,7 +240,13 @@ class RespSocketReader {
 
   private flush(): void {
     while (this.waiters.length > 0) {
-      const parsed = tryParseRespValue(this.buffer, 0);
+      let parsed: ParseResult | null;
+      try {
+        parsed = tryParseRespValue(this.buffer, 0);
+      } catch (error) {
+        this.fail(toRuntimeError(error));
+        return;
+      }
       if (!parsed) {
         return;
       }
@@ -503,4 +520,8 @@ function normalizeText(value: string | undefined): string {
 function normalizeOptionalText(value: string | undefined): string | null {
   const normalized = normalizeText(value);
   return normalized ? normalized : null;
+}
+
+function toRuntimeError(error: unknown): Error {
+  return error instanceof Error ? error : new Error(String(error));
 }

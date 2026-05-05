@@ -1,3 +1,4 @@
+import net from "node:net";
 import { describe, expect, it, vi } from "vitest";
 import { RespQueueSource, type RespQueueClient } from "@/usage-collector/sources/resp-queue-source";
 
@@ -83,4 +84,117 @@ describe("RespQueueSource", () => {
     expect(client.lpop).not.toHaveBeenCalled();
     expect(client.close).toHaveBeenCalledTimes(1);
   });
+
+  it("surfaces malformed RESP frames over the real TCP runtime boundary", async () => {
+    const runtime = await loadRuntimeRespFactory();
+    const { server, address } = await startFakeRespServer((socket) => {
+      let commandCount = 0;
+      socket.on("data", () => {
+        commandCount += 1;
+        if (commandCount === 1) {
+          socket.write("+OK\r\n");
+          return;
+        }
+
+        // Malformed bulk string terminator to trigger parser failure.
+        socket.write("*1\r\n$5\r\nabcdeX\r\n");
+      });
+    });
+
+    const source = new RespQueueSource({
+      address,
+      queue: "queue",
+      password: "secret-password-1234",
+      clientFactory: runtime.createRespQueueClientFactory(),
+    });
+
+    try {
+      await expect(source.pullBatch({ maxMessages: 1 })).rejects.toThrow(
+        "resp_protocol_error: malformed bulk string"
+      );
+    } finally {
+      await closeServer(server);
+    }
+  });
 });
+
+async function startFakeRespServer(
+  onConnection: (socket: net.Socket) => void
+): Promise<{ server: net.Server; address: string }> {
+  const server = net.createServer((socket) => {
+    onConnection(socket);
+  });
+
+  await new Promise<void>((resolve, reject) => {
+    server.once("error", reject);
+    server.listen(0, "127.0.0.1", () => {
+      server.removeListener("error", reject);
+      resolve();
+    });
+  });
+
+  const details = server.address();
+  if (!details || typeof details === "string") {
+    throw new Error("failed to resolve fake RESP server address");
+  }
+
+  return {
+    server,
+    address: `${details.address}:${details.port}`,
+  };
+}
+
+async function closeServer(server: net.Server): Promise<void> {
+  await new Promise<void>((resolve) => {
+    server.close(() => resolve());
+  });
+}
+
+async function loadRuntimeRespFactory(): Promise<{
+  createRespQueueClientFactory: () => {
+    create(options: { address: string; signal?: AbortSignal }): Promise<RespQueueClient>;
+  };
+}> {
+  const originalEnv = {
+    DATABASE_URL: process.env.DATABASE_URL,
+    JWT_SECRET: process.env.JWT_SECRET,
+    MANAGEMENT_API_KEY: process.env.MANAGEMENT_API_KEY,
+    CLIPROXYAPI_MANAGEMENT_URL: process.env.CLIPROXYAPI_MANAGEMENT_URL,
+  };
+
+  process.env.DATABASE_URL = process.env.DATABASE_URL || "postgresql://test:test@127.0.0.1:5432/test";
+  process.env.JWT_SECRET =
+    process.env.JWT_SECRET || "test-secret-with-minimum-32-characters";
+  process.env.MANAGEMENT_API_KEY =
+    process.env.MANAGEMENT_API_KEY || "test-management-api-key-1234";
+  process.env.CLIPROXYAPI_MANAGEMENT_URL =
+    process.env.CLIPROXYAPI_MANAGEMENT_URL || "http://127.0.0.1:8317/v0/management";
+  await neutralizeServerOnlyModuleForRuntimeImport();
+
+  try {
+    return await import("@/usage-collector/runtime-main");
+  } finally {
+    process.env.DATABASE_URL = originalEnv.DATABASE_URL;
+    process.env.JWT_SECRET = originalEnv.JWT_SECRET;
+    process.env.MANAGEMENT_API_KEY = originalEnv.MANAGEMENT_API_KEY;
+    process.env.CLIPROXYAPI_MANAGEMENT_URL = originalEnv.CLIPROXYAPI_MANAGEMENT_URL;
+  }
+}
+
+async function neutralizeServerOnlyModuleForRuntimeImport(): Promise<void> {
+  try {
+    const { createRequire } = await import("node:module");
+    const requireFromHere = createRequire(import.meta.url);
+    const serverOnlyPath = requireFromHere.resolve("server-only");
+    requireFromHere.cache[serverOnlyPath] = {
+      id: serverOnlyPath,
+      filename: serverOnlyPath,
+      loaded: true,
+      exports: {},
+      children: [],
+      paths: [],
+    } as unknown as NodeModule;
+  } catch {
+    // best effort only for environments without server-only
+  }
+}
