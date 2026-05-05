@@ -121,6 +121,34 @@ describe("UsageCollectorWorkerRunner", () => {
     expect(stateRepository.markWakeHandled).toHaveBeenCalledWith("worker-a", 2);
   });
 
+  it("keeps follower standby bounded after wake sequence advances", async () => {
+    const { runner, orchestrator, stateRepository } = createRunner({
+      lock: {
+        withLeadership: vi.fn().mockResolvedValue({ acquired: false }),
+      },
+      stateRepository: {
+        ensureSingletonState: vi.fn().mockResolvedValue(undefined),
+        getWakeSequence: vi.fn().mockResolvedValue(5),
+        markStandby: vi.fn().mockResolvedValue(undefined),
+        markRunning: vi.fn().mockResolvedValue(undefined),
+        markSuccess: vi.fn().mockResolvedValue(undefined),
+        markError: vi.fn().mockResolvedValue(undefined),
+        markWakeHandled: vi.fn().mockResolvedValue(undefined),
+      },
+    });
+
+    const result = await runner.runOnce();
+
+    expect(result).toEqual({
+      status: "standby",
+      waitMs: 1000,
+      wakeSequence: 5,
+    });
+    expect(stateRepository.markStandby).toHaveBeenCalledWith("worker-a");
+    expect(orchestrator.drainNow).not.toHaveBeenCalled();
+    expect(stateRepository.markWakeHandled).not.toHaveBeenCalled();
+  });
+
   it("marks error and returns backoff when orchestration fails", async () => {
     const failure = new Error("resp unavailable");
     const { runner, orchestrator, stateRepository } = createRunner();

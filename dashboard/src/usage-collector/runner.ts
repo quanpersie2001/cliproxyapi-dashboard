@@ -79,10 +79,13 @@ export class UsageCollectorWorkerRunner {
       );
 
       if (!leadership.acquired) {
+        if (wakeRequested) {
+          this.lastObservedWakeSequence = wakeSequence;
+        }
         await this.options.stateRepository.markStandby(this.options.workerId);
         return {
           status: "standby",
-          waitMs: wakeRequested ? 0 : this.options.idleMs,
+          waitMs: this.options.idleMs,
           wakeSequence,
         };
       }
