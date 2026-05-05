@@ -1,0 +1,18 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "noEmit": false,
+    "outDir": "./dist-collector",
+    "rootDir": "./src",
+    "incremental": false,
+    "tsBuildInfoFile": "./.next/cache/collector.tsbuildinfo"
+  },
+  "include": [
+    "src/usage-collector/**/*.ts"
+  ],
+  "exclude": [
+    "**/__tests__/**",
+    "**/*.test.ts",
+    "node_modules"
+  ]
+}

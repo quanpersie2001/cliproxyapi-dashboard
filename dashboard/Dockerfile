@@ -10,7 +10,8 @@ WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json package-lock.json ./
-COPY next.config.ts tsconfig.json prisma.config.ts postcss.config.mjs ./
+COPY next.config.ts tsconfig.json tsconfig.collector.json prisma.config.ts postcss.config.mjs ./
+COPY collector-bootstrap.js ./collector-bootstrap.js
 COPY public ./public
 COPY src ./src
 COPY prisma ./prisma
@@ -51,6 +52,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/dist-collector ./dist-collector
 COPY --from=builder --chown=nextjs:nodejs /app/src/generated ./src/generated
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 COPY --from=builder --chown=nextjs:nodejs /app/prisma.config.ts ./prisma.config.ts

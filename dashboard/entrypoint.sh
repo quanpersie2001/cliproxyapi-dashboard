@@ -12,5 +12,5 @@ echo "[dashboard] Applying Prisma migrations..."
 run_prisma migrate deploy
 echo "[dashboard] Prisma migrations applied"
 
-echo "[dashboard] Starting server..."
-exec node server.js
+echo "[dashboard] Starting server + collector coordinator..."
+exec node ./dist-collector/collector-bootstrap.js
