@@ -4,6 +4,7 @@ import type { CollectorStateRepository } from "@/usage-collector/repositories/co
 
 export type CollectorRunSignal = {
   aborted: boolean;
+  onAbort?: (listener: () => void) => () => void;
 };
 
 export interface CollectorRunResult {
@@ -58,23 +59,29 @@ export class UsageCollectorWorkerRunner {
       const wakeSequence = await this.options.stateRepository.getWakeSequence();
       const wakeRequested = wakeSequence > this.lastObservedWakeSequence;
 
+      const abortBridge = toAbortBridge(signal);
+      const abortSignal = abortBridge.signal;
       const leadership = await this.options.lock.withLeadership(
         this.options.workerId,
         async () => {
-          await this.options.stateRepository.markRunning(this.options.workerId);
-          const drainResult = await this.options.orchestrator.drainNow({
-            pull: {
-              maxMessages: this.options.pullBatchSize,
-              signal: toAbortSignal(signal),
-            },
-            process: {
-              maxRecords: this.options.processBatchSize,
-              signal: toAbortSignal(signal),
-            },
-          });
-          const recordsStored = Math.max(0, drainResult.summary.processed.processed);
-          await this.options.stateRepository.markSuccess(this.options.workerId, recordsStored);
-          return recordsStored;
+          try {
+            await this.options.stateRepository.markRunning(this.options.workerId);
+            const drainResult = await this.options.orchestrator.drainNow({
+              pull: {
+                maxMessages: this.options.pullBatchSize,
+                signal: abortSignal,
+              },
+              process: {
+                maxRecords: this.options.processBatchSize,
+                signal: abortSignal,
+              },
+            });
+            const recordsStored = Math.max(0, drainResult.summary.processed.processed);
+            await this.options.stateRepository.markSuccess(this.options.workerId, recordsStored);
+            return recordsStored;
+          } finally {
+            abortBridge.dispose();
+          }
         }
       );
 
@@ -123,16 +130,67 @@ export class UsageCollectorWorkerRunner {
   }
 }
 
-function toAbortSignal(signal?: CollectorRunSignal): AbortSignal | undefined {
+function toAbortBridge(signal?: CollectorRunSignal): {
+  signal: AbortSignal | undefined;
+  dispose: () => void;
+} {
   if (!signal) {
-    return undefined;
+    return { signal: undefined, dispose: noop };
   }
-  if (typeof AbortSignal !== "undefined" && "abort" in AbortSignal) {
-    if (signal.aborted) {
-      return AbortSignal.abort();
+
+  if (typeof AbortController === "undefined") {
+    return {
+      signal: signal.aborted ? AbortSignal.abort() : undefined,
+      dispose: noop,
+    };
+  }
+
+  if (signal.aborted) {
+    return { signal: AbortSignal.abort(), dispose: noop };
+  }
+
+  const controller = new AbortController();
+  let disposed = false;
+  let unsubscribe: (() => void) | undefined;
+  let watcher: NodeJS.Timeout | undefined;
+
+  const cleanup = () => {
+    if (disposed) {
+      return;
     }
+    disposed = true;
+    if (watcher) {
+      clearInterval(watcher);
+      watcher = undefined;
+    }
+    if (unsubscribe) {
+      unsubscribe();
+      unsubscribe = undefined;
+    }
+  };
+
+  const abort = () => {
+    if (!controller.signal.aborted) {
+      controller.abort();
+    }
+    cleanup();
+  };
+
+  if (signal.onAbort) {
+    unsubscribe = signal.onAbort(abort);
+  } else {
+    watcher = setInterval(() => {
+      if (signal.aborted) {
+        abort();
+      }
+    }, 25);
   }
-  return undefined;
+
+  return { signal: controller.signal, dispose: cleanup };
+}
+
+function noop(): void {
+  // intentionally empty
 }
 
 async function defaultSleep(ms: number, signal: CollectorRunSignal): Promise<void> {

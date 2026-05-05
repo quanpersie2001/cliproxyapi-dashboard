@@ -237,4 +237,55 @@ describe("UsageCollectorWorkerRunner", () => {
     expect(sleepCalls.length).toBe(1);
     expect(sleepCalls[0]).toBeGreaterThanOrEqual(0);
   });
+
+  it("propagates a live abort signal into in-flight drain operations", async () => {
+    const abortListeners = new Set<() => void>();
+    const runSignal: CollectorRunSignal = {
+      aborted: false,
+      onAbort: (listener) => {
+        abortListeners.add(listener);
+        return () => {
+          abortListeners.delete(listener);
+        };
+      },
+    };
+
+    const { runner, orchestrator } = createRunner({
+      orchestrator: {
+        pullOnce: vi.fn(),
+        processOnce: vi.fn(),
+        drainNow: vi.fn().mockImplementation(async ({ pull, process }) => {
+          expect(pull.signal).toBeDefined();
+          expect(process.signal).toBeDefined();
+          expect(pull.signal?.aborted).toBe(false);
+          expect(process.signal?.aborted).toBe(false);
+
+          return await new Promise((_resolve, reject) => {
+            pull.signal?.addEventListener(
+              "abort",
+              () => {
+                reject(new Error("drain aborted"));
+              },
+              { once: true }
+            );
+          });
+        }),
+      },
+    });
+
+    const runOncePromise = runner.runOnce(runSignal);
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    runSignal.aborted = true;
+    abortListeners.forEach((listener) => listener());
+
+    const result = await runOncePromise;
+
+    expect(vi.mocked(orchestrator.drainNow)).toHaveBeenCalledTimes(1);
+    expect(result).toEqual({
+      status: "error",
+      waitMs: 5000,
+      wakeSequence: 0,
+      error: "drain aborted",
+    });
+  });
 });
