@@ -248,6 +248,93 @@ setTimeout(() => {
     expect(harnessResult.exitCalls.length).toBe(1);
     expect(harnessResult.exitCalls[0]).toBe(1);
   });
+
+  it("proves default coordinator mode spawns both children and shuts down cleanly on SIGTERM", () => {
+    const harnessResultRaw = execFileSync(
+      "node",
+      [
+        "-e",
+        `
+const cp = require("node:child_process");
+const { EventEmitter } = require("node:events");
+const path = require("node:path");
+
+const spawned = [];
+const killCalls = [];
+const exitCalls = [];
+
+function createChild(name) {
+  const child = new EventEmitter();
+  child.killed = false;
+  child.exitCode = null;
+  child.kill = (signal) => {
+    killCalls.push({ name, signal });
+    child.killed = true;
+    child.exitCode = signal === "SIGTERM" ? 0 : 1;
+    setImmediate(() => child.emit("exit", child.exitCode, null));
+    return true;
+  };
+  return child;
+}
+
+cp.spawn = (command, args) => {
+  const name = spawned.length === 0 ? "server" : "collector";
+  const child = createChild(name);
+  spawned.push({ name, command, args });
+  return child;
+};
+
+process.exit = (code) => {
+  exitCalls.push(typeof code === "number" ? code : 0);
+};
+
+require(path.join(process.cwd(), "collector-bootstrap.js"));
+setImmediate(() => process.emit("SIGTERM"));
+
+setTimeout(() => {
+  const report = {
+    spawned,
+    serverKillCalls: killCalls.filter((entry) => entry.name === "server").length,
+    collectorKillCalls: killCalls.filter((entry) => entry.name === "collector").length,
+    exitCalls
+  };
+  process.stdout.write(JSON.stringify(report));
+}, 50);
+        `,
+      ],
+      {
+        cwd: DASHBOARD_ROOT,
+        env: {
+          ...process.env,
+          USAGE_COLLECTOR_SHUTDOWN_GRACE_MS: "25",
+        },
+        encoding: "utf8",
+      }
+    );
+
+    const reportLine = harnessResultRaw
+      .trim()
+      .split("\n")
+      .findLast((line) => line.trim().startsWith("{"));
+    if (!reportLine) {
+      throw new Error(`missing harness JSON report: ${harnessResultRaw}`);
+    }
+
+    const harnessResult = JSON.parse(reportLine) as {
+      spawned: Array<{ name: string; command: string; args: string[] }>;
+      serverKillCalls: number;
+      collectorKillCalls: number;
+      exitCalls: number[];
+    };
+
+    expect(harnessResult.spawned.length).toBe(2);
+    expect(harnessResult.spawned[0]?.args).toEqual(["server.js"]);
+    expect(harnessResult.spawned[1]?.args?.[0]?.endsWith("collector-bootstrap.js")).toBe(true);
+    expect(harnessResult.spawned[1]?.args?.[1]).toBe("--collector");
+    expect(harnessResult.serverKillCalls).toBe(1);
+    expect(harnessResult.collectorKillCalls).toBe(1);
+    expect(harnessResult.exitCalls).toEqual([0]);
+  });
 });
 
 async function waitFor(
