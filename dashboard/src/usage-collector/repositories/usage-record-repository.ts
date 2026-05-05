@@ -10,13 +10,26 @@ import { prisma as defaultPrisma } from "@/lib/db";
 
 export interface UsageRecordRepositoryOptions {
   prisma?: PrismaClient;
+  ownershipCacheTtlMs?: number;
 }
+
+const DEFAULT_OWNERSHIP_CACHE_TTL_MS = 30_000;
+
+type OwnershipDirectoryCache = {
+  directories: UsageOwnershipDirectories;
+  refreshedAtMs: number;
+};
 
 export class PrismaUsageRecordRepository implements UsageRecordRepository {
   private readonly prismaClient: PrismaClient;
+  private readonly ownershipCacheTtlMs: number;
+  private ownershipDirectoryCache: OwnershipDirectoryCache | null = null;
 
   public constructor(options: UsageRecordRepositoryOptions = {}) {
     this.prismaClient = options.prisma ?? defaultPrisma;
+    this.ownershipCacheTtlMs = normalizePositiveInt(
+      options.ownershipCacheTtlMs ?? DEFAULT_OWNERSHIP_CACHE_TTL_MS
+    );
   }
 
   public async persistNormalizedEvents(events: NormalizedQueuedUsageEvent[]): Promise<number> {
@@ -25,7 +38,7 @@ export class PrismaUsageRecordRepository implements UsageRecordRepository {
     }
 
     const deduplicatedEvents = dedupeByEventKey(events);
-    const ownershipDirectories = await this.buildOwnershipDirectories();
+    const ownershipDirectories = await this.getOwnershipDirectories();
 
     const result = await this.prismaClient.usageRecord.createMany({
       data: deduplicatedEvents.map((event) => ({
@@ -59,6 +72,21 @@ export class PrismaUsageRecordRepository implements UsageRecordRepository {
 
     invalidateUsageCaches();
     return result.count;
+  }
+
+  private async getOwnershipDirectories(): Promise<UsageOwnershipDirectories> {
+    const now = Date.now();
+    const cached = this.ownershipDirectoryCache;
+    if (cached && now - cached.refreshedAtMs <= this.ownershipCacheTtlMs) {
+      return cached.directories;
+    }
+
+    const directories = await this.buildOwnershipDirectories();
+    this.ownershipDirectoryCache = {
+      directories,
+      refreshedAtMs: now,
+    };
+    return directories;
   }
 
   private async buildOwnershipDirectories(): Promise<UsageOwnershipDirectories> {
@@ -172,4 +200,11 @@ function dedupeByEventKey(events: NormalizedQueuedUsageEvent[]): NormalizedQueue
 
 function normalizeLookupKey(value: string | null | undefined): string {
   return (value ?? "").trim().toLowerCase();
+}
+
+function normalizePositiveInt(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 0;
+  }
+  return Math.max(0, Math.trunc(value));
 }

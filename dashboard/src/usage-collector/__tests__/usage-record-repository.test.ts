@@ -166,4 +166,44 @@ describe("PrismaUsageRecordRepository", () => {
       })
     );
   });
+
+  it("reuses cached ownership directories across batches within ttl", async () => {
+    const usageRecord = {
+      createMany: vi.fn().mockResolvedValue({ count: 1 }),
+    };
+    const userApiKeyFindMany = vi.fn().mockResolvedValue([]);
+    const oauthOwnershipFindMany = vi.fn().mockResolvedValue([]);
+    const keyOwnershipFindMany = vi.fn().mockResolvedValue([]);
+    const userFindMany = vi.fn().mockResolvedValue([]);
+
+    const prisma = {
+      usageRecord,
+      userApiKey: {
+        findMany: userApiKeyFindMany,
+      },
+      providerOAuthOwnership: {
+        findMany: oauthOwnershipFindMany,
+      },
+      providerKeyOwnership: {
+        findMany: keyOwnershipFindMany,
+      },
+      user: {
+        findMany: userFindMany,
+      },
+    } as never;
+
+    const repository = new PrismaUsageRecordRepository({
+      prisma,
+      ownershipCacheTtlMs: 60_000,
+    });
+
+    await repository.persistNormalizedEvents([createEvent({ eventKey: "evt-cache-1" })]);
+    await repository.persistNormalizedEvents([createEvent({ eventKey: "evt-cache-2" })]);
+
+    expect(userApiKeyFindMany).toHaveBeenCalledTimes(1);
+    expect(oauthOwnershipFindMany).toHaveBeenCalledTimes(1);
+    expect(keyOwnershipFindMany).toHaveBeenCalledTimes(1);
+    expect(userFindMany).toHaveBeenCalledTimes(1);
+    expect(usageRecord.createMany).toHaveBeenCalledTimes(2);
+  });
 });
