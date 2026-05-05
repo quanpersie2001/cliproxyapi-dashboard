@@ -17,6 +17,30 @@ function withBuildTimeFallbacks(source: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   };
 }
 
+const booleanFromEnv = z.preprocess((value) => {
+  if (typeof value === "string") {
+    const normalized = value.trim().toLowerCase();
+    if (normalized === "true") return true;
+    if (normalized === "false") return false;
+  }
+  return value;
+}, z.boolean());
+
+function integerFromEnv(defaultValue: number, minValue = 0) {
+  return z.preprocess((value) => {
+    if (typeof value === "string" && value.trim().length > 0) {
+      const parsed = Number.parseInt(value.trim(), 10);
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+    return undefined;
+  }, z.number().int().min(minValue).default(defaultValue));
+}
+
 const envSchema = z.object({
   DATABASE_URL: z
     .string()
@@ -59,6 +83,25 @@ const envSchema = z.object({
     .enum(["fatal", "error", "warn", "info", "debug", "trace"])
     .default("info")
     .describe("Pino log level"),
+
+  USAGE_COLLECTOR_ENABLED: booleanFromEnv
+    .default(true)
+    .describe("Enable resident usage collector worker"),
+
+  USAGE_COLLECTOR_PULL_BATCH_SIZE: integerFromEnv(200, 1)
+    .describe("Maximum queue messages pulled per collector cycle"),
+
+  USAGE_COLLECTOR_PROCESS_BATCH_SIZE: integerFromEnv(200, 1)
+    .describe("Maximum inbox rows processed per collector cycle"),
+
+  USAGE_COLLECTOR_IDLE_MS: integerFromEnv(5000, 0)
+    .describe("Idle delay between collector cycles in milliseconds"),
+
+  USAGE_COLLECTOR_ERROR_BACKOFF_MS: integerFromEnv(15000, 0)
+    .describe("Backoff delay after collector errors in milliseconds"),
+
+  USAGE_COLLECTOR_LEADER_LOCK_KEY: integerFromEnv(942001, 1)
+    .describe("PostgreSQL advisory lock key used for collector leadership"),
 
   PROVIDER_ENCRYPTION_KEY: z
     .string()

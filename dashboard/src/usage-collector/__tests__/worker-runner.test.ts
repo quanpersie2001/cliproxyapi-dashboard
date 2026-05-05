@@ -1,0 +1,158 @@
+import { describe, expect, it, vi } from "vitest";
+import type { CollectorOrchestrator } from "@/usage-collector/core/orchestrator";
+import type { CollectorLeaderLock } from "@/usage-collector/infra/leader-lock";
+import type { CollectorStateRepository } from "@/usage-collector/repositories/collector-state-repository";
+import type {
+  CollectorRunSignal,
+  UsageCollectorWorkerRunnerOptions,
+} from "@/usage-collector/runner";
+import { UsageCollectorWorkerRunner } from "@/usage-collector/runner";
+
+function createRunner(
+  overrides: Partial<UsageCollectorWorkerRunnerOptions> = {}
+): {
+  runner: UsageCollectorWorkerRunner;
+  orchestrator: CollectorOrchestrator;
+  lock: CollectorLeaderLock;
+  stateRepository: CollectorStateRepository;
+} {
+  const defaultOrchestrator: CollectorOrchestrator = {
+    pullOnce: vi.fn(),
+    processOnce: vi.fn(),
+    drainNow: vi.fn().mockResolvedValue({
+      summary: {
+        pulled: { pulled: 2, stored: 2, dropped: 0, durationMs: 1 },
+        processed: {
+          claimed: 2,
+          processed: 2,
+          decodeFailed: 0,
+          processFailed: 0,
+          discarded: 0,
+          durationMs: 1,
+        },
+      },
+    }),
+  };
+
+  const defaultLock: CollectorLeaderLock = {
+    withLeadership: vi.fn().mockImplementation(async (_workerId, run) => ({
+      acquired: true,
+      value: await run(),
+    })),
+  };
+
+  const defaultStateRepository: CollectorStateRepository = {
+    ensureSingletonState: vi.fn().mockResolvedValue(undefined),
+    getWakeSequence: vi.fn().mockResolvedValue(0),
+    markStandby: vi.fn().mockResolvedValue(undefined),
+    markRunning: vi.fn().mockResolvedValue(undefined),
+    markSuccess: vi.fn().mockResolvedValue(undefined),
+    markError: vi.fn().mockResolvedValue(undefined),
+    markWakeHandled: vi.fn().mockResolvedValue(undefined),
+  };
+
+  const orchestrator = overrides.orchestrator ?? defaultOrchestrator;
+  const lock = overrides.lock ?? defaultLock;
+  const stateRepository = overrides.stateRepository ?? defaultStateRepository;
+
+  const runner = new UsageCollectorWorkerRunner({
+    workerId: "worker-a",
+    orchestrator,
+    lock,
+    stateRepository,
+    enabled: true,
+    pullBatchSize: 50,
+    processBatchSize: 50,
+    idleMs: 1_000,
+    errorBackoffMs: 5_000,
+    sleep: async () => undefined,
+    ...overrides,
+  });
+
+  return { runner, orchestrator, lock, stateRepository };
+}
+
+describe("UsageCollectorWorkerRunner", () => {
+  it("stays standby when leadership is not acquired", async () => {
+    const { runner, orchestrator, lock, stateRepository } = createRunner({
+      lock: {
+        withLeadership: vi.fn().mockResolvedValue({ acquired: false }),
+      },
+    });
+
+    const result = await runner.runOnce();
+
+    expect(result).toEqual({
+      status: "standby",
+      waitMs: 1000,
+      wakeSequence: 0,
+    });
+    expect(lock.withLeadership).toHaveBeenCalledTimes(1);
+    expect(stateRepository.markStandby).toHaveBeenCalledWith("worker-a");
+    expect(orchestrator.drainNow).not.toHaveBeenCalled();
+  });
+
+  it("processes work as leader and records wake handling when wake sequence advances", async () => {
+    const { runner, orchestrator, stateRepository } = createRunner({
+      stateRepository: {
+        ensureSingletonState: vi.fn().mockResolvedValue(undefined),
+        getWakeSequence: vi.fn().mockResolvedValue(2),
+        markStandby: vi.fn().mockResolvedValue(undefined),
+        markRunning: vi.fn().mockResolvedValue(undefined),
+        markSuccess: vi.fn().mockResolvedValue(undefined),
+        markError: vi.fn().mockResolvedValue(undefined),
+        markWakeHandled: vi.fn().mockResolvedValue(undefined),
+      },
+    });
+
+    const result = await runner.runOnce();
+
+    expect(result).toEqual({
+      status: "success",
+      waitMs: 0,
+      wakeSequence: 2,
+    });
+    expect(orchestrator.drainNow).toHaveBeenCalledWith({
+      pull: { maxMessages: 50, signal: undefined },
+      process: { maxRecords: 50, signal: undefined },
+    });
+    expect(stateRepository.markRunning).toHaveBeenCalledWith("worker-a");
+    expect(stateRepository.markSuccess).toHaveBeenCalledWith("worker-a", 2);
+    expect(stateRepository.markWakeHandled).toHaveBeenCalledWith("worker-a", 2);
+  });
+
+  it("marks error and returns backoff when orchestration fails", async () => {
+    const failure = new Error("resp unavailable");
+    const { runner, orchestrator, stateRepository } = createRunner();
+    vi.mocked(orchestrator.drainNow).mockRejectedValueOnce(failure);
+
+    const result = await runner.runOnce();
+
+    expect(result).toEqual({
+      status: "error",
+      waitMs: 5000,
+      wakeSequence: 0,
+      error: "resp unavailable",
+    });
+    expect(stateRepository.markError).toHaveBeenCalledWith(
+      "worker-a",
+      "resp unavailable"
+    );
+  });
+
+  it("runs loop continuously with backoff and exits when signal is aborted", async () => {
+    const sleepCalls: number[] = [];
+    const runSignal: CollectorRunSignal = { aborted: false };
+    const { runner } = createRunner({
+      sleep: async (ms, signal) => {
+        sleepCalls.push(ms);
+        signal.aborted = true;
+      },
+    });
+
+    await runner.start(runSignal);
+
+    expect(sleepCalls.length).toBe(1);
+    expect(sleepCalls[0]).toBeGreaterThanOrEqual(0);
+  });
+});

@@ -294,6 +294,15 @@ model CollectorState {
   lastStatus      String   @default("idle")
   recordsStored   Int      @default(0)
   errorMessage    String?
+  wakeSequence    Int      @default(0)
+  wakeRequestedAt DateTime?
+  wakeReason      String?
+  lastWakeHandledAt DateTime?
+  heartbeatAt     DateTime?
+  workerId        String?
+  lastRunStartedAt DateTime?
+  lastRunFinishedAt DateTime?
+  backoffUntil    DateTime?
   updatedAt       DateTime @updatedAt
 
   @@map("collector_state")
