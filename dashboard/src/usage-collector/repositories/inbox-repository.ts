@@ -11,24 +11,36 @@ import type {
 import { prisma as defaultPrisma } from "@/lib/db";
 
 const DEFAULT_MAX_PROCESS_ATTEMPTS = 10;
+const DEFAULT_PROCESSED_RETENTION_MS = 24 * 60 * 60 * 1000;
+const DEFAULT_FAILED_RETENTION_MS = 7 * 24 * 60 * 60 * 1000;
 
 type ClaimRowId = { id: string };
 
 export interface InboxRepositoryOptions {
   prisma?: PrismaClient;
   maxProcessAttempts?: number;
+  processedRetentionMs?: number;
+  failedRetentionMs?: number;
   now?: () => Date;
 }
 
 export class PrismaUsageQueueInboxRepository implements UsageQueueInboxRepository {
   private readonly prismaClient: PrismaClient;
   private readonly maxProcessAttempts: number;
+  private readonly processedRetentionMs: number;
+  private readonly failedRetentionMs: number;
   private readonly now: () => Date;
 
   public constructor(options: InboxRepositoryOptions = {}) {
     this.prismaClient = options.prisma ?? defaultPrisma;
     this.maxProcessAttempts = normalizePositiveInt(
       options.maxProcessAttempts ?? DEFAULT_MAX_PROCESS_ATTEMPTS
+    );
+    this.processedRetentionMs = normalizePositiveInt(
+      options.processedRetentionMs ?? DEFAULT_PROCESSED_RETENTION_MS
+    );
+    this.failedRetentionMs = normalizePositiveInt(
+      options.failedRetentionMs ?? DEFAULT_FAILED_RETENTION_MS
     );
     this.now = options.now ?? (() => new Date());
   }
@@ -161,6 +173,49 @@ export class PrismaUsageQueueInboxRepository implements UsageQueueInboxRepositor
         discardReason: reason,
       },
     });
+  }
+
+  public async cleanupExpiredRecords(): Promise<number> {
+    const now = this.now();
+    const processedBefore = new Date(now.getTime() - this.processedRetentionMs);
+    const failedBefore = new Date(now.getTime() - this.failedRetentionMs);
+
+    const [processedResult, failedResult] = await Promise.all([
+      this.prismaClient.usageQueueInbox.deleteMany({
+        where: {
+          status: UsageQueueInboxStatus.processed,
+          processedAt: {
+            lt: processedBefore,
+          },
+        },
+      }),
+      this.prismaClient.usageQueueInbox.deleteMany({
+        where: {
+          OR: [
+            {
+              status: UsageQueueInboxStatus.decode_failed,
+              failedAt: {
+                lt: failedBefore,
+              },
+            },
+            {
+              status: UsageQueueInboxStatus.process_failed,
+              failedAt: {
+                lt: failedBefore,
+              },
+            },
+            {
+              status: UsageQueueInboxStatus.discarded,
+              discardedAt: {
+                lt: failedBefore,
+              },
+            },
+          ],
+        },
+      }),
+    ]);
+
+    return processedResult.count + failedResult.count;
   }
 }
 

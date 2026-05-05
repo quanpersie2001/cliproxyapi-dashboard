@@ -51,6 +51,7 @@ export interface UsageQueueInboxRepository {
   markDecodeFailed(recordId: string, reason: string): Promise<void>;
   markProcessFailed(recordId: string, reason: string): Promise<void>;
   markDiscarded(recordId: string, reason: string): Promise<void>;
+  cleanupExpiredRecords?(): Promise<number>;
 }
 
 export interface UsageRecordRepository {

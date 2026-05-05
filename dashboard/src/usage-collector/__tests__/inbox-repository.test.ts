@@ -13,6 +13,7 @@ function createPrismaMock() {
     updateMany: vi.fn(),
     findMany: vi.fn(),
     update: vi.fn(),
+    deleteMany: vi.fn(),
   };
 
   const prisma = {
@@ -165,6 +166,57 @@ describe("PrismaUsageQueueInboxRepository", () => {
         status: UsageQueueInboxStatus.discarded,
         discardedAt: now,
         discardReason: "max_attempts_exceeded",
+      },
+    });
+  });
+
+  it("prunes processed quickly and failed/discarded rows on longer retention", async () => {
+    const now = new Date("2026-05-05T10:30:00.000Z");
+    const { prisma, usageQueueInbox } = createPrismaMock();
+    usageQueueInbox.deleteMany
+      .mockResolvedValueOnce({ count: 2 })
+      .mockResolvedValueOnce({ count: 3 });
+
+    const repository = new PrismaUsageQueueInboxRepository({
+      prisma: prisma as never,
+      now: () => now,
+      processedRetentionMs: 60 * 60 * 1000,
+      failedRetentionMs: 7 * 24 * 60 * 60 * 1000,
+    });
+
+    const deletedCount = await repository.cleanupExpiredRecords();
+
+    expect(deletedCount).toBe(5);
+    expect(usageQueueInbox.deleteMany).toHaveBeenNthCalledWith(1, {
+      where: {
+        status: UsageQueueInboxStatus.processed,
+        processedAt: {
+          lt: new Date("2026-05-05T09:30:00.000Z"),
+        },
+      },
+    });
+    expect(usageQueueInbox.deleteMany).toHaveBeenNthCalledWith(2, {
+      where: {
+        OR: [
+          {
+            status: UsageQueueInboxStatus.decode_failed,
+            failedAt: {
+              lt: new Date("2026-04-28T10:30:00.000Z"),
+            },
+          },
+          {
+            status: UsageQueueInboxStatus.process_failed,
+            failedAt: {
+              lt: new Date("2026-04-28T10:30:00.000Z"),
+            },
+          },
+          {
+            status: UsageQueueInboxStatus.discarded,
+            discardedAt: {
+              lt: new Date("2026-04-28T10:30:00.000Z"),
+            },
+          },
+        ],
       },
     });
   });

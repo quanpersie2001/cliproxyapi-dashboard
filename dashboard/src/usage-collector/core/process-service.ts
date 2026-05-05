@@ -115,6 +115,7 @@ export class CollectorProcessService {
     }
 
     const durationMs = Math.max(0, this.now().getTime() - startedAt);
+    await runRetentionCleanup(this.options.inboxRepository);
     return {
       metrics: {
         claimed: claimedRecords.length,
@@ -126,6 +127,18 @@ export class CollectorProcessService {
       },
       claimedRecords,
     };
+  }
+}
+
+async function runRetentionCleanup(inboxRepository: UsageQueueInboxRepository): Promise<void> {
+  if (typeof inboxRepository.cleanupExpiredRecords !== "function") {
+    return;
+  }
+
+  try {
+    await inboxRepository.cleanupExpiredRecords();
+  } catch {
+    // Retention cleanup is best-effort and must not break ingestion.
   }
 }
 
