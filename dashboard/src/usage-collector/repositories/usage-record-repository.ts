@@ -1,5 +1,9 @@
 import type { PrismaClient } from "@/generated/prisma/client";
 import type { UsageRecordRepository } from "@/usage-collector/contracts";
+import {
+  resolveUsageOwnership,
+  type UsageOwnershipDirectories,
+} from "@/usage-collector/core/ownership-resolver";
 import type { NormalizedQueuedUsageEvent } from "@/usage-collector/core/types";
 import { invalidateUsageCaches } from "@/lib/cache";
 import { prisma as defaultPrisma } from "@/lib/db";
@@ -21,8 +25,18 @@ export class PrismaUsageRecordRepository implements UsageRecordRepository {
     }
 
     const deduplicatedEvents = dedupeByEventKey(events);
+    const ownershipDirectories = await this.buildOwnershipDirectories();
+
     const result = await this.prismaClient.usageRecord.createMany({
       data: deduplicatedEvents.map((event) => ({
+        ...resolveUsageOwnership(
+          {
+            apiGroupKey: event.apiGroupKey,
+            authIndex: event.authIndex,
+            source: event.source,
+          },
+          ownershipDirectories
+        ),
         eventKey: event.eventKey,
         requestId: event.requestId,
         provider: event.provider,
@@ -46,6 +60,99 @@ export class PrismaUsageRecordRepository implements UsageRecordRepository {
     invalidateUsageCaches();
     return result.count;
   }
+
+  private async buildOwnershipDirectories(): Promise<UsageOwnershipDirectories> {
+    const [apiKeys, oauthOwnerships, keyOwnerships, users] = await Promise.all([
+      this.prismaClient.userApiKey.findMany({
+        select: {
+          id: true,
+          userId: true,
+          key: true,
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+      }),
+      this.prismaClient.providerOAuthOwnership.findMany({
+        select: {
+          userId: true,
+          accountName: true,
+          accountEmail: true,
+        },
+      }),
+      this.prismaClient.providerKeyOwnership.findMany({
+        select: {
+          userId: true,
+          keyIdentifier: true,
+        },
+      }),
+      this.prismaClient.user.findMany({
+        select: {
+          id: true,
+          username: true,
+        },
+      }),
+    ]);
+
+    const userToApiKey = new Map<string, string>();
+    const fullKeyToOwner = new Map<string, { userId: string; apiKeyId: string | null }>();
+
+    for (const apiKey of apiKeys) {
+      const normalizedKey = normalizeLookupKey(apiKey.key);
+      if (!normalizedKey) {
+        continue;
+      }
+      fullKeyToOwner.set(normalizedKey, {
+        userId: apiKey.userId,
+        apiKeyId: apiKey.id,
+      });
+
+      if (!userToApiKey.has(apiKey.userId)) {
+        userToApiKey.set(apiKey.userId, apiKey.id);
+      }
+    }
+
+    const sourceToUser = new Map<string, string>();
+    for (const user of users) {
+      const usernameKey = normalizeLookupKey(user.username);
+      if (usernameKey) {
+        sourceToUser.set(usernameKey, user.id);
+      }
+    }
+
+    for (const ownership of oauthOwnerships) {
+      const accountNameKey = normalizeLookupKey(ownership.accountName);
+      if (accountNameKey) {
+        sourceToUser.set(accountNameKey, ownership.userId);
+      }
+
+      const accountEmailKey = normalizeLookupKey(ownership.accountEmail);
+      if (accountEmailKey) {
+        sourceToUser.set(accountEmailKey, ownership.userId);
+      }
+    }
+
+    const authIndexPrefixToOwner = new Map<string, { userId: string; apiKeyId: string | null }>();
+    for (const ownership of keyOwnerships) {
+      const authPrefix = normalizeLookupKey(ownership.keyIdentifier);
+      if (!authPrefix) {
+        continue;
+      }
+
+      authIndexPrefixToOwner.set(authPrefix, {
+        userId: ownership.userId,
+        apiKeyId: userToApiKey.get(ownership.userId) ?? null,
+      });
+    }
+
+    return {
+      fullKeyToOwner,
+      authIndexToFile: new Map(),
+      sourceToUser,
+      authIndexPrefixToOwner,
+      userToApiKey,
+    };
+  }
 }
 
 function dedupeByEventKey(events: NormalizedQueuedUsageEvent[]): NormalizedQueuedUsageEvent[] {
@@ -61,4 +168,8 @@ function dedupeByEventKey(events: NormalizedQueuedUsageEvent[]): NormalizedQueue
   }
 
   return deduplicated;
+}
+
+function normalizeLookupKey(value: string | null | undefined): string {
+  return (value ?? "").trim().toLowerCase();
 }
