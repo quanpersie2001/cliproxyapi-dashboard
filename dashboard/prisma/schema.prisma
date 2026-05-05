@@ -213,6 +213,10 @@ model AuditLog {
 
 model UsageRecord {
   id              String   @id @default(cuid())
+  eventKey        String?  @unique
+  requestId       String?
+  provider        String?
+  authType        String?
   authIndex       String
   apiKeyId        String?
   userId          String?
@@ -243,6 +247,45 @@ model UsageRecord {
   @@index([authIndex, timestamp])
   @@index([collectedAt])
   @@map("usage_records")
+}
+
+enum UsageQueueInboxStatus {
+  pending
+  processed
+  decode_failed
+  process_failed
+  discarded
+}
+
+model UsageQueueInbox {
+  id            String               @id @default(cuid())
+  eventKey      String?
+  requestId     String?
+  provider      String?
+  authType      String?
+  authIndex     String?
+  apiGroupKey   String?
+  model         String?
+  source        String?
+  timestamp     DateTime?
+  rawMessage    String
+  status        UsageQueueInboxStatus @default(pending)
+  attemptCount  Int                  @default(0)
+  lastAttemptAt DateTime?
+  processedAt   DateTime?
+  failedAt      DateTime?
+  discardedAt   DateTime?
+  failureReason String?
+  discardReason String?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  @@index([status, createdAt])
+  @@index([eventKey])
+  @@index([requestId])
+  @@index([authIndex])
+  @@index([status, updatedAt])
+  @@map("usage_queue_inbox")
 }
 
 model CollectorState {
