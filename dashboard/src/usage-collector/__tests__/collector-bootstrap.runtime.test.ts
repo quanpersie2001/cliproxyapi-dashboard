@@ -20,37 +20,37 @@ describe("collector-bootstrap runtime", () => {
   it(
     "starts the real worker runtime in --collector mode (no placeholder loop)",
     async () => {
-    execFileSync("npm", ["run", "build:collector"], {
-      cwd: DASHBOARD_ROOT,
-      stdio: "pipe",
-      env: process.env,
-    });
+      execFileSync("npm", ["run", "build:collector"], {
+        cwd: DASHBOARD_ROOT,
+        stdio: "pipe",
+        env: process.env,
+      });
 
-    const child = spawn("node", ["dist-collector/collector-bootstrap.js", "--collector"], {
-      cwd: DASHBOARD_ROOT,
-      env: {
-        ...process.env,
-        DATABASE_URL: process.env.DATABASE_URL || "postgresql://test:test@127.0.0.1:5432/test",
-        JWT_SECRET:
-          process.env.JWT_SECRET || "test-secret-with-minimum-32-characters",
-        MANAGEMENT_API_KEY:
-          process.env.MANAGEMENT_API_KEY || "test-management-api-key-1234",
-        CLIPROXYAPI_MANAGEMENT_URL:
-          process.env.CLIPROXYAPI_MANAGEMENT_URL ||
-          "http://127.0.0.1:8317/v0/management",
-        USAGE_COLLECTOR_ENABLED: "false",
-      },
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-    childProcesses.push(child);
+      const child = spawn("node", ["dist-collector/collector-bootstrap.js", "--collector"], {
+        cwd: DASHBOARD_ROOT,
+        env: {
+          ...process.env,
+          DATABASE_URL: process.env.DATABASE_URL || "postgresql://test:test@127.0.0.1:5432/test",
+          JWT_SECRET:
+            process.env.JWT_SECRET || "test-secret-with-minimum-32-characters",
+          MANAGEMENT_API_KEY:
+            process.env.MANAGEMENT_API_KEY || "test-management-api-key-1234",
+          CLIPROXYAPI_MANAGEMENT_URL:
+            process.env.CLIPROXYAPI_MANAGEMENT_URL ||
+            "http://127.0.0.1:8317/v0/management",
+          USAGE_COLLECTOR_ENABLED: "false",
+        },
+        stdio: ["ignore", "pipe", "pipe"],
+      });
+      childProcesses.push(child);
 
-    let output = "";
-    child.stdout?.on("data", (chunk) => {
-      output += chunk.toString("utf8");
-    });
-    child.stderr?.on("data", (chunk) => {
-      output += chunk.toString("utf8");
-    });
+      let output = "";
+      child.stdout?.on("data", (chunk) => {
+        output += chunk.toString("utf8");
+      });
+      child.stderr?.on("data", (chunk) => {
+        output += chunk.toString("utf8");
+      });
 
       await waitFor(
         () => output.includes("[usage-collector] worker runtime started"),
@@ -64,12 +64,94 @@ describe("collector-bootstrap runtime", () => {
       child.once("close", (code) => resolve(code));
     });
 
-    expect(exitCode).toBe(0);
-    expect(output).toContain("[usage-collector] worker runtime started");
+      expect(exitCode).toBe(0);
+      expect(output).toContain("[usage-collector] worker runtime started");
       expect(output).not.toContain("placeholder started");
     },
     30_000
   );
+
+  it("keeps server child alive when collector exits first in coordinator mode", () => {
+    const harnessResultRaw = execFileSync(
+      "node",
+      [
+        "-e",
+        `
+const cp = require("node:child_process");
+const { EventEmitter } = require("node:events");
+const path = require("node:path");
+
+const spawned = [];
+const killCalls = [];
+const exitCalls = [];
+
+function createChild(name) {
+  const child = new EventEmitter();
+  child.killed = false;
+  child.exitCode = null;
+  child.kill = (signal) => {
+    killCalls.push({ name, signal });
+    child.killed = true;
+    return true;
+  };
+  return child;
+}
+
+cp.spawn = (command, args) => {
+  const name = spawned.length === 0 ? "server" : "collector";
+  const child = createChild(name);
+  spawned.push({ name, command, args });
+  if (name === "collector") {
+    setImmediate(() => child.emit("exit", 1, null));
+  }
+  return child;
+};
+
+process.exit = (code) => {
+  exitCalls.push(typeof code === "number" ? code : 0);
+};
+
+require(path.join(process.cwd(), "collector-bootstrap.js"));
+
+setTimeout(() => {
+  const report = {
+    spawnCount: spawned.length,
+    serverKillCalls: killCalls.filter((entry) => entry.name === "server").length,
+    collectorKillCalls: killCalls.filter((entry) => entry.name === "collector").length,
+    exitCalls
+  };
+  process.stdout.write(JSON.stringify(report));
+}, 50);
+        `,
+      ],
+      {
+        cwd: DASHBOARD_ROOT,
+        env: {
+          ...process.env,
+          USAGE_COLLECTOR_SHUTDOWN_GRACE_MS: "25",
+        },
+        encoding: "utf8",
+      }
+    );
+
+    const reportLine = harnessResultRaw
+      .trim()
+      .split("\n")
+      .findLast((line) => line.trim().startsWith("{"));
+    if (!reportLine) {
+      throw new Error(`missing harness JSON report: ${harnessResultRaw}`);
+    }
+
+    const harnessResult = JSON.parse(reportLine) as {
+      spawnCount: number;
+      serverKillCalls: number;
+      collectorKillCalls: number;
+      exitCalls: number[];
+    };
+
+    expect(harnessResult.spawnCount).toBe(2);
+    expect(harnessResult.serverKillCalls).toBe(0);
+  });
 });
 
 async function waitFor(
