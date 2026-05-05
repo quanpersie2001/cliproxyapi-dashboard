@@ -20,6 +20,8 @@ export interface PostgresCollectorLeaderLockOptions {
 }
 
 const DEFAULT_LOCK_KEY = 942001;
+const LOCK_TRANSACTION_MAX_WAIT_MS = 5_000;
+const LOCK_TRANSACTION_TIMEOUT_MS = 120_000;
 
 type AdvisoryLockRow = { acquired: boolean };
 type AdvisoryUnlockRow = { released: boolean };
@@ -37,22 +39,36 @@ export class PostgresCollectorLeaderLock implements CollectorLeaderLock {
     _workerId: string,
     run: () => Promise<T>
   ): Promise<CollectorLeaderLockRunResult<T>> {
-    const lockRows = await this.prismaClient.$queryRaw<AdvisoryLockRow[]>(
-      Prisma.sql`SELECT pg_try_advisory_lock(${this.lockKey}) AS acquired`
-    );
-    const acquired = lockRows[0]?.acquired === true;
-    if (!acquired) {
-      return { acquired: false };
-    }
+    return this.prismaClient.$transaction(
+      async (transactionClient) => {
+        const lockRows = await transactionClient.$queryRaw<AdvisoryLockRow[]>(
+          Prisma.sql`SELECT pg_try_advisory_lock(${this.lockKey}) AS acquired`
+        );
+        const acquired = lockRows[0]?.acquired === true;
+        if (!acquired) {
+          return { acquired: false };
+        }
 
-    try {
-      const value = await run();
-      return { acquired: true, value };
-    } finally {
-      await this.prismaClient.$queryRaw<AdvisoryUnlockRow[]>(
-        Prisma.sql`SELECT pg_advisory_unlock(${this.lockKey}) AS released`
-      );
-    }
+        try {
+          const value = await run();
+          return { acquired: true, value };
+        } finally {
+          const unlockRows = await transactionClient.$queryRaw<AdvisoryUnlockRow[]>(
+            Prisma.sql`SELECT pg_advisory_unlock(${this.lockKey}) AS released`
+          );
+          const released = unlockRows[0]?.released === true;
+          if (!released) {
+            throw new Error(
+              `Failed to release advisory lock ${this.lockKey} from the owning session.`
+            );
+          }
+        }
+      },
+      {
+        maxWait: LOCK_TRANSACTION_MAX_WAIT_MS,
+        timeout: LOCK_TRANSACTION_TIMEOUT_MS,
+      }
+    );
   }
 }
 

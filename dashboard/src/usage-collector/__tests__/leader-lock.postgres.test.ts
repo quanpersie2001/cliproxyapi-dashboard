@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
-import { PrismaClient } from "@/generated/prisma/client";
+import { Prisma, PrismaClient } from "@/generated/prisma/client";
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/db", () => ({
@@ -10,6 +10,9 @@ vi.mock("@/lib/db", () => ({
 }));
 
 import { PostgresCollectorLeaderLock } from "@/usage-collector/infra/leader-lock";
+
+type AdvisoryLockRow = { acquired: boolean };
+type AdvisoryUnlockRow = { released: boolean };
 
 function resolveDatabaseUrl(): string {
   const dedicatedUrl = process.env.COLLECTOR_STATE_TEST_DATABASE_URL?.trim();
@@ -54,6 +57,48 @@ function withSchemaSearchPath(connectionString: string): string {
     existingOptions ? `${existingOptions} ${searchPathOption}` : searchPathOption
   );
   return parsed.toString();
+}
+
+function createSessionSplitPrisma(
+  lockClient: PrismaClient,
+  unlockClient: PrismaClient
+): PrismaClient {
+  const routeQuery = async (...args: unknown[]) => {
+    const queryText = getQueryText(args[0]).toLowerCase();
+    if (queryText.includes("pg_advisory_unlock")) {
+      return (unlockClient.$queryRaw as (...params: unknown[]) => Promise<unknown>)(...args);
+    }
+    return (lockClient.$queryRaw as (...params: unknown[]) => Promise<unknown>)(...args);
+  };
+
+  return {
+    $queryRaw: routeQuery,
+    $transaction: async (...args: unknown[]) => {
+      const firstArg = args[0];
+      if (typeof firstArg !== "function") {
+        throw new Error("Expected interactive transaction callback.");
+      }
+
+      const callback = firstArg as (tx: { $queryRaw: (...params: unknown[]) => Promise<unknown> }) => Promise<unknown>;
+      const transactionClient = {
+        $queryRaw: routeQuery,
+      };
+      return callback(transactionClient);
+    },
+  } as PrismaClient;
+}
+
+function getQueryText(query: unknown): string {
+  if (
+    query &&
+    typeof query === "object" &&
+    "strings" in query &&
+    Array.isArray((query as { strings?: unknown }).strings)
+  ) {
+    return ((query as { strings: string[] }).strings as string[]).join(" ");
+  }
+
+  return String(query ?? "");
 }
 
 describe("PostgresCollectorLeaderLock (Postgres integration)", () => {
@@ -118,5 +163,28 @@ describe("PostgresCollectorLeaderLock (Postgres integration)", () => {
 
     const contenderAfterRelease = await lockB.withLeadership("worker-b", async () => "leader-b");
     expect(contenderAfterRelease).toEqual({ acquired: true, value: "leader-b" });
+  });
+
+  it("fails when lock release is attempted from a different session", async () => {
+    const splitSessionPrisma = createSessionSplitPrisma(prismaA, prismaB);
+    const lock = new PostgresCollectorLeaderLock({
+      prisma: splitSessionPrisma as never,
+      lockKey,
+    });
+
+    try {
+      await expect(lock.withLeadership("worker-a", async () => "leader-a")).rejects.toThrow(
+        "Failed to release advisory lock"
+      );
+
+      const contenderWhileStuck = await prismaB.$queryRaw<AdvisoryLockRow[]>(
+        Prisma.sql`SELECT pg_try_advisory_lock(${lockKey}) AS acquired`
+      );
+      expect(contenderWhileStuck[0]?.acquired).toBe(false);
+    } finally {
+      await prismaA.$queryRaw<AdvisoryUnlockRow[]>(
+        Prisma.sql`SELECT pg_advisory_unlock(${lockKey}) AS released`
+      );
+    }
   });
 });
