@@ -26,7 +26,8 @@ services:
 
   # Requires ./config.local.yaml mounted below with `port: 8317` for management/OAuth
   cliproxyapi:
-    image: eceasy/cli-proxy-api-plus:latest
+    image: eceasy/cli-proxy-api:latest
+    pull_policy: always
     container_name: cliproxyapi
     restart: unless-stopped
     networks:
@@ -90,6 +91,7 @@ services:
 
   dashboard:
     image: ghcr.io/quanpersie2001/cliproxyapi-dashboard/dashboard:latest
+    pull_policy: always
     container_name: cliproxyapi-dashboard
     restart: unless-stopped
     networks:
