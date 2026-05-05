@@ -68,15 +68,52 @@ function withSchemaSearchPath(connectionString: string): string {
   return parsed.toString();
 }
 
+async function ensureCollectorStateTable(prisma: PrismaClient): Promise<void> {
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "collector_state" (
+      "id" TEXT PRIMARY KEY,
+      "lastCollectedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "lastStatus" TEXT NOT NULL DEFAULT 'idle',
+      "recordsStored" INTEGER NOT NULL DEFAULT 0,
+      "errorMessage" TEXT,
+      "wakeSequence" INTEGER NOT NULL DEFAULT 0,
+      "wakeRequestedAt" TIMESTAMP(3),
+      "wakeReason" TEXT,
+      "lastWakeHandledAt" TIMESTAMP(3),
+      "heartbeatAt" TIMESTAMP(3),
+      "workerId" TEXT,
+      "lastRunStartedAt" TIMESTAMP(3),
+      "lastRunFinishedAt" TIMESTAMP(3),
+      "backoffUntil" TIMESTAMP(3),
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "collector_state"
+    ADD COLUMN IF NOT EXISTS "wakeSequence" INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS "wakeRequestedAt" TIMESTAMP(3),
+    ADD COLUMN IF NOT EXISTS "wakeReason" TEXT,
+    ADD COLUMN IF NOT EXISTS "lastWakeHandledAt" TIMESTAMP(3),
+    ADD COLUMN IF NOT EXISTS "heartbeatAt" TIMESTAMP(3),
+    ADD COLUMN IF NOT EXISTS "workerId" TEXT,
+    ADD COLUMN IF NOT EXISTS "lastRunStartedAt" TIMESTAMP(3),
+    ADD COLUMN IF NOT EXISTS "lastRunFinishedAt" TIMESTAMP(3),
+    ADD COLUMN IF NOT EXISTS "backoffUntil" TIMESTAMP(3);
+  `);
+}
+
 describe("PrismaCollectorStateRepository (Postgres integration)", () => {
   let prisma: PrismaClient;
 
   beforeAll(async () => {
-    const adapter = new PrismaPg({
-      connectionString: resolveDatabaseUrl(),
+    prisma = new PrismaClient({
+      adapter: new PrismaPg({
+        connectionString: resolveDatabaseUrl(),
+      }),
     });
-    prisma = new PrismaClient({ adapter });
     await prisma.$connect();
+    await ensureCollectorStateTable(prisma);
   });
 
   afterAll(async () => {
