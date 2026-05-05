@@ -210,6 +210,68 @@ describe("OneShotCollectorOrchestrator", () => {
     });
   });
 
+  it("does not reclassify already-processed rows when a later markProcessed fails", async () => {
+    const inboxRepository: UsageQueueInboxRepository = {
+      storeRawMessages: vi.fn(),
+      claimForProcessing: vi
+        .fn()
+        .mockResolvedValue([
+          createInboxRecord("processed-first", '{"kind":"valid","key":"evt-1"}', 1),
+          createInboxRecord("mark-fails", '{"kind":"valid","key":"evt-2"}', 2),
+          createInboxRecord("processed-last", '{"kind":"valid","key":"evt-3"}', 1),
+        ]),
+      markProcessed: vi
+        .fn()
+        .mockResolvedValueOnce(undefined)
+        .mockRejectedValueOnce(new Error("mark failed"))
+        .mockResolvedValueOnce(undefined),
+      markDecodeFailed: vi.fn().mockResolvedValue(undefined),
+      markProcessFailed: vi.fn().mockResolvedValue(undefined),
+      markDiscarded: vi.fn().mockResolvedValue(undefined),
+    };
+    const decoder: UsagePayloadDecoder = {
+      decode: vi.fn((envelope) => {
+        const payload = JSON.parse(envelope.rawMessage) as { key: string };
+        return {
+          ok: true,
+          event: createEvent(payload.key),
+        } as const;
+      }),
+    };
+    const usageRecordRepository: UsageRecordRepository = {
+      persistNormalizedEvents: vi.fn().mockResolvedValue(3),
+    };
+
+    const processService = new CollectorProcessService({
+      decoder,
+      inboxRepository,
+      usageRecordRepository,
+      maxProcessAttempts: 10,
+      now: (() => {
+        const times = [0, 6];
+        return () => new Date(times.shift() ?? 6);
+      })(),
+    });
+
+    const result = await processService.processOnce({ maxRecords: 3 });
+
+    expect(inboxRepository.markProcessed).toHaveBeenCalledTimes(3);
+    expect(inboxRepository.markProcessFailed).toHaveBeenCalledTimes(1);
+    expect(inboxRepository.markProcessFailed).toHaveBeenCalledWith(
+      "mark-fails",
+      "mark failed"
+    );
+    expect(inboxRepository.markDiscarded).not.toHaveBeenCalled();
+    expect(result.metrics).toEqual({
+      claimed: 3,
+      processed: 2,
+      decodeFailed: 0,
+      processFailed: 1,
+      discarded: 0,
+      durationMs: 6,
+    });
+  });
+
   it("composes pull and process into drainNow summary", async () => {
     const source: UsageMessageSource = {
       pullBatch: vi

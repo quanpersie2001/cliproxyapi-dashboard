@@ -72,13 +72,37 @@ export class CollectorProcessService {
         await this.options.usageRecordRepository.persistNormalizedEvents(
           persistableEvents.map((entry) => entry.event)
         );
-        for (const entry of persistableEvents) {
-          await this.options.inboxRepository.markProcessed(entry.record.id, entry.event);
-          processed += 1;
-        }
       } catch (error) {
         const failureReason = toErrorMessage(error);
         for (const entry of persistableEvents) {
+          if (shouldDiscard(entry.record, this.maxProcessAttempts)) {
+            await this.options.inboxRepository.markDiscarded(entry.record.id, failureReason);
+            discarded += 1;
+          } else {
+            await this.options.inboxRepository.markProcessFailed(entry.record.id, failureReason);
+            processFailed += 1;
+          }
+        }
+        const durationMs = Math.max(0, this.now().getTime() - startedAt);
+        return {
+          metrics: {
+            claimed: claimedRecords.length,
+            processed,
+            decodeFailed,
+            processFailed,
+            discarded,
+            durationMs,
+          },
+          claimedRecords,
+        };
+      }
+
+      for (const entry of persistableEvents) {
+        try {
+          await this.options.inboxRepository.markProcessed(entry.record.id, entry.event);
+          processed += 1;
+        } catch (error) {
+          const failureReason = toErrorMessage(error);
           if (shouldDiscard(entry.record, this.maxProcessAttempts)) {
             await this.options.inboxRepository.markDiscarded(entry.record.id, failureReason);
             discarded += 1;
