@@ -149,6 +149,60 @@ describe("UsageCollectorWorkerRunner", () => {
     expect(stateRepository.markWakeHandled).not.toHaveBeenCalled();
   });
 
+  it("preserves overlapping newer wake sequence after a successful leader run", async () => {
+    let wakeSequence = 4;
+    const { runner, stateRepository } = createRunner({
+      orchestrator: {
+        pullOnce: vi.fn(),
+        processOnce: vi.fn(),
+        drainNow: vi.fn().mockImplementation(async () => {
+          wakeSequence = 5;
+          return {
+            summary: {
+              pulled: { pulled: 1, stored: 1, dropped: 0, durationMs: 1 },
+              processed: {
+                claimed: 1,
+                processed: 1,
+                decodeFailed: 0,
+                processFailed: 0,
+                discarded: 0,
+                durationMs: 1,
+              },
+            },
+          };
+        }),
+      },
+      stateRepository: {
+        ensureSingletonState: vi.fn().mockResolvedValue(undefined),
+        getWakeSequence: vi.fn().mockImplementation(async () => wakeSequence),
+        markStandby: vi.fn().mockResolvedValue(undefined),
+        markRunning: vi.fn().mockResolvedValue(undefined),
+        markSuccess: vi.fn().mockResolvedValue(undefined),
+        markError: vi.fn().mockResolvedValue(undefined),
+        markWakeHandled: vi.fn().mockImplementation(async (_workerId, value) => {
+          wakeSequence = Math.max(wakeSequence, value);
+        }),
+      },
+    });
+
+    const firstRun = await runner.runOnce();
+
+    expect(firstRun).toEqual({
+      status: "success",
+      waitMs: 0,
+      wakeSequence: 5,
+    });
+    expect(stateRepository.markWakeHandled).toHaveBeenCalledWith("worker-a", 5);
+
+    const secondRun = await runner.runOnce();
+
+    expect(secondRun).toEqual({
+      status: "success",
+      waitMs: 1000,
+      wakeSequence: 5,
+    });
+  });
+
   it("marks error and returns backoff when orchestration fails", async () => {
     const failure = new Error("resp unavailable");
     const { runner, orchestrator, stateRepository } = createRunner();

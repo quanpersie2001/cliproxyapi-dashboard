@@ -90,15 +90,24 @@ export class UsageCollectorWorkerRunner {
         };
       }
 
-      this.lastObservedWakeSequence = wakeSequence;
+      let handledWakeSequence = wakeSequence;
       if (wakeRequested) {
-        await this.options.stateRepository.markWakeHandled(this.options.workerId, wakeSequence);
+        const latestWakeSequence = await this.options.stateRepository.getWakeSequence();
+        handledWakeSequence = Math.max(wakeSequence, latestWakeSequence);
+      }
+
+      this.lastObservedWakeSequence = handledWakeSequence;
+      if (wakeRequested) {
+        await this.options.stateRepository.markWakeHandled(
+          this.options.workerId,
+          handledWakeSequence
+        );
       }
 
       return {
         status: "success",
         waitMs: wakeRequested ? 0 : this.options.idleMs,
-        wakeSequence,
+        wakeSequence: handledWakeSequence,
       };
     } catch (error) {
       const reason = toErrorMessage(error);

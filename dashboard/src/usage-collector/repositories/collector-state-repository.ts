@@ -103,13 +103,31 @@ export class PrismaCollectorStateRepository implements CollectorStateRepository 
   }
 
   public async markWakeHandled(workerId: string, wakeSequence: number): Promise<void> {
-    await this.prismaClient.collectorState.update({
-      where: { id: COLLECTOR_STATE_ID },
-      data: {
-        workerId,
-        lastWakeHandledAt: this.now(),
-        wakeSequence: normalizeNonNegativeInt(wakeSequence),
-      },
+    const normalizedWakeSequence = normalizeNonNegativeInt(wakeSequence);
+    const handledAt = this.now();
+
+    await this.prismaClient.$transaction(async (tx) => {
+      const monotonicUpdate = await tx.collectorState.updateMany({
+        where: {
+          id: COLLECTOR_STATE_ID,
+          wakeSequence: { lte: normalizedWakeSequence },
+        },
+        data: {
+          workerId,
+          lastWakeHandledAt: handledAt,
+          wakeSequence: normalizedWakeSequence,
+        },
+      });
+
+      if (monotonicUpdate.count === 0) {
+        await tx.collectorState.update({
+          where: { id: COLLECTOR_STATE_ID },
+          data: {
+            workerId,
+            lastWakeHandledAt: handledAt,
+          },
+        });
+      }
     });
   }
 }
