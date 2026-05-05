@@ -116,6 +116,23 @@ describe("RespQueueSource", () => {
       await closeServer(server);
     }
   });
+
+  it("parses IPv6 RESP addresses with an explicit safe contract", async () => {
+    const runtime = await loadRuntimeRespFactory();
+
+    expect(runtime.splitRespAddressForTests("[2001:db8::10]:6380")).toEqual([
+      "2001:db8::10",
+      6380,
+    ]);
+    expect(runtime.splitRespAddressForTests("[2001:db8::10]")).toEqual([
+      "2001:db8::10",
+      8317,
+    ]);
+    expect(runtime.splitRespAddressForTests("2001:db8::10")).toEqual([
+      "2001:db8::10",
+      8317,
+    ]);
+  });
 });
 
 async function startFakeRespServer(
@@ -154,6 +171,7 @@ async function loadRuntimeRespFactory(): Promise<{
   createRespQueueClientFactory: () => {
     create(options: { address: string; signal?: AbortSignal }): Promise<RespQueueClient>;
   };
+  splitRespAddressForTests: (address: string) => [string, number];
 }> {
   const originalEnv = {
     DATABASE_URL: process.env.DATABASE_URL,

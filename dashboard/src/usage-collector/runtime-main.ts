@@ -469,11 +469,35 @@ function splitAddress(address: string): [string, number] {
     return ["127.0.0.1", DEFAULT_RESP_PORT];
   }
 
-  const separator = trimmed.lastIndexOf(":");
-  if (separator <= 0 || separator === trimmed.length - 1) {
+  if (trimmed.startsWith("[")) {
+    const closingBracket = trimmed.indexOf("]");
+    if (closingBracket <= 1) {
+      return [trimmed, DEFAULT_RESP_PORT];
+    }
+
+    const host = trimmed.slice(1, closingBracket).trim() || "127.0.0.1";
+    const suffix = trimmed.slice(closingBracket + 1).trim();
+    if (!suffix) {
+      return [host, DEFAULT_RESP_PORT];
+    }
+    if (!suffix.startsWith(":")) {
+      return [trimmed, DEFAULT_RESP_PORT];
+    }
+
+    const parsedPort = Number.parseInt(suffix.slice(1), 10);
+    if (!Number.isFinite(parsedPort) || parsedPort <= 0) {
+      return [host, DEFAULT_RESP_PORT];
+    }
+
+    return [host, parsedPort];
+  }
+
+  const colonCount = (trimmed.match(/:/g) ?? []).length;
+  if (colonCount !== 1) {
     return [trimmed, DEFAULT_RESP_PORT];
   }
 
+  const separator = trimmed.lastIndexOf(":");
   const host = trimmed.slice(0, separator).trim();
   const parsedPort = Number.parseInt(trimmed.slice(separator + 1), 10);
   if (!Number.isFinite(parsedPort) || parsedPort <= 0) {
@@ -524,4 +548,8 @@ function normalizeOptionalText(value: string | undefined): string | null {
 
 function toRuntimeError(error: unknown): Error {
   return error instanceof Error ? error : new Error(String(error));
+}
+
+export function splitRespAddressForTests(address: string): [string, number] {
+  return splitAddress(address);
 }
