@@ -87,6 +87,43 @@ describe("OneShotCollectorOrchestrator", () => {
     });
   });
 
+  it("fails closed with explicit loss-window signal when pull persistence fails", async () => {
+    const source: UsageMessageSource = {
+      pullBatch: vi.fn().mockResolvedValue([
+        {
+          source: "resp_queue",
+          receivedAt: new Date("2026-05-05T00:00:00.000Z"),
+          rawMessage: '{"ok":1}',
+        },
+        {
+          source: "resp_queue",
+          receivedAt: new Date("2026-05-05T00:00:01.000Z"),
+          rawMessage: '{"ok":2}',
+        },
+      ]),
+    };
+    const inboxRepository: UsageQueueInboxRepository = {
+      storeRawMessages: vi.fn().mockRejectedValue(new Error("db unavailable")),
+      claimForProcessing: vi.fn(),
+      markProcessed: vi.fn(),
+      markDecodeFailed: vi.fn(),
+      markProcessFailed: vi.fn(),
+      markDiscarded: vi.fn(),
+    };
+    const pullService = new CollectorPullService({
+      source,
+      inboxRepository,
+      now: (() => {
+        const times = [0, 2];
+        return () => new Date(times.shift() ?? 2);
+      })(),
+    });
+
+    await expect(pullService.pullOnce({ maxMessages: 2 })).rejects.toThrow(
+      "pull_store_failed: pulled=2 persisted=0 loss_window_open=true reason=db unavailable"
+    );
+  });
+
   it("processes mixed batches with decode failures and successful persistence", async () => {
     const inboxRepository: UsageQueueInboxRepository = {
       storeRawMessages: vi.fn(),

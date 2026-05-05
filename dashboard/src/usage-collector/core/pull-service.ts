@@ -18,7 +18,16 @@ export class CollectorPullService {
     const startedAt = this.now().getTime();
     const envelopes = await this.options.source.pullBatch(pullOptions);
     const pulled = envelopes.length;
-    const stored = await this.options.inboxRepository.storeRawMessages(envelopes);
+    let stored = 0;
+    try {
+      stored = await this.options.inboxRepository.storeRawMessages(envelopes);
+    } catch (error) {
+      const reason = toErrorMessage(error);
+      throw new Error(
+        `pull_store_failed: pulled=${pulled} persisted=0 loss_window_open=true reason=${reason}`,
+        { cause: error }
+      );
+    }
     const dropped = Math.max(0, pulled - stored);
     const durationMs = Math.max(0, this.now().getTime() - startedAt);
 
@@ -31,4 +40,11 @@ export class CollectorPullService {
       },
     };
   }
+}
+
+function toErrorMessage(value: unknown): string {
+  if (value instanceof Error && value.message) {
+    return value.message;
+  }
+  return "store_failed";
 }
