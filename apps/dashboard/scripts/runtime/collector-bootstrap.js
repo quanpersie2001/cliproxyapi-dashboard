@@ -251,6 +251,8 @@ function resolveServerEntry() {
     path.join(standaloneRoot, "server.js"),
     path.join(standaloneRoot, "apps", "dashboard", "server.js"),
     path.join(appRoot, "server.js"),
+    path.join(appRoot, "app", "server.js"),
+    path.join(appRoot, "apps", "dashboard", "server.js"),
   ];
 
   for (const candidate of candidates) {

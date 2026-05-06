@@ -16,10 +16,7 @@ afterEach(() => {
     child.kill("SIGKILL");
   }
 
-  const fixtureServerEntry = path.join(DASHBOARD_ROOT, "server.js");
-  if (fs.existsSync(fixtureServerEntry)) {
-    fs.unlinkSync(fixtureServerEntry);
-  }
+  cleanupServerEntrypointFixtures();
 });
 
 describe("collector-bootstrap runtime", () => {
@@ -344,6 +341,75 @@ setTimeout(() => {
     expect(harnessResult.collectorKillCalls).toBe(1);
     expect(harnessResult.exitCalls).toEqual([0]);
   });
+
+  it("resolves the nested standalone server entry copied by the Docker runtime image", () => {
+    cleanupServerEntrypointFixtures();
+    ensureImageServerEntrypointFixture();
+
+    const harnessResultRaw = execFileSync(
+      "node",
+      [
+        "-e",
+        `
+const cp = require("node:child_process");
+const { EventEmitter } = require("node:events");
+const fs = require("node:fs");
+const path = require("node:path");
+
+const actualExistsSync = fs.existsSync.bind(fs);
+fs.existsSync = (target) => {
+  const candidate = String(target);
+  if (candidate.includes(path.sep + ".next" + path.sep + "standalone" + path.sep)) {
+    return false;
+  }
+  return actualExistsSync(target);
+};
+
+const spawned = [];
+
+function createChild() {
+  const child = new EventEmitter();
+  child.killed = false;
+  child.exitCode = null;
+  child.kill = () => true;
+  return child;
+}
+
+cp.spawn = (command, args) => {
+  const child = createChild();
+  spawned.push({ command, args });
+  return child;
+};
+
+require(path.join(process.cwd(), "scripts/runtime/collector-bootstrap.js"));
+
+setTimeout(() => {
+  process.stdout.write(JSON.stringify({ serverEntry: spawned[0]?.args?.[0] ?? null }));
+}, 20);
+        `,
+      ],
+      {
+        cwd: DASHBOARD_ROOT,
+        env: {
+          ...process.env,
+          USAGE_COLLECTOR_SHUTDOWN_GRACE_MS: "25",
+        },
+        encoding: "utf8",
+      }
+    );
+
+    const reportLine = harnessResultRaw
+      .trim()
+      .split("\n")
+      .findLast((line) => line.trim().startsWith("{"));
+    if (!reportLine) {
+      throw new Error(`missing harness JSON report: ${harnessResultRaw}`);
+    }
+
+    const harnessResult = JSON.parse(reportLine) as { serverEntry: string | null };
+
+    expect(harnessResult.serverEntry).toBe(path.join(DASHBOARD_ROOT, "app", "server.js"));
+  });
 });
 
 function ensureServerEntrypointFixture(): void {
@@ -353,6 +419,33 @@ function ensureServerEntrypointFixture(): void {
   }
 
   fs.writeFileSync(fixtureServerEntry, "process.exit(0);\n", "utf8");
+}
+
+function ensureImageServerEntrypointFixture(): void {
+  const fixtureServerEntry = path.join(DASHBOARD_ROOT, "app", "server.js");
+  if (fs.existsSync(fixtureServerEntry)) {
+    return;
+  }
+
+  fs.mkdirSync(path.dirname(fixtureServerEntry), { recursive: true });
+  fs.writeFileSync(fixtureServerEntry, "process.exit(0);\n", "utf8");
+}
+
+function cleanupServerEntrypointFixtures(): void {
+  const rootFixture = path.join(DASHBOARD_ROOT, "server.js");
+  if (fs.existsSync(rootFixture)) {
+    fs.unlinkSync(rootFixture);
+  }
+
+  const imageFixture = path.join(DASHBOARD_ROOT, "app", "server.js");
+  if (fs.existsSync(imageFixture)) {
+    fs.unlinkSync(imageFixture);
+  }
+
+  const imageAppDir = path.dirname(imageFixture);
+  if (fs.existsSync(imageAppDir) && fs.readdirSync(imageAppDir).length === 0) {
+    fs.rmdirSync(imageAppDir);
+  }
 }
 
 async function waitFor(
