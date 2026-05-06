@@ -4,11 +4,11 @@ Canonical docs hub: [`docs/README.md`](README.md)
 
 ## Workspace Status
 
-This repository runs in a workspace layout with the active dashboard application under `apps/dashboard/`, a standalone worker workspace under `workers/`, and shared modules under `packages/`.
+This repository runs in a workspace layout with the active dashboard application under `apps/dashboard/` and shared modules under `packages/`.
 
 Root npm scripts proxy to `apps/dashboard`, including `npm run build:collector` for the collector runtime build step.
 
-`apps/dashboard/src/server/jobs/workers/usage-collector/` remains the embedded runtime source boundary packaged into the dashboard image, while `workers/usage-collector/` is kept as a separate workspace boundary for worker artifacts and local experiments. Shared contracts/modules should live in `packages/*`.
+`apps/dashboard/src/server/jobs/workers/usage-collector/` is the embedded runtime source boundary packaged into the dashboard image. Shared contracts/modules should live in `packages/*`.
 
 ## Deployment Modes
 
@@ -122,7 +122,7 @@ What the source-dev script does:
 - runs `prisma migrate deploy`
 - generates the Prisma client
 - writes `apps/dashboard/.env.local`
-- starts `npm run dev`
+- starts `npm run dev:embedded` so the Next.js dev server and embedded usage collector companion run together
 
 Load-bearing note:
 
@@ -204,7 +204,7 @@ The installer currently:
 5. Optionally configures firewall rules for OAuth callback ports and the Nginx HTTP listener.
 6. Generates `JWT_SECRET`, `MANAGEMENT_API_KEY`, `POSTGRES_PASSWORD`, `COLLECTOR_API_KEY`, and `PROVIDER_ENCRYPTION_KEY`.
 7. Writes `infrastructure/.env`.
-8. Optionally installs backup cron jobs, the usage collector cron, and the dashboard deploy webhook.
+8. Optionally installs backup cron jobs and the dashboard deploy webhook.
 
 Installed files are intentionally limited to:
 

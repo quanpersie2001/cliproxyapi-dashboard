@@ -1,5 +1,9 @@
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import type { NextConfig } from "next";
 
+const appRoot = path.dirname(fileURLToPath(import.meta.url));
+const workspaceRoot = path.resolve(appRoot, "..", "..");
 const isDev = process.env.NODE_ENV === "development";
 
 // Environment-aware CSP configuration
@@ -32,6 +36,9 @@ const getCSP = (): string => {
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  turbopack: {
+    root: workspaceRoot,
+  },
   async headers() {
     const csp = getCSP();
 

@@ -2,18 +2,18 @@
   "name": "cliproxyapi-dashboard-workspace",
   "private": true,
   "version": "0.0.0",
+  "packageManager": "npm@11.6.2",
   "workspaces": [
     "apps/*",
-    "workers/*",
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm --prefix apps/dashboard run dev",
-    "build": "npm --prefix apps/dashboard run build",
-    "start": "npm --prefix apps/dashboard run start",
-    "test": "npm --prefix apps/dashboard run test",
-    "typecheck": "npm --prefix apps/dashboard run typecheck",
-    "lint": "npm --prefix apps/dashboard run lint",
-    "build:collector": "npm --prefix apps/dashboard run build:collector"
+    "dev": "npm run dev --workspace=dashboard",
+    "build": "npm run build --workspace=dashboard",
+    "start": "npm run start --workspace=dashboard",
+    "test": "npm run test --workspace=dashboard",
+    "typecheck": "npm run typecheck --workspace=dashboard",
+    "lint": "npm run lint --workspace=dashboard",
+    "build:collector": "npm run build:collector --workspace=dashboard"
   }
 }

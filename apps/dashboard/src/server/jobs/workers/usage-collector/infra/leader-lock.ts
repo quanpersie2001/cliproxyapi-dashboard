@@ -1,6 +1,6 @@
-import { Prisma } from "@/server/db/generated/prisma/client";
-import type { PrismaClient } from "@/server/db/generated/prisma/client";
-import { prisma as defaultPrisma } from "@/server/db/client";
+import { Prisma } from "../../../../db/generated/prisma/client";
+import type { PrismaClient } from "../../../../db/generated/prisma/client";
+import { prisma as defaultPrisma } from "../../../../db/client";
 
 export interface CollectorLeaderLockRunResult<T> {
   acquired: boolean;

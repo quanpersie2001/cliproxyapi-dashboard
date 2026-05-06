@@ -6,9 +6,9 @@ import type {
   ProcessOnceResult,
   PullOnceOptions,
   PullOnceResult,
-} from "@/server/jobs/workers/usage-collector/core/orchestrator";
-import { CollectorProcessService } from "@/server/jobs/workers/usage-collector/core/process-service";
-import { CollectorPullService } from "@/server/jobs/workers/usage-collector/core/pull-service";
+} from "./orchestrator";
+import { CollectorProcessService } from "./process-service";
+import { CollectorPullService } from "./pull-service";
 
 export interface OneShotCollectorOrchestratorOptions {
   pullService: CollectorPullService;

@@ -1,14 +1,14 @@
-import type { PrismaClient, UsageQueueInbox } from "@/server/db/generated/prisma/client";
-import { Prisma } from "@/server/db/generated/prisma/client";
-import { UsageQueueInboxStatus } from "@/server/db/generated/prisma/enums";
-import type { UsageQueueInboxRepository } from "@/server/jobs/workers/usage-collector/contracts";
-import type { ProcessOnceOptions } from "@/server/jobs/workers/usage-collector/core/orchestrator";
+import type { PrismaClient, UsageQueueInbox } from "../../../../db/generated/prisma/client";
+import { Prisma } from "../../../../db/generated/prisma/client";
+import { UsageQueueInboxStatus } from "../../../../db/generated/prisma/enums";
+import type { UsageQueueInboxRepository } from "../contracts";
+import type { ProcessOnceOptions } from "../core/orchestrator";
 import type {
   NormalizedQueuedUsageEvent,
   UsageInboxRecord,
   UsageSourceEnvelope,
-} from "@/server/jobs/workers/usage-collector/core/types";
-import { prisma as defaultPrisma } from "@/server/db/client";
+} from "../core/types";
+import { prisma as defaultPrisma } from "../../../../db/client";
 
 const DEFAULT_MAX_PROCESS_ATTEMPTS = 10;
 const DEFAULT_PROCESSED_RETENTION_MS = 24 * 60 * 60 * 1000;

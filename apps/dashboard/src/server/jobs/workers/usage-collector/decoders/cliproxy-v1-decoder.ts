@@ -1,11 +1,11 @@
-import type { UsagePayloadDecoder } from "@/server/jobs/workers/usage-collector/contracts";
-import { buildUsageEventKey } from "@/server/jobs/workers/usage-collector/core/event-key";
+import type { UsagePayloadDecoder } from "../contracts";
+import { buildUsageEventKey } from "../core/event-key";
 import type {
   DecodedUsageMessage,
   NormalizedQueuedUsageEvent,
   NormalizedTokenUsage,
   UsageSourceEnvelope,
-} from "@/server/jobs/workers/usage-collector/core/types";
+} from "../core/types";
 
 type QueuedPayload = {
   timestamp?: unknown;

@@ -153,18 +153,19 @@ function Reset-Containers {
 }
 
 function Start-NextDev {
-    Write-Info "Starting Next.js development server..."
+    Write-Info "Starting dashboard dev server with embedded usage collector..."
     Write-Host ""
     Write-Host "  ============================================================" -ForegroundColor Green
     Write-Host "    Dashboard:  http://localhost:3000" -ForegroundColor Green
     Write-Host "    PostgreSQL: localhost:5433" -ForegroundColor Cyan
     Write-Host "    API:        http://localhost:28317" -ForegroundColor Cyan
+    Write-Host "    Collector:  embedded dev companion" -ForegroundColor Cyan
     Write-Host "  ============================================================" -ForegroundColor Green
     Write-Host ""
     Write-Host "  Press Ctrl+C to stop" -ForegroundColor Yellow
     Write-Host ""
 
-    npm run dev
+    npm run dev:embedded
 }
 
 # --- Main ---

@@ -11,11 +11,11 @@ Canonical docs hub: [`docs/README.md`](docs/README.md)
 
 ## Workspace Status
 
-The repository uses a workspace layout with the active app in [`apps/dashboard/`](apps/dashboard/), a standalone worker workspace under `workers/`, and shared modules under `packages/`.
+The repository uses a workspace layout with the active app in [`apps/dashboard/`](apps/dashboard/) and shared modules under `packages/`.
 
 Root scripts are convenience entrypoints that proxy into `apps/dashboard`, including `npm run build:collector` for collector-runtime build output.
 
-`apps/dashboard/src/server/jobs/workers/usage-collector/` remains the embedded runtime source boundary packaged into the dashboard image, while `workers/usage-collector/` is kept as a separate workspace boundary for worker artifacts and local experiments. Keep shared contracts/modules in `packages/*`. 
+`apps/dashboard/src/server/jobs/workers/usage-collector/` is the embedded runtime source boundary packaged into the dashboard image. Keep shared contracts/modules in `packages/*`.
 
 ## Recommended Development Workflow
 
@@ -38,6 +38,7 @@ This gives you:
 - dashboard on `http://localhost:3000`
 - proxy API on `http://localhost:28317`
 - PostgreSQL on `localhost:5433`
+- embedded usage collector companion running alongside the dev server
 
 For a quick smoke test of the published images instead of source development, use the root appliance setup:
 
@@ -63,6 +64,7 @@ Direct execution in [`apps/dashboard/`](apps/dashboard/) is also valid:
 | Command | Purpose |
 | --- | --- |
 | `npm run dev` | Start the Next.js development server |
+| `npm run dev:embedded` | Start the Next.js dev server plus the embedded usage collector companion |
 | `npm run typecheck` | Regenerate Prisma client and run `tsc --noEmit` |
 | `npm run lint` | Run ESLint |
 | `npm test` | Run the Vitest suite |

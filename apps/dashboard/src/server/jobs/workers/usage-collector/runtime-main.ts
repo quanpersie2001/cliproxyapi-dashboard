@@ -1,19 +1,19 @@
 import net from "node:net";
-import { env } from "@/lib/env";
-import { CLIProxyV1Decoder } from "@/server/jobs/workers/usage-collector/decoders/cliproxy-v1-decoder";
-import { PostgresCollectorLeaderLock } from "@/server/jobs/workers/usage-collector/infra/leader-lock";
-import { OneShotCollectorOrchestrator } from "@/server/jobs/workers/usage-collector/core/one-shot-orchestrator";
-import { CollectorProcessService } from "@/server/jobs/workers/usage-collector/core/process-service";
-import { CollectorPullService } from "@/server/jobs/workers/usage-collector/core/pull-service";
-import { PrismaCollectorStateRepository } from "@/server/jobs/workers/usage-collector/repositories/collector-state-repository";
-import { PrismaUsageQueueInboxRepository } from "@/server/jobs/workers/usage-collector/repositories/inbox-repository";
-import { PrismaUsageRecordRepository } from "@/server/jobs/workers/usage-collector/repositories/usage-record-repository";
-import { UsageCollectorWorkerRunner, type CollectorRunSignal } from "@/server/jobs/workers/usage-collector/runner";
+import { env } from "../../../../lib/env";
+import { CLIProxyV1Decoder } from "./decoders/cliproxy-v1-decoder";
+import { PostgresCollectorLeaderLock } from "./infra/leader-lock";
+import { OneShotCollectorOrchestrator } from "./core/one-shot-orchestrator";
+import { CollectorProcessService } from "./core/process-service";
+import { CollectorPullService } from "./core/pull-service";
+import { PrismaCollectorStateRepository } from "./repositories/collector-state-repository";
+import { PrismaUsageQueueInboxRepository } from "./repositories/inbox-repository";
+import { PrismaUsageRecordRepository } from "./repositories/usage-record-repository";
+import { UsageCollectorWorkerRunner, type CollectorRunSignal } from "./runner";
 import {
   RespQueueSource,
   type RespQueueClient,
   type RespQueueClientFactory,
-} from "@/server/jobs/workers/usage-collector/sources/resp-queue-source";
+} from "./sources/resp-queue-source";
 
 type RuntimeLogger = Pick<typeof console, "info" | "warn" | "error">;
 

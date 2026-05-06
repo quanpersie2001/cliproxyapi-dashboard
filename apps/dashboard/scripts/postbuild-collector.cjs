@@ -22,28 +22,6 @@ const candidateClientPaths = [
     "prisma",
     "client.js",
   ),
-  path.resolve(
-    __dirname,
-    "..",
-    "dist-collector",
-    "apps",
-    "dashboard",
-    "src",
-    "generated",
-    "prisma",
-    "client.js",
-  ),
-  path.resolve(
-    __dirname,
-    "..",
-    "dist-collector",
-    "packages",
-    "db",
-    "src",
-    "generated",
-    "prisma",
-    "client.js",
-  ),
 ];
 
 const clientPath = candidateClientPaths.find((candidate) => fs.existsSync(candidate));

@@ -1,5 +1,5 @@
-import type { UsageMessageSource, UsageQueueInboxRepository } from "@/server/jobs/workers/usage-collector/contracts";
-import type { PullOnceOptions, PullOnceResult } from "@/server/jobs/workers/usage-collector/core/orchestrator";
+import type { UsageMessageSource, UsageQueueInboxRepository } from "../contracts";
+import type { PullOnceOptions, PullOnceResult } from "./orchestrator";
 
 export interface CollectorPullServiceOptions {
   source: UsageMessageSource;

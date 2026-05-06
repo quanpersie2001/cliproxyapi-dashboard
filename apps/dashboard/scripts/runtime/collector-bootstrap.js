@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 const fs = require("node:fs");
-const Module = require("node:module");
 const path = require("node:path");
 const { spawn } = require("node:child_process");
 
@@ -13,7 +12,6 @@ const GRACEFUL_SHUTDOWN_MS = parsePositiveInt(
   process.env.USAGE_COLLECTOR_SHUTDOWN_GRACE_MS,
   10000,
 );
-let aliasResolutionEnabled = false;
 
 const preloadedLocalEnv = loadLocalEnv();
 
@@ -29,9 +27,10 @@ if (process.argv.includes(COLLECTOR_MODE_FLAG)) {
 
 async function runCollectorWorkerProcess() {
   neutralizeServerOnlyModule();
-  enableCollectorAliasResolution();
   const runtimeModulePath = path.join(
     __dirname,
+    "server",
+    "jobs",
     "workers",
     "usage-collector",
     "runtime-main.js",
@@ -70,67 +69,6 @@ function neutralizeServerOnlyModule() {
   } catch {
     // Optional in non-Next runtimes.
   }
-}
-
-function enableCollectorAliasResolution() {
-  if (aliasResolutionEnabled) {
-    return;
-  }
-
-  const collectorRoot = __dirname;
-  const originalResolveFilename = Module._resolveFilename;
-
-  Module._resolveFilename = function patchedResolveFilename(request, parent, isMain, options) {
-    if (typeof request === "string") {
-      if (request === "@prisma/client" || request === "@prisma/client/default") {
-        const prismaClientPath = path.join(
-          collectorRoot,
-          "server",
-          "db",
-          "generated",
-          "prisma",
-          "client",
-        );
-        return originalResolveFilename.call(this, prismaClientPath, parent, isMain, options);
-      }
-
-      if (request.startsWith("@/")) {
-        let mappedPath;
-        if (request === "@/lib/db" || request === "@/server/db/client") {
-          mappedPath = path.join(collectorRoot, "server", "db", "client");
-        } else if (request === "@/lib/env") {
-          mappedPath = path.join(collectorRoot, "lib", "env");
-        } else if (request === "@/lib/cache") {
-          mappedPath = path.join(collectorRoot, "lib", "cache");
-        } else if (request.startsWith("@/generated/prisma/")) {
-          mappedPath = path.join(
-            collectorRoot,
-            "server",
-            "db",
-            "generated",
-            "prisma",
-            request.slice("@/generated/prisma/".length),
-          );
-        } else if (request.startsWith("@/server/db/generated/prisma/")) {
-          mappedPath = path.join(
-            collectorRoot,
-            "server",
-            "db",
-            "generated",
-            "prisma",
-            request.slice("@/server/db/generated/prisma/".length),
-          );
-        } else {
-          mappedPath = path.join(collectorRoot, request.slice(2));
-        }
-        return originalResolveFilename.call(this, mappedPath, parent, isMain, options);
-      }
-    }
-
-    return originalResolveFilename.call(this, request, parent, isMain, options);
-  };
-
-  aliasResolutionEnabled = true;
 }
 
 function runCoordinator() {

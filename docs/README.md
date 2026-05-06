@@ -35,7 +35,7 @@ This directory is the canonical documentation set for the active CLIProxyAPI Das
 | --- | --- | --- |
 | [`../setup-local.sh`](../setup-local.sh) / [`../setup-local.ps1`](../setup-local.ps1) | Published-image local appliance | Creates root `.env` and `config.local.yaml`, then starts the bundled local stack |
 | [`../apps/dashboard/tools/dev/dev-local.sh`](../apps/dashboard/tools/dev/dev-local.sh) / [`../apps/dashboard/tools/dev/dev-local.ps1`](../apps/dashboard/tools/dev/dev-local.ps1) | Source development | Starts PostgreSQL + CLIProxyAPI for development and runs the Next.js dev server |
-| [`../install.sh`](../install.sh) | Server install | Single server installer; can run from a checkout or as a one-file bootstrap, writes `infrastructure/.env`, can install Nginx plus a split-host ingress config, installs cron helpers, and optionally installs the webhook flow |
+| [`../install.sh`](../install.sh) | Server install | Single server installer; can run from a checkout or as a one-file bootstrap, writes `infrastructure/.env`, can install Nginx plus a split-host ingress config, can install backup cron jobs, and optionally installs the webhook flow |
 | [`../infrastructure/manage.sh`](../infrastructure/manage.sh) | Bundled runtime control | Wrapper around `docker compose` plus backup/restore operations |
 | [`../infrastructure/WEBHOOK_SETUP.md`](../infrastructure/WEBHOOK_SETUP.md) | UI-linked webhook alias | Redirects to the canonical webhook section in [`OPERATIONS.md`](OPERATIONS.md) |
 
@@ -52,7 +52,6 @@ This directory is the canonical documentation set for the active CLIProxyAPI Das
 - `apps/dashboard/tools/dev/` is the local source-dev orchestration boundary (`dev-local.*`, `docker-compose.dev.yml`, dev config templates).
 - `npm run build:collector` from the repo root delegates to the dashboard workspace collector build.
 - `apps/dashboard/src/server/jobs/workers/usage-collector/` is the embedded worker source boundary for usage ingestion runtime code packaged into the dashboard image.
-- `workers/usage-collector/` is the standalone worker workspace boundary preserved in the repo.
 - `packages/*` is an active shared-module boundary (`api-contracts`, `auth-contracts`, `config`, `db`, `logger`, `shared`, `usage-contracts`).
 - Keep Next instrumentation entrypoints in `apps/dashboard/src/instrumentation.ts` and `apps/dashboard/src/instrumentation-node.ts`; they are load-bearing for runtime instrumentation hooks.
 

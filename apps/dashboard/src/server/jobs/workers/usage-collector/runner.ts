@@ -1,6 +1,6 @@
-import type { CollectorOrchestrator } from "@/server/jobs/workers/usage-collector/core/orchestrator";
-import type { CollectorLeaderLock } from "@/server/jobs/workers/usage-collector/infra/leader-lock";
-import type { CollectorStateRepository } from "@/server/jobs/workers/usage-collector/repositories/collector-state-repository";
+import type { CollectorOrchestrator } from "./core/orchestrator";
+import type { CollectorLeaderLock } from "./infra/leader-lock";
+import type { CollectorStateRepository } from "./repositories/collector-state-repository";
 
 export type CollectorRunSignal = {
   aborted: boolean;

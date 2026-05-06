@@ -46,10 +46,9 @@ This repository is a workspace-structured monorepo with the active application i
 Current state:
 
 - `apps/dashboard/` is the runnable Next.js app and remains the primary surface for dashboard UI/API behavior
-- root scripts proxy to the app workspace (for example, `npm run dev` runs `npm --prefix apps/dashboard run dev`)
+- root scripts proxy to the app workspace through npm workspaces (for example, `npm run dev` runs the `dashboard` workspace script)
 - `npm run build:collector` is available at the repository root and delegates to the dashboard workspace collector build
 - the embedded usage collector runtime lives under `apps/dashboard/src/server/jobs/workers/usage-collector/` and is packaged into the dashboard image
-- `workers/usage-collector/` remains in the repo as a standalone worker workspace boundary for the collector runtime artifacts and local experiments
 - `packages/*` now holds shared contracts and foundations (`api-contracts`, `auth-contracts`, `config`, `db`, `logger`, `shared`, `usage-contracts`) used by the refactored structure
 
 ## Deployment Modes
@@ -75,7 +74,6 @@ Operational boundaries:
 
 - `apps/dashboard/`: application code, Prisma schema, local source-dev workflow, and load-bearing Next instrumentation entrypoints (`src/instrumentation.ts`, `src/instrumentation-node.ts`)
 - `apps/dashboard/src/server/jobs/workers/usage-collector/`: embedded worker runtime sources that are packaged into the dashboard image
-- `workers/usage-collector/`: standalone worker workspace boundary kept alongside the embedded runtime sources
 - `packages/`: shared workspace modules for contracts, db foundations, config, and logging
 - `infrastructure/`: production compose stack, runtime config, `manage.sh`, backup/restore ops, webhook helpers
 - `apps/dashboard/scripts/runtime/`: dashboard runtime scripts (`entrypoint.sh`, collector bootstrap)
@@ -138,7 +136,7 @@ cd apps/dashboard
 # Windows: .\tools\dev\dev-local.ps1
 ```
 
-The source-dev workflow starts PostgreSQL and CLIProxyAPI in Docker, applies Prisma bootstrap and migrations, writes `apps/dashboard/.env.local`, and runs `npm run dev`.
+The source-dev workflow starts PostgreSQL and CLIProxyAPI in Docker, applies Prisma bootstrap and migrations, writes `apps/dashboard/.env.local`, and runs `npm run dev:embedded` so the Next.js dev server and embedded usage collector companion start together.
 
 Source-dev endpoints:
 

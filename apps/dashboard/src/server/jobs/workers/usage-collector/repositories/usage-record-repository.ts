@@ -1,12 +1,12 @@
-import type { PrismaClient } from "@/server/db/generated/prisma/client";
-import type { UsageRecordRepository } from "@/server/jobs/workers/usage-collector/contracts";
+import type { PrismaClient } from "../../../../db/generated/prisma/client";
+import type { UsageRecordRepository } from "../contracts";
 import {
   resolveUsageOwnership,
   type UsageOwnershipDirectories,
-} from "@/server/jobs/workers/usage-collector/core/ownership-resolver";
-import type { NormalizedQueuedUsageEvent } from "@/server/jobs/workers/usage-collector/core/types";
-import { invalidateUsageCaches } from "@/lib/cache";
-import { prisma as defaultPrisma } from "@/server/db/client";
+} from "../core/ownership-resolver";
+import type { NormalizedQueuedUsageEvent } from "../core/types";
+import { invalidateUsageCaches } from "../../../../../lib/cache";
+import { prisma as defaultPrisma } from "../../../../db/client";
 
 export interface UsageRecordRepositoryOptions {
   prisma?: PrismaClient;

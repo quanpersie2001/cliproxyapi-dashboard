@@ -11,7 +11,6 @@ on:
       - "tsconfig.base.json"
       - "scripts/**"
       - "apps/dashboard/**"
-      - "workers/**"
       - "packages/**"
   push:
     branches:
@@ -25,7 +24,6 @@ on:
       - "tsconfig.base.json"
       - "scripts/**"
       - "apps/dashboard/**"
-      - "workers/**"
       - "packages/**"
 
 permissions:

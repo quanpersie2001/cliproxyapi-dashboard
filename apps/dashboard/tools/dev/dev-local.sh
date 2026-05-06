@@ -199,20 +199,21 @@ write_env_local() {
     log_success ".env.local updated (DOCKER_HOST=${docker_host})"
 }
 
-# Function to start Next.js dev server
+# Function to start the source-dev runtime
 start_nextjs() {
-    log_info "Starting Next.js development server..."
+    log_info "Starting dashboard dev server with embedded usage collector..."
     echo ""
     echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo -e "${GREEN}  Dashboard:  http://localhost:3000${NC}"
     echo -e "${BLUE}  PostgreSQL: localhost:5433${NC}"
     echo -e "${BLUE}  API:        http://localhost:28317${NC}"
+    echo -e "${BLUE}  Collector:  embedded dev companion${NC}"
     echo -e "${GREEN}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
     echo ""
     echo -e "${YELLOW}Press Ctrl+C to stop${NC}"
     echo ""
-    
-    npm run dev
+
+    npm run dev:embedded
 }
 
 # Function to stop containers
