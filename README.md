@@ -39,6 +39,15 @@
 | Proxy operations | Routing, retries, logging, streaming, TLS, pprof, payload transforms, OAuth model aliases |
 | Observability | Usage collection, quota views, logs, container state, and update workflows |
 
+## Workspace Status
+
+The repository now includes root workspace scaffolding (`package.json`, `tsconfig.base.json`, and placeholder `apps/`, `workers/`, `packages/` directories).
+
+Current state:
+
+- the runnable app still lives in `dashboard/`
+- root npm scripts delegate to `dashboard` for now (for example, `npm run dev` runs `npm --prefix dashboard run dev`)
+
 ## Deployment Modes
 
 | Mode | Use it when | Command |
@@ -191,7 +200,7 @@ The canonical documentation hub lives at [`docs/README.md`](docs/README.md).
 
 ## Development Commands
 
-Run from [`dashboard/`](dashboard/):
+Run from the repository root (delegates to [`dashboard/`](dashboard/)):
 
 ```bash
 npm run dev
@@ -200,6 +209,8 @@ npm run lint
 npm test
 npm run build
 ```
+
+Equivalent direct run inside `dashboard/` is still supported.
 
 Implementation notes:
 

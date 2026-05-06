@@ -9,6 +9,12 @@ Canonical docs hub: [`docs/README.md`](docs/README.md)
 - Docker Desktop or Docker Engine + Compose plugin
 - Git
 
+## Workspace Status
+
+The repository now has root workspace scaffolding (`package.json`, `tsconfig.base.json`, plus placeholder `apps/`, `workers/`, `packages/` directories), but the runnable app remains in [`dashboard/`](dashboard/).
+
+Root scripts are available as convenience entrypoints and currently delegate to `dashboard`.
+
 ## Recommended Development Workflow
 
 Use the source-dev scripts from [`dashboard/`](dashboard/):
@@ -39,7 +45,17 @@ For a quick smoke test of the published images instead of source development, us
 
 ## Dashboard npm Scripts
 
-Run from [`dashboard/`](dashboard/):
+Preferred from repo root (delegates to `dashboard`):
+
+```bash
+npm run dev
+npm run typecheck
+npm run lint
+npm test
+npm run build
+```
+
+Direct execution in [`dashboard/`](dashboard/) is also valid:
 
 | Command | Purpose |
 | --- | --- |

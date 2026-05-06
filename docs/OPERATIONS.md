@@ -11,6 +11,7 @@ This guide is the operator-facing reference for lifecycle commands, health check
 | [`../infrastructure/manage.sh`](../infrastructure/manage.sh) | Bundled runtime stack control, backup, restore, image pulls |
 | [`../setup-local.sh`](../setup-local.sh) / [`../setup-local.ps1`](../setup-local.ps1) | Local appliance lifecycle using published images |
 | [`../dashboard/dev-local.sh`](../dashboard/dev-local.sh) / [`../dashboard/dev-local.ps1`](../dashboard/dev-local.ps1) | Source development lifecycle |
+| Root npm scripts (`npm run dev`, `npm run test`, `npm run lint`, `npm run typecheck`) | Workspace entrypoint that currently delegates to `dashboard` |
 | [`../install.sh`](../install.sh) | Ubuntu/Debian provisioning, backup cron wiring, optional webhook install |
 
 ## First Boot Checklist

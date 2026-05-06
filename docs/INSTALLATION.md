@@ -2,6 +2,12 @@
 
 Canonical docs hub: [`docs/README.md`](README.md)
 
+## Workspace Status
+
+Root workspace scaffolding is in place (`package.json`, `tsconfig.base.json`, plus placeholder `apps/`, `workers/`, and `packages/` directories), but the runnable dashboard application has not moved yet and remains under `dashboard/`.
+
+Root npm scripts currently delegate to `dashboard`.
+
 ## Deployment Modes
 
 This repo supports three distinct ways to run the project:
