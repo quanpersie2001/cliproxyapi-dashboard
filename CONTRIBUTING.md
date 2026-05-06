@@ -9,20 +9,28 @@ Canonical docs hub: [`docs/README.md`](docs/README.md)
 - Docker Desktop or Docker Engine + Compose plugin
 - Git
 
+## Workspace Status
+
+The repository uses a workspace layout with the active app in [`apps/dashboard/`](apps/dashboard/) and shared modules under `packages/`.
+
+Root scripts are convenience entrypoints that proxy into `apps/dashboard`, including `npm run build:collector` for collector-runtime build output.
+
+`apps/dashboard/src/server/jobs/workers/usage-collector/` is the embedded runtime source boundary packaged into the dashboard image. Keep shared contracts/modules in `packages/*`.
+
 ## Recommended Development Workflow
 
-Use the source-dev scripts from [`dashboard/`](dashboard/):
+Use the source-dev scripts from [`apps/dashboard/`](apps/dashboard/):
 
 ```bash
-cd dashboard
-./dev-local.sh
+cd apps/dashboard
+./tools/dev/dev-local.sh
 ```
 
 Windows:
 
 ```powershell
-cd dashboard
-.\dev-local.ps1
+cd apps/dashboard
+.\tools\dev\dev-local.ps1
 ```
 
 This gives you:
@@ -30,6 +38,7 @@ This gives you:
 - dashboard on `http://localhost:3000`
 - proxy API on `http://localhost:28317`
 - PostgreSQL on `localhost:5433`
+- embedded usage collector companion running alongside the dev server
 
 For a quick smoke test of the published images instead of source development, use the root appliance setup:
 
@@ -39,11 +48,23 @@ For a quick smoke test of the published images instead of source development, us
 
 ## Dashboard npm Scripts
 
-Run from [`dashboard/`](dashboard/):
+Preferred from repo root (delegates to `apps/dashboard`):
+
+```bash
+npm run dev
+npm run typecheck
+npm run lint
+npm test
+npm run build
+npm run build:collector
+```
+
+Direct execution in [`apps/dashboard/`](apps/dashboard/) is also valid:
 
 | Command | Purpose |
 | --- | --- |
 | `npm run dev` | Start the Next.js development server |
+| `npm run dev:embedded` | Start the Next.js dev server plus the embedded usage collector companion |
 | `npm run typecheck` | Regenerate Prisma client and run `tsc --noEmit` |
 | `npm run lint` | Run ESLint |
 | `npm test` | Run the Vitest suite |
@@ -54,11 +75,11 @@ Run from [`dashboard/`](dashboard/):
 ## Project Rules That Matter
 
 - TypeScript strict mode is enabled.
-- Use `API_ENDPOINTS` from [`dashboard/src/lib/api-endpoints.ts`](dashboard/src/lib/api-endpoints.ts) instead of hardcoded route strings in the app.
-- Use `apiError`, `apiSuccess`, or `Errors.*` from [`dashboard/src/lib/errors.ts`](dashboard/src/lib/errors.ts) for API responses.
+- Use `API_ENDPOINTS` from [`apps/dashboard/src/lib/api-endpoints.ts`](apps/dashboard/src/lib/api-endpoints.ts) instead of hardcoded route strings in the app.
+- Use `apiError`, `apiSuccess`, or `Errors.*` from [`apps/dashboard/src/lib/errors.ts`](apps/dashboard/src/lib/errors.ts) for API responses.
 - Do not add new consumers of the deprecated `GET /api/usage` route; use `GET /api/usage/history`.
 - Do not treat `providerMutex` as a distributed lock.
-- Do not edit generated Prisma internals under `dashboard/src/generated/prisma/internal/`.
+- Do not edit generated Prisma internals under `apps/dashboard/src/server/db/generated/prisma/internal/`.
 - Keep secrets and API URLs out of source control.
 
 ## Testing Checklist
@@ -66,7 +87,7 @@ Run from [`dashboard/`](dashboard/):
 Before opening a PR, run:
 
 ```bash
-cd dashboard
+cd apps/dashboard
 npm run typecheck
 npm run lint
 npm test

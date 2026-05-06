@@ -2,6 +2,14 @@
 
 Canonical docs hub: [`docs/README.md`](README.md)
 
+## Workspace Status
+
+This repository runs in a workspace layout with the active dashboard application under `apps/dashboard/` and shared modules under `packages/`.
+
+Root npm scripts proxy to `apps/dashboard`, including `npm run build:collector` for the collector runtime build step.
+
+`apps/dashboard/src/server/jobs/workers/usage-collector/` is the embedded runtime source boundary packaged into the dashboard image. Shared contracts/modules should live in `packages/*`.
+
 ## Deployment Modes
 
 This repo supports three distinct ways to run the project:
@@ -9,7 +17,7 @@ This repo supports three distinct ways to run the project:
 | Mode | Primary script | Best for |
 | --- | --- | --- |
 | Local appliance stack | [`../setup-local.sh`](../setup-local.sh) / [`../setup-local.ps1`](../setup-local.ps1) | Running the published dashboard image locally with minimal setup |
-| Source development | [`../dashboard/dev-local.sh`](../dashboard/dev-local.sh) / [`../dashboard/dev-local.ps1`](../dashboard/dev-local.ps1) | Working on dashboard code from this checkout |
+| Source development | [`../apps/dashboard/tools/dev/dev-local.sh`](../apps/dashboard/tools/dev/dev-local.sh) / [`../apps/dashboard/tools/dev/dev-local.ps1`](../apps/dashboard/tools/dev/dev-local.ps1) | Working on dashboard code from this checkout |
 | Server install | [`../install.sh`](../install.sh) | Provisioning the bundled production compose stack on Ubuntu/Debian, with or without pre-cloning the repo |
 
 ## Bundled Stack Topology
@@ -95,26 +103,30 @@ Use the source-dev scripts when you want to modify the Next.js app from this che
 ### Commands
 
 ```bash
-cd dashboard
-./dev-local.sh
+cd apps/dashboard
+./tools/dev/dev-local.sh
 ```
 
 Windows:
 
 ```powershell
-cd dashboard
-.\dev-local.ps1
+cd apps/dashboard
+.\tools\dev\dev-local.ps1
 ```
 
 What the source-dev script does:
 
-- starts [`../dashboard/docker-compose.dev.yml`](../dashboard/docker-compose.dev.yml)
+- starts [`../apps/dashboard/tools/dev/docker-compose.dev.yml`](../apps/dashboard/tools/dev/docker-compose.dev.yml)
 - waits for PostgreSQL and CLIProxyAPI
-- creates `dashboard/config.dev.yaml` from [`../dashboard/config.dev.yaml.example`](../dashboard/config.dev.yaml.example) when needed
+- creates `apps/dashboard/tools/dev/config.dev.yaml` from [`../apps/dashboard/tools/dev/config.dev.yaml.example`](../apps/dashboard/tools/dev/config.dev.yaml.example) when needed
 - runs `prisma migrate deploy`
 - generates the Prisma client
-- writes `dashboard/.env.local`
-- starts `npm run dev`
+- writes `apps/dashboard/.env.local`
+- starts `npm run dev:embedded` so the Next.js dev server and embedded usage collector companion run together
+
+Load-bearing note:
+
+- keep `apps/dashboard/src/instrumentation.ts` and `apps/dashboard/src/instrumentation-node.ts` intact unless you are intentionally changing Next.js instrumentation behavior.
 
 Source-dev endpoints:
 
@@ -133,9 +145,9 @@ Source-dev callback host ports:
 Lifecycle helpers:
 
 ```bash
-cd dashboard
-./dev-local.sh --down
-./dev-local.sh --reset
+cd apps/dashboard
+./tools/dev/dev-local.sh --down
+./tools/dev/dev-local.sh --reset
 ```
 
 ## Option 3: Server Install
@@ -192,7 +204,7 @@ The installer currently:
 5. Optionally configures firewall rules for OAuth callback ports and the Nginx HTTP listener.
 6. Generates `JWT_SECRET`, `MANAGEMENT_API_KEY`, `POSTGRES_PASSWORD`, `COLLECTOR_API_KEY`, and `PROVIDER_ENCRYPTION_KEY`.
 7. Writes `infrastructure/.env`.
-8. Optionally installs backup cron jobs, the usage collector cron, and the dashboard deploy webhook.
+8. Optionally installs backup cron jobs and the dashboard deploy webhook.
 
 Installed files are intentionally limited to:
 

@@ -1,7 +1,7 @@
 {
-  "timestamp": "2026-05-04T17:58:24Z",
+  "timestamp": "2026-05-06T09:45:52Z",
   "project_root": "/Users/quannv.dev/Workspace/Personal/cliproxyapi-dashboard",
-  "requested_mode": "review-only",
+  "requested_mode": "single-worker",
   "recommended_mode": "single-worker",
   "status": "PASS",
   "onboarding": "PASS",
@@ -37,5 +37,5 @@
   },
   "blockers": [],
   "degradations": [],
-  "next_skill": "pulse:using-pulse"
+  "next_skill": "none"
 }

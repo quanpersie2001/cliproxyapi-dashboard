@@ -10,8 +10,9 @@ This guide is the operator-facing reference for lifecycle commands, health check
 | --- | --- |
 | [`../infrastructure/manage.sh`](../infrastructure/manage.sh) | Bundled runtime stack control, backup, restore, image pulls |
 | [`../setup-local.sh`](../setup-local.sh) / [`../setup-local.ps1`](../setup-local.ps1) | Local appliance lifecycle using published images |
-| [`../dashboard/dev-local.sh`](../dashboard/dev-local.sh) / [`../dashboard/dev-local.ps1`](../dashboard/dev-local.ps1) | Source development lifecycle |
-| [`../install.sh`](../install.sh) | Ubuntu/Debian provisioning, cron wiring, optional webhook install |
+| [`../apps/dashboard/tools/dev/dev-local.sh`](../apps/dashboard/tools/dev/dev-local.sh) / [`../apps/dashboard/tools/dev/dev-local.ps1`](../apps/dashboard/tools/dev/dev-local.ps1) | Source development lifecycle |
+| Root npm scripts (`npm run dev`, `npm run test`, `npm run lint`, `npm run typecheck`) | Workspace entrypoint that currently delegates to `apps/dashboard` |
+| [`../install.sh`](../install.sh) | Ubuntu/Debian provisioning, backup cron wiring, optional webhook install |
 
 ## First Boot Checklist
 
@@ -54,9 +55,9 @@ docker compose -f docker-compose.local.yml logs -f
 ### Source-Dev State
 
 ```bash
-cd dashboard
-docker compose -f docker-compose.dev.yml ps
-docker compose -f docker-compose.dev.yml logs -f
+cd apps/dashboard
+docker compose -f tools/dev/docker-compose.dev.yml ps
+docker compose -f tools/dev/docker-compose.dev.yml logs -f
 ```
 
 ## `infrastructure/manage.sh`
@@ -110,10 +111,10 @@ Current local appliance endpoints:
 ### Source Development
 
 ```bash
-cd dashboard
-./dev-local.sh
-./dev-local.sh --down
-./dev-local.sh --reset
+cd apps/dashboard
+./tools/dev/dev-local.sh
+./tools/dev/dev-local.sh --down
+./tools/dev/dev-local.sh --reset
 ```
 
 Current source-dev endpoints:
@@ -132,7 +133,7 @@ Source-dev callback host ports also bind to loopback with dev-specific host port
 
 ## Usage Collection
 
-The dashboard persists proxy usage into PostgreSQL through `POST /api/usage/collect`.
+The dashboard runs a resident usage collector worker in the dashboard container and persists proxy usage into PostgreSQL.
 
 Manual trigger from the host:
 
@@ -143,8 +144,9 @@ curl -sf -X POST http://127.0.0.1:3000/api/usage/collect \
 
 Important behavior:
 
-- `install.sh` installs a cron trigger every 5 minutes
-- the generated cron job sources `infrastructure/.env` on each run so `COLLECTOR_API_KEY` rotations do not leave a stale bearer token in crontab
+- `POST /api/usage/collect` is an authenticated fast wake/trigger seam, not the steady-state collector loop
+- `COLLECTOR_API_KEY` is the bearer credential for manual host/internal automation when session auth is not used
+- `install.sh` does not install a default usage collector cron
 - concurrent runs are serialized through `collector_state`
 - overlapping runs return `202` instead of double-processing
 - long-term analytics are exposed via `GET /api/usage/history`

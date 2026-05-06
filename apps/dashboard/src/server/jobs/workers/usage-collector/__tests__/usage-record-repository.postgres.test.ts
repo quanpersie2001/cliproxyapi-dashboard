@@ -1,0 +1,214 @@
+import fs from "node:fs";
+import path from "node:path";
+import { PrismaPg } from "@prisma/adapter-pg";
+import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
+import { PrismaClient } from "@/server/db/generated/prisma/client";
+import type { NormalizedQueuedUsageEvent } from "@/server/jobs/workers/usage-collector/core/types";
+
+vi.mock("server-only", () => ({}));
+vi.mock("@/server/db/client", () => ({
+  prisma: {},
+}));
+vi.mock("@/lib/cache", () => ({
+  invalidateUsageCaches: vi.fn(),
+}));
+
+import { PrismaUsageRecordRepository } from "@/server/jobs/workers/usage-collector/repositories/usage-record-repository";
+
+function resolveDatabaseUrl(): string | null {
+  const envLocalPath = path.resolve(process.cwd(), ".env.local");
+  if (fs.existsSync(envLocalPath)) {
+    const contents = fs.readFileSync(envLocalPath, "utf8");
+    for (const line of contents.split("\n")) {
+      if (!line.startsWith("DATABASE_URL=")) {
+        continue;
+      }
+      return line.slice("DATABASE_URL=".length).trim();
+    }
+  }
+
+  const fromEnv = process.env.DATABASE_URL?.trim();
+  if (fromEnv) {
+    return fromEnv;
+  }
+
+  return null;
+}
+
+const databaseUrl = resolveDatabaseUrl();
+const describeIfDatabase = databaseUrl ? describe : describe.skip;
+
+async function ensureUsageRecordDependencies(prisma: PrismaClient): Promise<void> {
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "users" (
+      "id" TEXT PRIMARY KEY,
+      "username" TEXT,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "user_api_keys" (
+      "id" TEXT PRIMARY KEY,
+      "userId" TEXT NOT NULL,
+      "key" TEXT NOT NULL,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "provider_oauth_ownerships" (
+      "id" TEXT PRIMARY KEY,
+      "userId" TEXT NOT NULL,
+      "accountName" TEXT,
+      "accountEmail" TEXT,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "provider_key_ownerships" (
+      "id" TEXT PRIMARY KEY,
+      "userId" TEXT NOT NULL,
+      "keyIdentifier" TEXT NOT NULL,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE TABLE IF NOT EXISTS "usage_records" (
+      "id" TEXT PRIMARY KEY DEFAULT ('usage_' || md5(random()::text || clock_timestamp()::text)),
+      "eventKey" TEXT,
+      "requestId" TEXT,
+      "provider" TEXT,
+      "authType" TEXT,
+      "authIndex" TEXT NOT NULL,
+      "apiKeyId" TEXT,
+      "userId" TEXT,
+      "endpoint" TEXT,
+      "model" TEXT NOT NULL,
+      "source" TEXT NOT NULL,
+      "timestamp" TIMESTAMP(3) NOT NULL,
+      "latencyMs" INTEGER NOT NULL DEFAULT 0,
+      "inputTokens" INTEGER NOT NULL DEFAULT 0,
+      "outputTokens" INTEGER NOT NULL DEFAULT 0,
+      "reasoningTokens" INTEGER NOT NULL DEFAULT 0,
+      "cachedTokens" INTEGER NOT NULL DEFAULT 0,
+      "totalTokens" INTEGER NOT NULL DEFAULT 0,
+      "failed" BOOLEAN NOT NULL DEFAULT FALSE,
+      "collectedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE "usage_records"
+    ADD COLUMN IF NOT EXISTS "eventKey" TEXT,
+    ADD COLUMN IF NOT EXISTS "requestId" TEXT,
+    ADD COLUMN IF NOT EXISTS "provider" TEXT,
+    ADD COLUMN IF NOT EXISTS "authType" TEXT,
+    ADD COLUMN IF NOT EXISTS "authIndex" TEXT,
+    ADD COLUMN IF NOT EXISTS "apiKeyId" TEXT,
+    ADD COLUMN IF NOT EXISTS "userId" TEXT,
+    ADD COLUMN IF NOT EXISTS "endpoint" TEXT,
+    ADD COLUMN IF NOT EXISTS "model" TEXT,
+    ADD COLUMN IF NOT EXISTS "source" TEXT,
+    ADD COLUMN IF NOT EXISTS "timestamp" TIMESTAMP(3),
+    ADD COLUMN IF NOT EXISTS "latencyMs" INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS "inputTokens" INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS "outputTokens" INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS "reasoningTokens" INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS "cachedTokens" INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS "totalTokens" INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS "failed" BOOLEAN NOT NULL DEFAULT FALSE,
+    ADD COLUMN IF NOT EXISTS "collectedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE UNIQUE INDEX IF NOT EXISTS "usage_records_eventKey_key" ON "usage_records"("eventKey");
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE UNIQUE INDEX IF NOT EXISTS "usage_dedup_key" ON "usage_records"("authIndex", "model", "timestamp", "source", "totalTokens");
+  `);
+}
+
+function createEvent(eventKey: string, source: string): NormalizedQueuedUsageEvent {
+  return {
+    eventKey,
+    requestId: `req-${eventKey}`,
+    provider: "openai",
+    authType: "api-key",
+    authIndex: `auth-${eventKey}`,
+    apiGroupKey: "/v1/chat/completions",
+    model: "gpt-4.1",
+    source,
+    timestamp: new Date("2026-05-05T16:00:00.000Z"),
+    failed: false,
+    latencyMs: 120,
+    tokens: {
+      inputTokens: 10,
+      outputTokens: 20,
+      reasoningTokens: 0,
+      cachedTokens: 0,
+      totalTokens: 30,
+    },
+  };
+}
+
+describeIfDatabase("PrismaUsageRecordRepository (Postgres integration)", () => {
+  let prisma: PrismaClient;
+
+  beforeAll(async () => {
+    prisma = new PrismaClient({
+      adapter: new PrismaPg({
+        connectionString: databaseUrl!,
+      }),
+    });
+
+    await prisma.$connect();
+    await ensureUsageRecordDependencies(prisma);
+  });
+
+  afterAll(async () => {
+    await prisma?.$disconnect();
+  });
+
+  it("skips duplicate eventKey inserts across writes without failing the batch", async () => {
+    const source = `vitest_eventkey_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    const duplicateEventKey = `evt_dup_${Date.now()}`;
+
+    const repository = new PrismaUsageRecordRepository({
+      prisma: prisma as never,
+      ownershipCacheTtlMs: 0,
+    });
+
+    await prisma.usageRecord.deleteMany({
+      where: {
+        eventKey: duplicateEventKey,
+      },
+    });
+
+    const firstWriteCount = await repository.persistNormalizedEvents([
+      createEvent(duplicateEventKey, source),
+    ]);
+    const secondWriteCount = await repository.persistNormalizedEvents([
+      createEvent(duplicateEventKey, source),
+    ]);
+
+    const rows = await prisma.usageRecord.findMany({
+      where: {
+        eventKey: duplicateEventKey,
+      },
+    });
+
+    expect(firstWriteCount).toBe(1);
+    expect(secondWriteCount).toBe(0);
+    expect(rows).toHaveLength(1);
+
+    await prisma.usageRecord.deleteMany({
+      where: {
+        eventKey: duplicateEventKey,
+      },
+    });
+  });
+});

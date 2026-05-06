@@ -10,7 +10,7 @@ Dashboard không nằm trên hot path inference `/v1/*`; inference traffic đi t
 
 Repo có hai boundary chính:
 
-1. `dashboard/` — ứng dụng Next.js 16 / React 19, App Router, API routes, Prisma, auth/session, và các feature UI.
+1. `apps/dashboard/` — ứng dụng Next.js 16 / React 19, App Router, API routes, Prisma, auth/session, và các feature UI.
 2. `infrastructure/` — production compose stack, runtime config, reverse proxy template, backup/restore, và helper scripts vận hành.
 
 Bundled deployment chạy bốn service Docker:
@@ -25,7 +25,7 @@ Bundled deployment chạy bốn service Docker:
 Các entry path chính:
 
 - `/` redirect sang `/dashboard`
-- `dashboard/src/app/dashboard/layout.tsx` bắt buộc session; thiếu session thì redirect `/login`
+- `apps/dashboard/src/app/dashboard/layout.tsx` bắt buộc session; thiếu session thì redirect `/login`
 - `POST /api/auth/login` xử lý login, rate limit, ký JWT, và set cookie session
 - `GET|POST|PUT|PATCH|DELETE /api/management/[...path]` là lớp passthrough an toàn sang CLIProxyAPI management API
 - `GET /api/usage/history` đọc usage history đã persist trong Postgres
@@ -34,21 +34,21 @@ Các entry path chính:
 Hai workflow runtime chính:
 
 - **Local appliance**: `./setup-local.sh` dựng cả stack bằng `docker-compose.local.yml`
-- **Source development**: `cd dashboard && ./dev-local.sh` chạy Postgres + CLIProxyAPI bằng Docker, apply Prisma migrations, rồi chạy Next.js dev server
+- **Source development**: `cd apps/dashboard && ./tools/dev/dev-local.sh` chạy Postgres + CLIProxyAPI bằng Docker, apply Prisma migrations, rồi chạy Next.js dev server
 
 ## Source of Truth
 
 - `README.md` — overview, deploy modes, quick start, release model
 - `docs/ARCHITECTURE.md` — runtime topology, module boundaries, API/data overview
-- `dashboard/prisma/schema.prisma` — source of truth cho data model hiện tại
-- `dashboard/src/app/api/management/[...path]/route.ts` — security boundary giữa dashboard và CLIProxyAPI management API
-- `dashboard/src/lib/api-endpoints.ts` — route literals dùng chung, tránh hardcode URL
+- `apps/dashboard/prisma/schema.prisma` — source of truth cho data model hiện tại
+- `apps/dashboard/src/app/api/management/[...path]/route.ts` — security boundary giữa dashboard và CLIProxyAPI management API
+- `apps/dashboard/src/lib/api-endpoints.ts` — route literals dùng chung, tránh hardcode URL
 - `infrastructure/docker-compose.yml` — production runtime topology và operational wiring
 - `docker-compose.local.yml` — local appliance topology
 
 ## Build, Test, and Verification
 
-Chạy từ `dashboard/`:
+Chạy từ `apps/dashboard/`:
 
 - `npm run dev`
 - `npm run typecheck`
@@ -59,18 +59,18 @@ Chạy từ `dashboard/`:
 Bootstrap workflows:
 
 - `./setup-local.sh`
-- `cd dashboard && ./dev-local.sh`
+- `cd apps/dashboard && ./tools/dev/dev-local.sh`
 - `cd infrastructure && ./manage.sh up`
 
 ## Constraints and Conventions
 
 - Đây là **proxy-only** dashboard; không mở rộng tư duy thành general product control plane.
 - Không thêm consumer mới cho `GET /api/usage`; code mới dùng `GET /api/usage/history`.
-- Không hardcode API URLs; dùng constants trong `dashboard/src/lib/api-endpoints.ts`.
+- Không hardcode API URLs; dùng constants trong `apps/dashboard/src/lib/api-endpoints.ts`.
 - `providerMutex` là process-local lock, không phải distributed lock.
-- Không sửa generated Prisma internals trong `dashboard/src/generated/prisma/internal/*`.
+- Không sửa generated Prisma internals trong `apps/dashboard/src/server/db/generated/prisma/internal/*`.
 - Dashboard phải giữ boundary bảo mật rõ với management API: allowlist path, validate origin, chống SSRF, giới hạn payload/response size.
-- Production image chạy `dashboard/entrypoint.sh` để `prisma migrate deploy` trước khi start server.
+- Production image chạy `apps/dashboard/scripts/runtime/entrypoint.sh` để `prisma migrate deploy` trước khi start server.
 
 ## External Integrations
 
@@ -90,9 +90,9 @@ Bootstrap workflows:
 
 - `docs/FEATURES.md`
 - `docs/CONFIGURATION.md`
-- `dashboard/src/lib/auth/session.ts`
-- `dashboard/src/app/api/auth/login/route.ts`
-- `dashboard/src/app/api/quota/route.ts`
-- `dashboard/src/app/api/usage/history/route.ts`
-- `dashboard/src/app/api/management/[...path]/route.ts`
-- `dashboard/dev-local.sh`
+- `apps/dashboard/src/lib/auth/session.ts`
+- `apps/dashboard/src/app/api/auth/login/route.ts`
+- `apps/dashboard/src/app/api/quota/route.ts`
+- `apps/dashboard/src/app/api/usage/history/route.ts`
+- `apps/dashboard/src/app/api/management/[...path]/route.ts`
+- `apps/dashboard/tools/dev/dev-local.sh`

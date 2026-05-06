@@ -755,29 +755,6 @@ setup_backup_scripts() {
     log_success "Backup cron job installed"
 }
 
-setup_usage_collector() {
-    local collector_url="http://127.0.0.1:3000"
-    local cron_schedule="*/5 * * * *"
-    local env_file="$INSTALL_DIR/infrastructure/.env"
-    local cron_cmd=". \"${env_file}\" && curl -fsS -X POST ${collector_url}/api/usage/collect -H \"Authorization: Bearer \$COLLECTOR_API_KEY\" -o /dev/null"
-
-    ensure_cron_available
-    ensure_command curl curl
-
-    if crontab -l 2>/dev/null | grep -q "/api/usage/collect"; then
-        log_warning "Usage collector cron job already exists"
-        return
-    fi
-
-    (
-        crontab -l 2>/dev/null || true
-        echo "# CLIProxyAPI usage collector (every 5 minutes)"
-        echo "$cron_schedule $cron_cmd"
-    ) | crontab -
-
-    log_success "Usage collector cron job installed"
-}
-
 install_webhook_service() {
     prompt_yes_no INSTALL_WEBHOOK "Install webhook deploy service?" 0
     if [ "$INSTALL_WEBHOOK" -ne 1 ]; then
@@ -1028,10 +1005,6 @@ setup_nginx_reverse_proxy
 print_section "Backup Setup"
 
 setup_backup_scripts
-
-print_section "Usage Collector"
-
-setup_usage_collector
 
 print_section "Optional Webhook"
 

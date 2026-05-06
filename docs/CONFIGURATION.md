@@ -19,8 +19,8 @@ During local appliance setup the equivalents are:
 
 During source development the equivalents are:
 
-- `dashboard/.env.local`
-- `dashboard/config.dev.yaml`
+- `apps/dashboard/.env.local`
+- `apps/dashboard/tools/dev/config.dev.yaml`
 
 ## Environment Layer
 
@@ -165,7 +165,7 @@ Relevant environment variables:
 Two runtime behaviors are easy to miss:
 
 - `GET /api/health` checks both PostgreSQL and the proxy root endpoint, not just the dashboard process.
-- `POST /api/usage/collect` persists usage from the proxy into PostgreSQL and supports cron auth via `COLLECTOR_API_KEY`.
+- `POST /api/usage/collect` is an authenticated fast wake/trigger seam for the resident usage collector worker; bearer automation still uses `COLLECTOR_API_KEY`, but steady-state ingestion happens in the background worker.
 
 ## Current Configuration Constraints
 

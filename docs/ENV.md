@@ -14,7 +14,7 @@ These values are always written by `install.sh` for the bundled production compo
 | `POSTGRES_PASSWORD` | Yes | generated | Password used by the bundled `postgres` container on first volume initialization |
 | `JWT_SECRET` | Yes | generated | Secret used for dashboard session signing |
 | `MANAGEMENT_API_KEY` | Yes | generated | Bearer key used when the dashboard talks to the CLIProxyAPI management API |
-| `COLLECTOR_API_KEY` | Yes | generated | Bearer key accepted by `POST /api/usage/collect` for cron-based collection |
+| `COLLECTOR_API_KEY` | Yes | generated | Bearer key accepted by `POST /api/usage/collect` for authenticated manual trigger/automation |
 | `PROVIDER_ENCRYPTION_KEY` | Yes | 64 hex chars | AES-256-GCM key used to persist custom-provider API keys for later re-sync |
 | `CLIPROXYAPI_MANAGEMENT_URL` | No | `http://cliproxyapi:8317/v0/management` | Internal management API base URL |
 | `INSTALL_DIR` | Yes | `/opt/cliproxyapi-dashboard` | Host path mounted into the dashboard container for compose-aware operations |
@@ -46,7 +46,7 @@ These values are read by the current app or compose stack but are not written by
 
 ## Validated Core Runtime Variables
 
-These are validated at startup by [`../dashboard/src/lib/env.ts`](../dashboard/src/lib/env.ts).
+These are validated at startup by [`../apps/dashboard/src/lib/env.ts`](../apps/dashboard/src/lib/env.ts).
 
 | Variable | Required | Default | Notes |
 | --- | --- | --- | --- |
@@ -86,7 +86,7 @@ Local appliance endpoints:
 
 ## Source-Dev Defaults
 
-[`../dashboard/.env.development`](../dashboard/.env.development) is copied to `dashboard/.env.local` by the source-dev scripts.
+[`../apps/dashboard/tools/dev/.env.development`](../apps/dashboard/tools/dev/.env.development) is copied to `apps/dashboard/.env.local` by the source-dev scripts.
 
 Current source-dev defaults:
 
@@ -105,11 +105,11 @@ Current source-dev defaults:
 
 Notes:
 
-- The Bash source-dev script rewrites `DOCKER_HOST` from `auto` to a platform-appropriate value in `dashboard/.env.local`.
+- The Bash source-dev script rewrites `DOCKER_HOST` from `auto` to a platform-appropriate value in `apps/dashboard/.env.local`.
 - The PowerShell source-dev script copies the file as-is; the current app code does not depend on `DOCKER_HOST`.
 
 ## Validation Notes
 
-The app validates the core env schema at startup in [`../dashboard/src/lib/env.ts`](../dashboard/src/lib/env.ts).
+The app validates the core env schema at startup in [`../apps/dashboard/src/lib/env.ts`](../apps/dashboard/src/lib/env.ts).
 
 If validation fails, the dashboard process exits early with a detailed error message naming the invalid variable.

@@ -5,16 +5,26 @@ on:
     paths:
       - ".github/workflows/**"
       - ".release-please-manifest.json"
-      - "dashboard/**"
       - "release-please-config.json"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.base.json"
+      - "scripts/**"
+      - "apps/dashboard/**"
+      - "packages/**"
   push:
     branches:
       - main
     paths:
       - ".github/workflows/**"
       - ".release-please-manifest.json"
-      - "dashboard/**"
       - "release-please-config.json"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.base.json"
+      - "scripts/**"
+      - "apps/dashboard/**"
+      - "packages/**"
 
 permissions:
   contents: read
@@ -28,7 +38,7 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: dashboard
+        working-directory: apps/dashboard
     steps:
       - uses: actions/checkout@v6
 
@@ -36,10 +46,10 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: dashboard/package-lock.json
+          cache-dependency-path: apps/dashboard/package-lock.json
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps --no-audit --no-fund
+        run: npm ci --workspaces=false --legacy-peer-deps --no-audit --no-fund
 
       - name: Lint
         run: npm run lint
@@ -61,7 +71,7 @@ jobs:
       - name: Build production image
         run: |
           docker build \
-            -f dashboard/Dockerfile \
+            -f apps/dashboard/Dockerfile \
             -t cliproxyapi-dashboard:ci \
             --build-arg DASHBOARD_VERSION=ci-${GITHUB_SHA::7} \
-            dashboard
+            apps/dashboard

@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0",
-  "feature_key": "oauth-config-ui-ux",
+  "feature_key": "usage-queue-ingestion",
   "phase": "compounding",
-  "gate": "compounding-complete",
-  "status": "compounding-complete",
-  "updated_at": "2026-05-04T20:39:37.572Z"
+  "gate": "GATE 4",
+  "status": "complete",
+  "updated_at": "2026-05-06T09:58:26.145Z"
 }

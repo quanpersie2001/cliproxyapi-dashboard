@@ -63,7 +63,7 @@ Common causes:
 - invalid `JWT_SECRET`
 - PostgreSQL unavailable
 - proxy unavailable
-- environment validation failure in `dashboard/src/lib/env.ts`
+- environment validation failure in `apps/dashboard/src/lib/env.ts`
 
 ## Proxy Not Reachable
 
@@ -90,8 +90,8 @@ If monitoring, update, or container actions fail specifically:
 ### Prisma or schema drift issues
 
 ```bash
-cd dashboard
-./dev-local.sh --reset
+cd apps/dashboard
+./tools/dev/dev-local.sh --reset
 ```
 
 If your local PostgreSQL volume predates the current baseline migration, reset the local stack instead.
@@ -99,7 +99,7 @@ If your local PostgreSQL volume predates the current baseline migration, reset t
 ### Build errors after switching branches
 
 ```bash
-cd dashboard
+cd apps/dashboard
 npx prisma generate
 npm install
 npm run typecheck

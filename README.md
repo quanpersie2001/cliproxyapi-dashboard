@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./dashboard/src/app/icon.svg" alt="CLIProxyAPI Dashboard logo" width="112" height="112" />
+  <img src="./apps/dashboard/src/app/icon.svg" alt="CLIProxyAPI Dashboard logo" width="112" height="112" />
   <h1>CLIProxyAPI Dashboard</h1>
   <p><strong>Proxy-only control plane for <a href="https://github.com/router-for-me/CLIProxyAPI">CLIProxyAPI</a></strong></p>
   <p>Next.js 16 / React 19 dashboard for provider credentials, proxy runtime settings, usage history, quotas, updates, logs, and safe container operations.</p>
@@ -39,12 +39,24 @@
 | Proxy operations | Routing, retries, logging, streaming, TLS, pprof, payload transforms, OAuth model aliases |
 | Observability | Usage collection, quota views, logs, container state, and update workflows |
 
+## Workspace Status
+
+This repository is a workspace-structured monorepo with the active application in `apps/dashboard/`.
+
+Current state:
+
+- `apps/dashboard/` is the runnable Next.js app and remains the primary surface for dashboard UI/API behavior
+- root scripts proxy to the app workspace through npm workspaces (for example, `npm run dev` runs the `dashboard` workspace script)
+- `npm run build:collector` is available at the repository root and delegates to the dashboard workspace collector build
+- the embedded usage collector runtime lives under `apps/dashboard/src/server/jobs/workers/usage-collector/` and is packaged into the dashboard image
+- `packages/*` now holds shared contracts and foundations (`api-contracts`, `auth-contracts`, `config`, `db`, `logger`, `shared`, `usage-contracts`) used by the refactored structure
+
 ## Deployment Modes
 
 | Mode | Use it when | Command |
 | --- | --- | --- |
 | Local appliance | You want the published dashboard image and bundled proxy stack running locally | `./setup-local.sh` |
-| Source development | You want to run the dashboard from the checked-out source tree | `cd dashboard && ./dev-local.sh` |
+| Source development | You want to run the dashboard from the checked-out source tree | `cd apps/dashboard && ./tools/dev/dev-local.sh` |
 | Server install | You want the bundled production compose stack on Ubuntu/Debian | `curl -fsSL .../install.sh | sudo bash` |
 
 ## Runtime Topology
@@ -60,8 +72,12 @@ The bundled deployment is a four-service Docker stack:
 
 Operational boundaries:
 
-- `dashboard/`: application code, Prisma schema, local source-dev workflow
+- `apps/dashboard/`: application code, Prisma schema, local source-dev workflow, and load-bearing Next instrumentation entrypoints (`src/instrumentation.ts`, `src/instrumentation-node.ts`)
+- `apps/dashboard/src/server/jobs/workers/usage-collector/`: embedded worker runtime sources that are packaged into the dashboard image
+- `packages/`: shared workspace modules for contracts, db foundations, config, and logging
 - `infrastructure/`: production compose stack, runtime config, `manage.sh`, backup/restore ops, webhook helpers
+- `apps/dashboard/scripts/runtime/`: dashboard runtime scripts (`entrypoint.sh`, collector bootstrap)
+- `apps/dashboard/tools/dev/`: local source-dev orchestration scripts and dev compose assets
 - `docs/`: canonical documentation set
 
 Default bundled endpoints:
@@ -115,12 +131,12 @@ Useful commands:
 ### 2. Source Development
 
 ```bash
-cd dashboard
-./dev-local.sh
-# Windows: .\dev-local.ps1
+cd apps/dashboard
+./tools/dev/dev-local.sh
+# Windows: .\tools\dev\dev-local.ps1
 ```
 
-The source-dev workflow starts PostgreSQL and CLIProxyAPI in Docker, applies Prisma bootstrap and migrations, writes `dashboard/.env.local`, and runs `npm run dev`.
+The source-dev workflow starts PostgreSQL and CLIProxyAPI in Docker, applies Prisma bootstrap and migrations, writes `apps/dashboard/.env.local`, and runs `npm run dev:embedded` so the Next.js dev server and embedded usage collector companion start together.
 
 Source-dev endpoints:
 
@@ -161,7 +177,7 @@ The bundled installer currently:
 - generates stack secrets
 - writes `infrastructure/.env`
 - optionally installs Nginx and renders a split-host HTTP reverse proxy config from the public dashboard/API URLs you entered
-- optionally configures firewall rules, backup cron, usage collector cron, and the dashboard deploy webhook
+- optionally configures firewall rules, backup cron, and the dashboard deploy webhook
 
 After install:
 
@@ -191,7 +207,7 @@ The canonical documentation hub lives at [`docs/README.md`](docs/README.md).
 
 ## Development Commands
 
-Run from [`dashboard/`](dashboard/):
+Run from the repository root (delegates to [`apps/dashboard/`](apps/dashboard/)):
 
 ```bash
 npm run dev
@@ -199,12 +215,16 @@ npm run typecheck
 npm run lint
 npm test
 npm run build
+npm run build:collector
 ```
+
+Equivalent direct run inside `apps/dashboard/` is still supported.
 
 Implementation notes:
 
 - Prisma client generation is wired into `predev`, `prebuild`, and `pretest`
-- The production image uses [`dashboard/entrypoint.sh`](dashboard/entrypoint.sh) to bootstrap core tables at startup with a PostgreSQL advisory lock
+- The production image uses [`apps/dashboard/scripts/runtime/entrypoint.sh`](apps/dashboard/scripts/runtime/entrypoint.sh) to bootstrap core tables at startup with a PostgreSQL advisory lock
+- The bundled deployment runs an embedded resident usage collector worker; `POST /api/usage/collect` is an authenticated fast trigger/wake seam
 - `GET /api/usage` remains a compatibility route, but new code should use `GET /api/usage/history`
 
 ## Release Model
