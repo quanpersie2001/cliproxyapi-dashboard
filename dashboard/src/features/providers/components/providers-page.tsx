@@ -15,9 +15,9 @@ import {
   type KeyWithOwnership,
   type ProviderId,
   type ProviderState,
-} from "@/components/providers/api-key-section";
-import { CustomProviderSection } from "@/components/providers/custom-provider-section";
-import { OAuthSection } from "@/components/providers/oauth-section";
+} from "@/features/providers/components/api-key-section";
+import { CustomProviderSection } from "@/features/providers/components/custom-provider-section";
+import { OAuthSection } from "@/features/providers/components/oauth-section";
 
 interface CurrentUser {
   id: string;

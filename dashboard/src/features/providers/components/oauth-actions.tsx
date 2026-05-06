@@ -1,7 +1,7 @@
 "use client";
 
-import type { OAuthProviderEntry, OAuthProviderId } from "@/components/providers/oauth-provider-meta";
-import { OAuthProviderIcon } from "@/components/providers/oauth-provider-meta";
+import type { OAuthProviderEntry, OAuthProviderId } from "@/features/providers/components/oauth-provider-meta";
+import { OAuthProviderIcon } from "@/features/providers/components/oauth-provider-meta";
 import { Button } from "@/components/ui/button";
 import { getStateToneStyle } from "@/components/ui/state-styles";
 import { cn } from "@/lib/utils";

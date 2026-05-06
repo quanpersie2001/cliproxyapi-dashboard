@@ -4,10 +4,10 @@ import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CustomProviderModal } from "@/components/custom-provider-modal";
 import { useToast } from "@/components/ui/toast";
-import { ProviderGroupModal } from "@/components/providers/provider-group-modal";
+import { ProviderGroupModal } from "@/features/providers/components/provider-group-modal";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { GroupList } from "@/components/providers/group-list";
-import { UngroupedList } from "@/components/providers/ungrouped-list";
+import { GroupList } from "@/features/providers/components/group-list";
+import { UngroupedList } from "@/features/providers/components/ungrouped-list";
 import { extractApiError } from "@/lib/utils";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 

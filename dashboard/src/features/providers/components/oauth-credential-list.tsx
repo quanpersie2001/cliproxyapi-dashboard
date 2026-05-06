@@ -5,8 +5,8 @@ import { Network } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { AlertSurface } from "@/components/ui/alert-surface";
-import { OwnerBadge, type CurrentUserLike } from "@/components/providers/api-key-section";
-import { getOAuthProviderPresentation, OAuthProviderIcon } from "@/components/providers/oauth-provider-meta";
+import { OwnerBadge, type CurrentUserLike } from "@/features/providers/components/api-key-section";
+import { getOAuthProviderPresentation, OAuthProviderIcon } from "@/features/providers/components/oauth-provider-meta";
 import { cn } from "@/lib/utils";
 
 interface OAuthAccountWithOwnership {

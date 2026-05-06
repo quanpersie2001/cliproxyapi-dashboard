@@ -1,6 +1,6 @@
 "use client";
 
-import { getOAuthProviderPresentation, OAuthProviderIcon } from "@/components/providers/oauth-provider-meta";
+import { getOAuthProviderPresentation, OAuthProviderIcon } from "@/features/providers/components/oauth-provider-meta";
 import { Badge, type BadgeTone } from "@/components/ui/badge";
 import { AlertSurface } from "@/components/ui/alert-surface";
 import { cn } from "@/lib/utils";

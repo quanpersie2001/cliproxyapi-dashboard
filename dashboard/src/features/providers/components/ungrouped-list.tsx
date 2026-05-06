@@ -1,7 +1,7 @@
 "use client";
 
-import { ProviderRow } from "@/components/providers/provider-row";
-import type { CustomProvider } from "@/components/providers/custom-provider-section";
+import { ProviderRow } from "@/features/providers/components/provider-row";
+import type { CustomProvider } from "@/features/providers/components/custom-provider-section";
 
 interface UngroupedListProps {
   providers: CustomProvider[];

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import {
   getOAuthProviderPresentation,
   OAuthProviderIcon,
-} from "@/components/providers/oauth-provider-meta";
+} from "@/features/providers/components/oauth-provider-meta";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 

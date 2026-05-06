@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { OAuthSection } from "@/components/providers/oauth-section";
+import { OAuthSection } from "@/features/providers/components/oauth-section";
 import { useToast } from "@/components/ui/toast";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";

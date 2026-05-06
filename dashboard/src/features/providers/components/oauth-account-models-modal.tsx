@@ -4,8 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { AlertSurface } from "@/components/ui/alert-surface";
 import { Button } from "@/components/ui/button";
 import { Modal, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@/components/ui/modal";
-import type { OAuthAccountWithOwnership } from "@/components/providers/oauth-credential-list";
-import { getOAuthProviderPresentation } from "@/components/providers/oauth-provider-meta";
+import type { OAuthAccountWithOwnership } from "@/features/providers/components/oauth-credential-list";
+import { getOAuthProviderPresentation } from "@/features/providers/components/oauth-provider-meta";
 
 export interface OAuthAccountModel {
   id: string;

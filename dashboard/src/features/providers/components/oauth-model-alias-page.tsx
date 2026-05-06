@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { OAuthModelAliasEditor } from "@/components/providers/oauth-model-alias-editor";
+import { OAuthModelAliasEditor } from "@/features/providers/components/oauth-model-alias-editor";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { useToast } from "@/components/ui/toast";
 import { useAuth } from "@/hooks/use-auth";

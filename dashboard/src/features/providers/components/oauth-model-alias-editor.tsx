@@ -1,12 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
-import { OAuthModelAliasDiagram } from "@/components/providers/oauth-model-alias-diagram";
+import { OAuthModelAliasDiagram } from "@/features/providers/components/oauth-model-alias-diagram";
 import {
   getOAuthProviderPresentation,
   OAUTH_PROVIDERS,
   OAuthProviderIcon,
-} from "@/components/providers/oauth-provider-meta";
+} from "@/features/providers/components/oauth-provider-meta";
 import { AlertSurface } from "@/components/ui/alert-surface";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

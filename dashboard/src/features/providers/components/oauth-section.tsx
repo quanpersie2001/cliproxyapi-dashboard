@@ -10,24 +10,24 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
 import { extractApiError } from "@/lib/utils";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
-import type { CurrentUserLike } from "@/components/providers/api-key-section";
+import type { CurrentUserLike } from "@/features/providers/components/api-key-section";
 import {
   OAuthCredentialList,
   type OAuthAccountUsageStats,
   type OAuthAccountWithOwnership,
-} from "@/components/providers/oauth-credential-list";
-import { OAuthImportForm } from "@/components/providers/oauth-import-form";
-import { OAuthActions } from "@/components/providers/oauth-actions";
+} from "@/features/providers/components/oauth-credential-list";
+import { OAuthImportForm } from "@/features/providers/components/oauth-import-form";
+import { OAuthActions } from "@/features/providers/components/oauth-actions";
 import {
   OAuthAccountModelsModal,
   type OAuthAccountModel,
-} from "@/components/providers/oauth-account-models-modal";
-import { OAuthAccountSettingsModal } from "@/components/providers/oauth-account-settings-modal";
+} from "@/features/providers/components/oauth-account-models-modal";
+import { OAuthAccountSettingsModal } from "@/features/providers/components/oauth-account-settings-modal";
 import {
   getOAuthProviderById,
   OAUTH_PROVIDERS,
   type OAuthProviderId,
-} from "@/components/providers/oauth-provider-meta";
+} from "@/features/providers/components/oauth-provider-meta";
 import { getStateToneStyle } from "@/components/ui/state-styles";
 import {
   buildOAuthAuthFileSettingsPayload,

@@ -2,7 +2,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import type { CustomProvider } from "@/components/providers/custom-provider-section";
+import type { CustomProvider } from "@/features/providers/components/custom-provider-section";
 
 interface ProviderRowProps {
   provider: CustomProvider;

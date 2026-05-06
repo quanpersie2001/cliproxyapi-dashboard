@@ -6,8 +6,8 @@ import { AlertSurface } from "@/components/ui/alert-surface";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Modal, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@/components/ui/modal";
-import type { OAuthAccountWithOwnership } from "@/components/providers/oauth-credential-list";
-import { getOAuthProviderPresentation } from "@/components/providers/oauth-provider-meta";
+import type { OAuthAccountWithOwnership } from "@/features/providers/components/oauth-credential-list";
+import { getOAuthProviderPresentation } from "@/features/providers/components/oauth-provider-meta";
 import type { OAuthAuthFileSettingsEditor } from "@/lib/providers/oauth-auth-file-settings";
 
 interface OAuthAccountSettingsModalProps {

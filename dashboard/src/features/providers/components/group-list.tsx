@@ -2,8 +2,8 @@
 
 import { getBadgeToneStyle } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ProviderRow } from "@/components/providers/provider-row";
-import type { CustomProvider, ProviderGroup } from "@/components/providers/custom-provider-section";
+import { ProviderRow } from "@/features/providers/components/provider-row";
+import type { CustomProvider, ProviderGroup } from "@/features/providers/components/custom-provider-section";
 
 interface GroupListProps {
   groups: ProviderGroup[];

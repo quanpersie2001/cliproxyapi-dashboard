@@ -4,7 +4,7 @@ import {
   createOAuthAuthFileSettingsEditor,
   updateOAuthAuthFileSettingsEditor,
 } from "@/lib/providers/oauth-auth-file-settings";
-import { saveOAuthAuthFileSettings } from "@/components/providers/oauth-section";
+import { saveOAuthAuthFileSettings } from "@/features/providers/components/oauth-section";
 
 describe("saveOAuthAuthFileSettings", () => {
   it("returns validation error and aborts before PATCH when headers JSON is invalid", async () => {
