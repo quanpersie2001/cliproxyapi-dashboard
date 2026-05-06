@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="./dashboard/src/app/icon.svg" alt="CLIProxyAPI Dashboard logo" width="112" height="112" />
+  <img src="./apps/dashboard/src/app/icon.svg" alt="CLIProxyAPI Dashboard logo" width="112" height="112" />
   <h1>CLIProxyAPI Dashboard</h1>
   <p><strong>Proxy-only control plane for <a href="https://github.com/router-for-me/CLIProxyAPI">CLIProxyAPI</a></strong></p>
   <p>Next.js 16 / React 19 dashboard for provider credentials, proxy runtime settings, usage history, quotas, updates, logs, and safe container operations.</p>
@@ -45,15 +45,15 @@ The repository now includes root workspace scaffolding (`package.json`, `tsconfi
 
 Current state:
 
-- the runnable app still lives in `dashboard/`
-- root npm scripts delegate to `dashboard` for now (for example, `npm run dev` runs `npm --prefix dashboard run dev`)
+- the runnable app lives in `apps/dashboard/`
+- root npm scripts delegate to `apps/dashboard` (for example, `npm run dev` runs `npm --prefix apps/dashboard run dev`)
 
 ## Deployment Modes
 
 | Mode | Use it when | Command |
 | --- | --- | --- |
 | Local appliance | You want the published dashboard image and bundled proxy stack running locally | `./setup-local.sh` |
-| Source development | You want to run the dashboard from the checked-out source tree | `cd dashboard && ./dev-local.sh` |
+| Source development | You want to run the dashboard from the checked-out source tree | `cd apps/dashboard && ./dev-local.sh` |
 | Server install | You want the bundled production compose stack on Ubuntu/Debian | `curl -fsSL .../install.sh | sudo bash` |
 
 ## Runtime Topology
@@ -69,7 +69,7 @@ The bundled deployment is a four-service Docker stack:
 
 Operational boundaries:
 
-- `dashboard/`: application code, Prisma schema, local source-dev workflow
+- `apps/dashboard/`: application code, Prisma schema, local source-dev workflow
 - `infrastructure/`: production compose stack, runtime config, `manage.sh`, backup/restore ops, webhook helpers
 - `docs/`: canonical documentation set
 
@@ -124,12 +124,12 @@ Useful commands:
 ### 2. Source Development
 
 ```bash
-cd dashboard
+cd apps/dashboard
 ./dev-local.sh
 # Windows: .\dev-local.ps1
 ```
 
-The source-dev workflow starts PostgreSQL and CLIProxyAPI in Docker, applies Prisma bootstrap and migrations, writes `dashboard/.env.local`, and runs `npm run dev`.
+The source-dev workflow starts PostgreSQL and CLIProxyAPI in Docker, applies Prisma bootstrap and migrations, writes `apps/dashboard/.env.local`, and runs `npm run dev`.
 
 Source-dev endpoints:
 
@@ -200,7 +200,7 @@ The canonical documentation hub lives at [`docs/README.md`](docs/README.md).
 
 ## Development Commands
 
-Run from the repository root (delegates to [`dashboard/`](dashboard/)):
+Run from the repository root (delegates to [`apps/dashboard/`](apps/dashboard/)):
 
 ```bash
 npm run dev
@@ -210,12 +210,12 @@ npm test
 npm run build
 ```
 
-Equivalent direct run inside `dashboard/` is still supported.
+Equivalent direct run inside `apps/dashboard/` is still supported.
 
 Implementation notes:
 
 - Prisma client generation is wired into `predev`, `prebuild`, and `pretest`
-- The production image uses [`dashboard/entrypoint.sh`](dashboard/entrypoint.sh) to bootstrap core tables at startup with a PostgreSQL advisory lock
+- The production image uses [`apps/dashboard/entrypoint.sh`](apps/dashboard/entrypoint.sh) to bootstrap core tables at startup with a PostgreSQL advisory lock
 - The bundled deployment runs an embedded resident usage collector worker; `POST /api/usage/collect` is an authenticated fast trigger/wake seam
 - `GET /api/usage` remains a compatibility route, but new code should use `GET /api/usage/history`
 

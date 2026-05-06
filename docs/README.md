@@ -34,7 +34,7 @@ This directory is the canonical documentation set for the active CLIProxyAPI Das
 | Script | Scope | Notes |
 | --- | --- | --- |
 | [`../setup-local.sh`](../setup-local.sh) / [`../setup-local.ps1`](../setup-local.ps1) | Published-image local appliance | Creates root `.env` and `config.local.yaml`, then starts the bundled local stack |
-| [`../dashboard/dev-local.sh`](../dashboard/dev-local.sh) / [`../dashboard/dev-local.ps1`](../dashboard/dev-local.ps1) | Source development | Starts PostgreSQL + CLIProxyAPI for development and runs the Next.js dev server |
+| [`../apps/dashboard/dev-local.sh`](../apps/dashboard/dev-local.sh) / [`../apps/dashboard/dev-local.ps1`](../apps/dashboard/dev-local.ps1) | Source development | Starts PostgreSQL + CLIProxyAPI for development and runs the Next.js dev server |
 | [`../install.sh`](../install.sh) | Server install | Single server installer; can run from a checkout or as a one-file bootstrap, writes `infrastructure/.env`, can install Nginx plus a split-host ingress config, installs cron helpers, and optionally installs the webhook flow |
 | [`../infrastructure/manage.sh`](../infrastructure/manage.sh) | Bundled runtime control | Wrapper around `docker compose` plus backup/restore operations |
 | [`../infrastructure/WEBHOOK_SETUP.md`](../infrastructure/WEBHOOK_SETUP.md) | UI-linked webhook alias | Redirects to the canonical webhook section in [`OPERATIONS.md`](OPERATIONS.md) |
@@ -51,6 +51,6 @@ This directory is the canonical documentation set for the active CLIProxyAPI Das
 - Historical snapshots under `references/` are not source of truth for the active repo.
 - Generated analysis artifacts are supporting material only.
 - Documentation changes should stay aligned with:
-  - [`../dashboard/prisma/schema.prisma`](../dashboard/prisma/schema.prisma)
+  - [`../apps/dashboard/prisma/schema.prisma`](../apps/dashboard/prisma/schema.prisma)
   - [`../infrastructure/docker-compose.yml`](../infrastructure/docker-compose.yml)
-  - [`../dashboard/package.json`](../dashboard/package.json)
+  - [`../apps/dashboard/package.json`](../apps/dashboard/package.json)

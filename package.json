@@ -3,18 +3,17 @@
   "private": true,
   "version": "0.0.0",
   "workspaces": [
-    "dashboard",
     "apps/*",
     "workers/*",
     "packages/*"
   ],
   "scripts": {
-    "dev": "npm --prefix dashboard run dev",
-    "build": "npm --prefix dashboard run build",
-    "start": "npm --prefix dashboard run start",
-    "test": "npm --prefix dashboard run test",
-    "typecheck": "npm --prefix dashboard run typecheck",
-    "lint": "npm --prefix dashboard run lint",
-    "build:collector": "npm --prefix dashboard run build:collector"
+    "dev": "npm --prefix apps/dashboard run dev",
+    "build": "npm --prefix apps/dashboard run build",
+    "start": "npm --prefix apps/dashboard run start",
+    "test": "npm --prefix apps/dashboard run test",
+    "typecheck": "npm --prefix apps/dashboard run typecheck",
+    "lint": "npm --prefix apps/dashboard run lint",
+    "build:collector": "npm --prefix apps/dashboard run build:collector"
   }
 }

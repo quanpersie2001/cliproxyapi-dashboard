@@ -4,9 +4,9 @@ Canonical docs hub: [`docs/README.md`](README.md)
 
 ## Workspace Status
 
-Root workspace scaffolding is in place (`package.json`, `tsconfig.base.json`, plus placeholder `apps/`, `workers/`, and `packages/` directories), but the runnable dashboard application has not moved yet and remains under `dashboard/`.
+Root workspace scaffolding is in place (`package.json`, `tsconfig.base.json`, plus `apps/`, `workers/`, and `packages/` directories), and the runnable dashboard application now lives under `apps/dashboard/`.
 
-Root npm scripts currently delegate to `dashboard`.
+Root npm scripts currently delegate to `apps/dashboard`.
 
 ## Deployment Modes
 
@@ -15,7 +15,7 @@ This repo supports three distinct ways to run the project:
 | Mode | Primary script | Best for |
 | --- | --- | --- |
 | Local appliance stack | [`../setup-local.sh`](../setup-local.sh) / [`../setup-local.ps1`](../setup-local.ps1) | Running the published dashboard image locally with minimal setup |
-| Source development | [`../dashboard/dev-local.sh`](../dashboard/dev-local.sh) / [`../dashboard/dev-local.ps1`](../dashboard/dev-local.ps1) | Working on dashboard code from this checkout |
+| Source development | [`../apps/dashboard/dev-local.sh`](../apps/dashboard/dev-local.sh) / [`../apps/dashboard/dev-local.ps1`](../apps/dashboard/dev-local.ps1) | Working on dashboard code from this checkout |
 | Server install | [`../install.sh`](../install.sh) | Provisioning the bundled production compose stack on Ubuntu/Debian, with or without pre-cloning the repo |
 
 ## Bundled Stack Topology
@@ -101,25 +101,25 @@ Use the source-dev scripts when you want to modify the Next.js app from this che
 ### Commands
 
 ```bash
-cd dashboard
+cd apps/dashboard
 ./dev-local.sh
 ```
 
 Windows:
 
 ```powershell
-cd dashboard
+cd apps/dashboard
 .\dev-local.ps1
 ```
 
 What the source-dev script does:
 
-- starts [`../dashboard/docker-compose.dev.yml`](../dashboard/docker-compose.dev.yml)
+- starts [`../apps/dashboard/docker-compose.dev.yml`](../apps/dashboard/docker-compose.dev.yml)
 - waits for PostgreSQL and CLIProxyAPI
-- creates `dashboard/config.dev.yaml` from [`../dashboard/config.dev.yaml.example`](../dashboard/config.dev.yaml.example) when needed
+- creates `apps/dashboard/config.dev.yaml` from [`../apps/dashboard/config.dev.yaml.example`](../apps/dashboard/config.dev.yaml.example) when needed
 - runs `prisma migrate deploy`
 - generates the Prisma client
-- writes `dashboard/.env.local`
+- writes `apps/dashboard/.env.local`
 - starts `npm run dev`
 
 Source-dev endpoints:
@@ -139,7 +139,7 @@ Source-dev callback host ports:
 Lifecycle helpers:
 
 ```bash
-cd dashboard
+cd apps/dashboard
 ./dev-local.sh --down
 ./dev-local.sh --reset
 ```

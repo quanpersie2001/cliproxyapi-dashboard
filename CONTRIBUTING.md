@@ -11,23 +11,23 @@ Canonical docs hub: [`docs/README.md`](docs/README.md)
 
 ## Workspace Status
 
-The repository now has root workspace scaffolding (`package.json`, `tsconfig.base.json`, plus placeholder `apps/`, `workers/`, `packages/` directories), but the runnable app remains in [`dashboard/`](dashboard/).
+The repository now has root workspace scaffolding (`package.json`, `tsconfig.base.json`, plus `apps/`, `workers/`, `packages/` directories), and the runnable app lives in [`apps/dashboard/`](apps/dashboard/).
 
-Root scripts are available as convenience entrypoints and currently delegate to `dashboard`.
+Root scripts are available as convenience entrypoints and currently delegate to `apps/dashboard`.
 
 ## Recommended Development Workflow
 
-Use the source-dev scripts from [`dashboard/`](dashboard/):
+Use the source-dev scripts from [`apps/dashboard/`](apps/dashboard/):
 
 ```bash
-cd dashboard
+cd apps/dashboard
 ./dev-local.sh
 ```
 
 Windows:
 
 ```powershell
-cd dashboard
+cd apps/dashboard
 .\dev-local.ps1
 ```
 
@@ -45,7 +45,7 @@ For a quick smoke test of the published images instead of source development, us
 
 ## Dashboard npm Scripts
 
-Preferred from repo root (delegates to `dashboard`):
+Preferred from repo root (delegates to `apps/dashboard`):
 
 ```bash
 npm run dev
@@ -55,7 +55,7 @@ npm test
 npm run build
 ```
 
-Direct execution in [`dashboard/`](dashboard/) is also valid:
+Direct execution in [`apps/dashboard/`](apps/dashboard/) is also valid:
 
 | Command | Purpose |
 | --- | --- |
@@ -70,11 +70,11 @@ Direct execution in [`dashboard/`](dashboard/) is also valid:
 ## Project Rules That Matter
 
 - TypeScript strict mode is enabled.
-- Use `API_ENDPOINTS` from [`dashboard/src/lib/api-endpoints.ts`](dashboard/src/lib/api-endpoints.ts) instead of hardcoded route strings in the app.
-- Use `apiError`, `apiSuccess`, or `Errors.*` from [`dashboard/src/lib/errors.ts`](dashboard/src/lib/errors.ts) for API responses.
+- Use `API_ENDPOINTS` from [`apps/dashboard/src/lib/api-endpoints.ts`](apps/dashboard/src/lib/api-endpoints.ts) instead of hardcoded route strings in the app.
+- Use `apiError`, `apiSuccess`, or `Errors.*` from [`apps/dashboard/src/lib/errors.ts`](apps/dashboard/src/lib/errors.ts) for API responses.
 - Do not add new consumers of the deprecated `GET /api/usage` route; use `GET /api/usage/history`.
 - Do not treat `providerMutex` as a distributed lock.
-- Do not edit generated Prisma internals under `dashboard/src/generated/prisma/internal/`.
+- Do not edit generated Prisma internals under `apps/dashboard/src/generated/prisma/internal/`.
 - Keep secrets and API URLs out of source control.
 
 ## Testing Checklist
@@ -82,7 +82,7 @@ Direct execution in [`dashboard/`](dashboard/) is also valid:
 Before opening a PR, run:
 
 ```bash
-cd dashboard
+cd apps/dashboard
 npm run typecheck
 npm run lint
 npm test
