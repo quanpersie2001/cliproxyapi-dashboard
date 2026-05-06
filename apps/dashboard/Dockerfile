@@ -3,7 +3,14 @@
 FROM node:20-alpine AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
-RUN NODE_OPTIONS=--max-old-space-size=384 npm ci --legacy-peer-deps --no-audit --no-fund && npm cache clean --force
+RUN NODE_OPTIONS=--max-old-space-size=384 npm ci --legacy-peer-deps --no-audit --no-fund && \
+    NEXT_VERSION=$(node -p "require('./package.json').dependencies.next") && \
+    case "$(node -p 'process.arch')" in \
+      arm64) npm install --no-save "@next/swc-linux-arm64-musl@${NEXT_VERSION}" ;; \
+      x64) npm install --no-save "@next/swc-linux-x64-musl@${NEXT_VERSION}" ;; \
+      *) echo "Unsupported architecture: $(node -p 'process.arch')" >&2; exit 1 ;; \
+    esac && \
+    npm cache clean --force
 
 FROM node:20-alpine AS builder
 WORKDIR /app
@@ -51,7 +58,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 COPY --from=builder --chown=nextjs:nodejs /app/public ./public
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./app/.next/static
 COPY --from=builder --chown=nextjs:nodejs /app/dist-collector ./dist-collector
 COPY --from=builder --chown=nextjs:nodejs /app/src/server/db/generated ./src/server/db/generated
 COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
