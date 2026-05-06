@@ -26,7 +26,7 @@ const REQUIRED_RUNTIME_COLUMNS = [
   "backoffUntil",
 ] as const;
 
-function resolveDatabaseUrl(): string {
+function resolveDatabaseUrl(): string | null {
   const dedicatedUrl = process.env.COLLECTOR_STATE_TEST_DATABASE_URL?.trim();
   if (dedicatedUrl) {
     return withSchemaSearchPath(dedicatedUrl, TEST_SCHEMA);
@@ -48,8 +48,11 @@ function resolveDatabaseUrl(): string {
     }
   }
 
-  throw new Error("DATABASE_URL is required for collector_state postgres integration test.");
+  return null;
 }
+
+const databaseUrl = resolveDatabaseUrl();
+const describeIfDatabase = databaseUrl ? describe : describe.skip;
 
 function withSchemaSearchPath(connectionString: string, schema: string): string {
   const parsed = new URL(connectionString);
@@ -100,13 +103,13 @@ async function ensureCollectorStateTable(prisma: PrismaClient): Promise<void> {
   `);
 }
 
-describe("PrismaCollectorStateRepository (Postgres integration)", () => {
+describeIfDatabase("PrismaCollectorStateRepository (Postgres integration)", () => {
   let prisma: PrismaClient;
 
   beforeAll(async () => {
     prisma = new PrismaClient({
       adapter: new PrismaPg({
-        connectionString: resolveDatabaseUrl(),
+        connectionString: databaseUrl!,
       }),
     });
     await prisma.$connect();
@@ -115,6 +118,9 @@ describe("PrismaCollectorStateRepository (Postgres integration)", () => {
   });
 
   afterAll(async () => {
+    if (!prisma) {
+      return;
+    }
     await prisma.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${TEST_SCHEMA}" CASCADE`);
     await prisma.$disconnect();
   });

@@ -15,7 +15,7 @@ vi.mock("@/lib/cache", () => ({
 
 import { PrismaUsageRecordRepository } from "@/server/jobs/workers/usage-collector/repositories/usage-record-repository";
 
-function resolveDatabaseUrl(): string {
+function resolveDatabaseUrl(): string | null {
   const envLocalPath = path.resolve(process.cwd(), ".env.local");
   if (fs.existsSync(envLocalPath)) {
     const contents = fs.readFileSync(envLocalPath, "utf8");
@@ -32,8 +32,11 @@ function resolveDatabaseUrl(): string {
     return fromEnv;
   }
 
-  throw new Error("DATABASE_URL is required for usage record postgres integration test.");
+  return null;
 }
+
+const databaseUrl = resolveDatabaseUrl();
+const describeIfDatabase = databaseUrl ? describe : describe.skip;
 
 async function ensureUsageRecordDependencies(prisma: PrismaClient): Promise<void> {
   await prisma.$executeRawUnsafe(`
@@ -152,13 +155,13 @@ function createEvent(eventKey: string, source: string): NormalizedQueuedUsageEve
   };
 }
 
-describe("PrismaUsageRecordRepository (Postgres integration)", () => {
+describeIfDatabase("PrismaUsageRecordRepository (Postgres integration)", () => {
   let prisma: PrismaClient;
 
   beforeAll(async () => {
     prisma = new PrismaClient({
       adapter: new PrismaPg({
-        connectionString: resolveDatabaseUrl(),
+        connectionString: databaseUrl!,
       }),
     });
 
@@ -167,7 +170,7 @@ describe("PrismaUsageRecordRepository (Postgres integration)", () => {
   });
 
   afterAll(async () => {
-    await prisma.$disconnect();
+    await prisma?.$disconnect();
   });
 
   it("skips duplicate eventKey inserts across writes without failing the batch", async () => {

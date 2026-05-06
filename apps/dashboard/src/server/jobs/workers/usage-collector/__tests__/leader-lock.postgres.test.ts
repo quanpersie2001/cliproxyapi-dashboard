@@ -14,7 +14,7 @@ import { PostgresCollectorLeaderLock } from "@/server/jobs/workers/usage-collect
 type AdvisoryLockRow = { acquired: boolean };
 type AdvisoryUnlockRow = { released: boolean };
 
-function resolveDatabaseUrl(): string {
+function resolveDatabaseUrl(): string | null {
   const dedicatedUrl = process.env.COLLECTOR_STATE_TEST_DATABASE_URL?.trim();
   if (dedicatedUrl) {
     return withSchemaSearchPath(dedicatedUrl);
@@ -36,8 +36,11 @@ function resolveDatabaseUrl(): string {
     }
   }
 
-  throw new Error("DATABASE_URL is required for leader-lock postgres integration test.");
+  return null;
 }
+
+const databaseUrl = resolveDatabaseUrl();
+const describeIfDatabase = databaseUrl ? describe : describe.skip;
 
 function withSchemaSearchPath(connectionString: string): string {
   const parsed = new URL(connectionString);
@@ -101,13 +104,13 @@ function getQueryText(query: unknown): string {
   return String(query ?? "");
 }
 
-describe("PostgresCollectorLeaderLock (Postgres integration)", () => {
+describeIfDatabase("PostgresCollectorLeaderLock (Postgres integration)", () => {
   let prismaA: PrismaClient;
   let prismaB: PrismaClient;
   const lockKey = 942001;
 
   beforeAll(async () => {
-    const connectionString = resolveDatabaseUrl();
+    const connectionString = databaseUrl!;
     prismaA = new PrismaClient({
       adapter: new PrismaPg({ connectionString }),
     });
@@ -120,8 +123,8 @@ describe("PostgresCollectorLeaderLock (Postgres integration)", () => {
   });
 
   afterAll(async () => {
-    await prismaA.$disconnect();
-    await prismaB.$disconnect();
+    await prismaA?.$disconnect();
+    await prismaB?.$disconnect();
   });
 
   it("enforces exclusive leadership under contention and releases lock for a later contender", async () => {

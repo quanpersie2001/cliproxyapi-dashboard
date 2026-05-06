@@ -38,7 +38,7 @@ vi.mock("@/server/db/client", () => ({
   },
 }));
 
-function resolveDatabaseUrl(): string {
+function resolveDatabaseUrl(): string | null {
   const envLocalPath = path.resolve(process.cwd(), ".env.local");
   if (fs.existsSync(envLocalPath)) {
     const contents = fs.readFileSync(envLocalPath, "utf8");
@@ -55,8 +55,11 @@ function resolveDatabaseUrl(): string {
     return withSchemaSearchPath(fromEnv, TEST_SCHEMA);
   }
 
-  throw new Error("DATABASE_URL is required for route wake postgres integration test.");
+  return null;
 }
+
+const databaseUrl = resolveDatabaseUrl();
+const describeIfDatabase = databaseUrl ? describe : describe.skip;
 
 function withSchemaSearchPath(connectionString: string, schema: string): string {
   const parsed = new URL(connectionString);
@@ -121,13 +124,13 @@ function createRequest(headers: Record<string, string> = {}): NextRequest {
   });
 }
 
-describe("POST /api/usage/collect (Postgres integration)", () => {
+describeIfDatabase("POST /api/usage/collect (Postgres integration)", () => {
   let prisma: PrismaClient;
 
   beforeAll(async () => {
     prisma = new PrismaClient({
       adapter: new PrismaPg({
-        connectionString: resolveDatabaseUrl(),
+        connectionString: databaseUrl!,
       }),
     });
     prismaClientForRoute = prisma;
@@ -138,6 +141,9 @@ describe("POST /api/usage/collect (Postgres integration)", () => {
   });
 
   afterAll(async () => {
+    if (!prisma) {
+      return;
+    }
     await prisma.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${TEST_SCHEMA}" CASCADE`);
     await prisma.$disconnect();
   });
