@@ -2,5 +2,5 @@
   "version": "0.2.8",
   "tag": "dashboard-v0.2.8",
   "releaseUrl": "https://github.com/quanpersie2001/cliproxyapi-dashboard/releases/tag/dashboard-v0.2.8",
-  "releaseNotes": "## [0.2.8](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.7...dashboard-v0.2.8) (2026-05-06)\n\n\n### Features\n\n* add embedded usage queue ingestion ([#14](https://github.com/quanpersie2001/cliproxyapi-dashboard/issues/14)) ([5c9edef](https://github.com/quanpersie2001/cliproxyapi-dashboard/commit/5c9edef8c01db86c1bd48c559e2cacf002f1b89b))\n\n\n### Bug Fixes\n\n* **ui:** add overscroll-y-none to dashboard client layout ([91387a8](https://github.com/quanpersie2001/cliproxyapi-dashboard/commit/91387a8f8a73c5f96c763b03f56bb9b3d283e21d))"
+  "releaseNotes": "## [0.2.8](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.7...dashboard-v0.2.8) (2026-05-06)\r\n\r\n\r\n### Features\r\n\r\n* add embedded usage queue ingestion ([#14](https://github.com/quanpersie2001/cliproxyapi-dashboard/issues/14)) ([5c9edef](https://github.com/quanpersie2001/cliproxyapi-dashboard/commit/5c9edef8c01db86c1bd48c559e2cacf002f1b89b))\r\n\r\n\r\n### Bug Fixes\r\n\r\n* **ui:** add overscroll-y-none to dashboard client layout ([91387a8](https://github.com/quanpersie2001/cliproxyapi-dashboard/commit/91387a8f8a73c5f96c763b03f56bb9b3d283e21d))"
 }
