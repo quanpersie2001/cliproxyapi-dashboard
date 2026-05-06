@@ -37,9 +37,9 @@
 
 ## Final Verification Rerun
 
-- `npm --prefix "/Users/quannv.dev/Workspace/Personal/cliproxyapi-dashboard/dashboard" test` => Pass (`40` files, `171` tests).
-- `npm --prefix "/Users/quannv.dev/Workspace/Personal/cliproxyapi-dashboard/dashboard" run typecheck` => Pass.
-- `npm --prefix "/Users/quannv.dev/Workspace/Personal/cliproxyapi-dashboard/dashboard" run build` => Pass.
+- `npm --prefix "/Users/quannv.dev/Workspace/Personal/cliproxyapi-apps/dashboard/dashboard" test` => Pass (`40` files, `171` tests).
+- `npm --prefix "/Users/quannv.dev/Workspace/Personal/cliproxyapi-apps/dashboard/dashboard" run typecheck` => Pass.
+- `npm --prefix "/Users/quannv.dev/Workspace/Personal/cliproxyapi-apps/dashboard/dashboard" run build` => Pass.
 
 ## Non-Blocking Review Findings
 

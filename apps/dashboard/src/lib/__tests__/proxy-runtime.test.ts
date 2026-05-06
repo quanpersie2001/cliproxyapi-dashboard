@@ -27,7 +27,7 @@ describe("getProxyContainerName", () => {
 describe("resolveProxyComposeFile", () => {
   it("prefers the dev compose file for dev-local proxy containers", () => {
     const cwd = "/workspace/dashboard";
-    const devCompose = path.resolve(cwd, "docker-compose.dev.yml");
+    const devCompose = path.resolve(cwd, "tools/dev/docker-compose.dev.yml");
     const prodCompose = path.resolve(cwd, "../infrastructure/docker-compose.yml");
 
     const resolved = resolveProxyComposeFile(

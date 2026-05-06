@@ -7,15 +7,15 @@
     "predev": "npm run prisma:generate",
     "dev": "next dev",
     "prebuild": "npm run prisma:generate",
-    "build:collector": "rm -rf dist-collector && tsc -p tsconfig.collector.json && cp collector-bootstrap.js dist-collector/collector-bootstrap.js && node ./scripts/postbuild-collector.cjs",
-    "build": "npm run build:collector && next build",
+    "build:collector": "rm -rf dist-collector && tsc -p tsconfig.collector.json && mkdir -p dist-collector/workers/usage-collector && cp -R dist-collector/server/jobs/workers/usage-collector/. dist-collector/workers/usage-collector/ && cp scripts/runtime/collector-bootstrap.js dist-collector/collector-bootstrap.js && node scripts/postbuild-collector.cjs",
+    "build": "npm run build:collector && next build && rm -rf .next/standalone/apps/dashboard/.next/static && mkdir -p .next/standalone/apps/dashboard/.next && cp -R .next/static .next/standalone/apps/dashboard/.next/static",
     "typecheck": "npm run prisma:generate && tsc --noEmit",
     "pretest": "npm run prisma:generate",
-    "start": "next start",
+    "start": "node dist-collector/collector-bootstrap.js",
     "lint": "eslint",
     "test": "vitest run",
     "test:watch": "vitest",
-    "migrate:provider-ownership": "tsx src/scripts/migrate-provider-ownership.ts"
+    "migrate:provider-ownership": "tsx src/server/jobs/scripts/migrate-provider-ownership.ts"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.4.2",

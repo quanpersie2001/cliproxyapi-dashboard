@@ -41,7 +41,7 @@ flowchart TD
 
 ## Deployment Boundaries
 
-- **Dashboard (`dashboard/`)**
+- **Dashboard (`apps/dashboard/`)**
   - Next.js UI and API routes
   - JWT session auth
   - Prisma access to PostgreSQL
@@ -57,16 +57,18 @@ flowchart TD
 ## Current Source Layout
 
 ```text
-dashboard/src/
-├── app/                18 page routes total
-│   ├── api/            48 route handlers
-│   └── dashboard/      authenticated dashboard and admin surfaces
-├── components/         71 shared component files
-├── features/           16 feature-surface files
-├── hooks/              8 hook files
-├── lib/                57 service/utility files
-├── server/             2 server-side usage service files
-└── generated/          Prisma client output
+apps/dashboard/src/
+├── app/                App Router pages and API handlers
+│   ├── api/            authenticated/admin/runtime route handlers
+│   └── dashboard/      authenticated dashboard surfaces
+├── components/         shared UI building blocks
+├── features/           feature-scoped UI and domain modules
+├── lib/                shared utilities, clients, and React hooks
+└── server/             server-only auth, db, jobs, and usage services
+    ├── auth/           session and origin-validation helpers
+    ├── db/             Prisma client and generated output
+    │   └── generated/  generated Prisma client under db ownership
+    └── jobs/           resident usage collector runtime
 ```
 
 ## Frontend Surface
@@ -212,17 +214,17 @@ CollectorState
 - `lib/proxy-runtime.ts`: proxy container and compose-path resolution
 - `lib/providers/management-api.ts`: management API wrapper and process-local mutex
 - `lib/usage/history.ts`: persistent usage snapshot and aggregation logic
-- `lib/containers.ts`: allowlist for container management
-- `lib/auth/origin.ts`: effective-origin validation for state-changing authenticated requests
+- `features/containers/containers.ts`: allowlist for container management
+- `server/auth/lib/origin.ts`: effective-origin validation for state-changing authenticated requests
 
 ## Runtime Notes
 
-- The production dashboard image runs [`../dashboard/entrypoint.sh`](../dashboard/entrypoint.sh), which applies the baseline Prisma migration chain with `prisma migrate deploy` before starting the server.
+- The production dashboard image runs [`../apps/dashboard/scripts/runtime/entrypoint.sh`](../apps/dashboard/scripts/runtime/entrypoint.sh), which applies the baseline Prisma migration chain with `prisma migrate deploy` before starting the server.
 - Source development uses the same baseline migration chain with `prisma migrate deploy`.
 - The Docker stack itself does not include a public ingress service. The repo ships an optional Nginx template, and `install.sh` can install Nginx as an HTTP reverse proxy starter outside the Compose stack.
 - The bundled deployment assumes a single dashboard instance.
-- `providerMutex` in [`../dashboard/src/lib/providers/management-api.ts`](../dashboard/src/lib/providers/management-api.ts) is process-local only.
-- [`../dashboard/prisma/schema.prisma`](../dashboard/prisma/schema.prisma) is the active source of truth for the data model.
+- `providerMutex` in [`../apps/dashboard/src/lib/providers/management-api.ts`](../apps/dashboard/src/lib/providers/management-api.ts) is process-local only.
+- [`../apps/dashboard/prisma/schema.prisma`](../apps/dashboard/prisma/schema.prisma) is the active source of truth for the data model.
 
 ## Auth Model
 

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma } from "@/server/db/client";
 import { env } from "@/lib/env";
 
 const HEALTH_CHECK_TIMEOUT_MS = 5000;

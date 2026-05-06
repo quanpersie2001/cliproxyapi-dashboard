@@ -6,8 +6,8 @@ import Image from "next/image";
 import { useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { useMobileSidebar } from "@/components/mobile-sidebar-context";
-import { useAuth } from "@/hooks/use-auth";
-import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { useAuth } from "@/features/auth/hooks/use-auth";
+import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
 
 function IconPlayCircle({ className }: { className?: string }) {
   return (

@@ -7,7 +7,7 @@
 
 ## Commands
 
-1. `npm --prefix "/Users/quannv.dev/Workspace/Personal/cliproxyapi-dashboard/dashboard" run test -- src/usage-collector/__tests__/one-shot-orchestrator.test.ts`
+1. `npm --prefix "/Users/quannv.dev/Workspace/Personal/cliproxyapi-apps/dashboard/dashboard" run test -- src/usage-collector/__tests__/one-shot-orchestrator.test.ts`
    - Exit code: `0`
    - Observed result: `1` test file passed, `7` tests passed.
 
@@ -18,4 +18,4 @@
 
 ## Artifacts
 
-- `dashboard/src/usage-collector/__tests__/one-shot-orchestrator.test.ts`
+- `apps/dashboard/src/usage-collector/__tests__/one-shot-orchestrator.test.ts`

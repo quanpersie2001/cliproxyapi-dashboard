@@ -24,22 +24,22 @@ Phase 2 makes queue ingestion real but still bounded. By the end, the repo can p
 ## 4. Parallelization Guidance
 - Story 1 should remain a single ownership zone because source and decoder share the queue payload contract.
 - Story 2 must own `usage_queue_inbox` claim/status semantics alone; no other Phase 2 bead should issue competing row-claim SQL.
-- Story 3 may extract helper logic from `dashboard/src/app/api/usage/collect/route.ts`, but it must not rewrite the route's public behavior.
+- Story 3 may extract helper logic from `apps/dashboard/src/app/api/usage/collect/route.ts`, but it must not rewrite the route's public behavior.
 - Story 4 is the composition step and should remain serial after Stories 1-3 close.
-- Do not let any Phase 2 bead edit `dashboard/entrypoint.sh`, `dashboard/Dockerfile`, `dashboard/collector-bootstrap.js`, `install.sh`, or canonical docs; those are Phase 3/4 collision zones.
+- Do not let any Phase 2 bead edit `apps/dashboard/entrypoint.sh`, `apps/dashboard/Dockerfile`, `apps/dashboard/collector-bootstrap.js`, `install.sh`, or canonical docs; those are Phase 3/4 collision zones.
 
 ## 5. Shared Files and Collision Risks
 | File / Area | Risk | Coordination Rule |
 |---|---|---|
-| `dashboard/src/usage-collector/contracts.ts` and `dashboard/src/usage-collector/core/types.ts` | Medium | Reuse Phase 1 contracts; only Story 1 may add strictly necessary transport-neutral refinements. |
-| `dashboard/src/usage-collector/core/event-key.ts` | Medium | Story 1 and Story 4 may rely on it, but only touch it if fail-closed hardening is required by tests. |
-| `dashboard/src/usage-collector/repositories/*` | High | Story 2 owns inbox repository files; Story 3 owns usage-record persistence; keep repository responsibilities split. |
-| `dashboard/src/app/api/usage/collect/route.ts` | Medium | Story 3 may extract reusable ownership logic, but Phase 2 must not ship the route rewrite. |
-| `dashboard/src/lib/usage/history.ts` | High | Story 3 may add test coverage or additive compatibility proofs only; no redesign. |
-| `dashboard/prisma/schema.prisma` and existing migration files | Blocked except additive fixes | Phase 2 should not reopen Phase 1 schema unless execution finds a validation-approved additive correction. |
+| `apps/dashboard/src/usage-collector/contracts.ts` and `apps/dashboard/src/usage-collector/core/types.ts` | Medium | Reuse Phase 1 contracts; only Story 1 may add strictly necessary transport-neutral refinements. |
+| `apps/dashboard/src/usage-collector/core/event-key.ts` | Medium | Story 1 and Story 4 may rely on it, but only touch it if fail-closed hardening is required by tests. |
+| `apps/dashboard/src/usage-collector/repositories/*` | High | Story 2 owns inbox repository files; Story 3 owns usage-record persistence; keep repository responsibilities split. |
+| `apps/dashboard/src/app/api/usage/collect/route.ts` | Medium | Story 3 may extract reusable ownership logic, but Phase 2 must not ship the route rewrite. |
+| `apps/dashboard/src/lib/usage/history.ts` | High | Story 3 may add test coverage or additive compatibility proofs only; no redesign. |
+| `apps/dashboard/prisma/schema.prisma` and existing migration files | Blocked except additive fixes | Phase 2 should not reopen Phase 1 schema unless execution finds a validation-approved additive correction. |
 
 ## 6. Testing Discipline
-- Story 1: fixture-driven source/decoder tests plus `npm run typecheck` from `dashboard/`.
+- Story 1: fixture-driven source/decoder tests plus `npm run typecheck` from `apps/dashboard/`.
 - Story 2: repository tests must prove real claim/update semantics; prefer local Postgres-backed evidence because this is a HIGH-risk concurrency seam.
 - Story 3: prove duplicate/idempotency behavior at runtime level, not only by generated Prisma surface, and add a focused usage-history compatibility check.
 - Story 4: mixed-batch one-shot tests must cover valid rows, malformed payloads, process retries, discard behavior, and cleanup outcomes.

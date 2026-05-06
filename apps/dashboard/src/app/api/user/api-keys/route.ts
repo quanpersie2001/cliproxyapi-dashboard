@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifySession } from "@/lib/auth/session";
-import { validateOrigin } from "@/lib/auth/origin";
+import { verifySession } from "@/server/auth/lib/session";
+import { validateOrigin } from "@/server/auth/lib/origin";
 import { generateApiKey } from "@/lib/api-keys/generate";
 import { syncKeysToCliProxyApi } from "@/lib/api-keys/sync";
-import { prisma } from "@/lib/db";
-import { checkRateLimitWithPreset } from "@/lib/auth/rate-limit";
+import { prisma } from "@/server/db/client";
+import { checkRateLimitWithPreset } from "@/server/auth/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { z } from "zod";
 import { Errors, apiSuccess } from "@/lib/errors";

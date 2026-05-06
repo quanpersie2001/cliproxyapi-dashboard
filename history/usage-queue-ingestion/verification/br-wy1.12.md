@@ -38,6 +38,6 @@ Coordinator shutdown bookkeeping now removes the exiting child entry before shut
 
 ## Files Changed
 
-- `dashboard/collector-bootstrap.js`
-- `dashboard/src/usage-collector/__tests__/collector-bootstrap.runtime.test.ts`
+- `apps/dashboard/collector-bootstrap.js`
+- `apps/dashboard/src/usage-collector/__tests__/collector-bootstrap.runtime.test.ts`
 - `history/usage-queue-ingestion/verification/br-wy1.12.md`

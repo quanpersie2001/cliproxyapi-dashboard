@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { verifySession } from "@/lib/auth/session";
+import { verifySession } from "@/server/auth/lib/session";
 import { scheduleKeysToCliProxyApiSync } from "@/lib/api-keys/sync";
-import { prisma } from "@/lib/db";
+import { prisma } from "@/server/db/client";
 import { Errors } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 

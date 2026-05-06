@@ -10,7 +10,7 @@ This guide is the operator-facing reference for lifecycle commands, health check
 | --- | --- |
 | [`../infrastructure/manage.sh`](../infrastructure/manage.sh) | Bundled runtime stack control, backup, restore, image pulls |
 | [`../setup-local.sh`](../setup-local.sh) / [`../setup-local.ps1`](../setup-local.ps1) | Local appliance lifecycle using published images |
-| [`../apps/dashboard/dev-local.sh`](../apps/dashboard/dev-local.sh) / [`../apps/dashboard/dev-local.ps1`](../apps/dashboard/dev-local.ps1) | Source development lifecycle |
+| [`../apps/dashboard/tools/dev/dev-local.sh`](../apps/dashboard/tools/dev/dev-local.sh) / [`../apps/dashboard/tools/dev/dev-local.ps1`](../apps/dashboard/tools/dev/dev-local.ps1) | Source development lifecycle |
 | Root npm scripts (`npm run dev`, `npm run test`, `npm run lint`, `npm run typecheck`) | Workspace entrypoint that currently delegates to `apps/dashboard` |
 | [`../install.sh`](../install.sh) | Ubuntu/Debian provisioning, backup cron wiring, optional webhook install |
 
@@ -56,8 +56,8 @@ docker compose -f docker-compose.local.yml logs -f
 
 ```bash
 cd apps/dashboard
-docker compose -f docker-compose.dev.yml ps
-docker compose -f docker-compose.dev.yml logs -f
+docker compose -f tools/dev/docker-compose.dev.yml ps
+docker compose -f tools/dev/docker-compose.dev.yml logs -f
 ```
 
 ## `infrastructure/manage.sh`
@@ -112,9 +112,9 @@ Current local appliance endpoints:
 
 ```bash
 cd apps/dashboard
-./dev-local.sh
-./dev-local.sh --down
-./dev-local.sh --reset
+./tools/dev/dev-local.sh
+./tools/dev/dev-local.sh --down
+./tools/dev/dev-local.sh --reset
 ```
 
 Current source-dev endpoints:

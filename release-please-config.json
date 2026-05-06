@@ -3,21 +3,21 @@
     ".": {
       "release-type": "node",
       "component": "dashboard",
-      "changelog-path": "dashboard/CHANGELOG.md",
+      "changelog-path": "apps/dashboard/CHANGELOG.md",
       "extra-files": [
         {
           "type": "json",
-          "path": "dashboard/package.json",
+          "path": "apps/dashboard/package.json",
           "jsonpath": "$.version"
         },
         {
           "type": "json",
-          "path": "dashboard/package-lock.json",
+          "path": "apps/dashboard/package-lock.json",
           "jsonpath": "$.version"
         },
         {
           "type": "json",
-          "path": "dashboard/package-lock.json",
+          "path": "apps/dashboard/package-lock.json",
           "jsonpath": "$['packages']['']['version']"
         }
       ],

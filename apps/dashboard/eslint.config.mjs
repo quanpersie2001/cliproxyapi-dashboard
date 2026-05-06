@@ -6,7 +6,7 @@ const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
   {
-    files: ["collector-bootstrap.js", "scripts/postbuild-collector.cjs"],
+    files: ["scripts/runtime/collector-bootstrap.js", "scripts/postbuild-collector.cjs"],
     languageOptions: {
       sourceType: "commonjs",
     },

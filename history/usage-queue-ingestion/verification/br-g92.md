@@ -26,6 +26,6 @@ Added a socket-level RESP integration harness to exercise the real TCP runtime b
 
 ## Files Changed
 
-- `dashboard/src/usage-collector/runtime-main.ts`
-- `dashboard/src/usage-collector/__tests__/resp-queue-source.test.ts`
+- `apps/dashboard/src/usage-collector/runtime-main.ts`
+- `apps/dashboard/src/usage-collector/__tests__/resp-queue-source.test.ts`
 - `history/usage-queue-ingestion/verification/br-g92.md`

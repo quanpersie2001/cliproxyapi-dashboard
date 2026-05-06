@@ -3,4 +3,4 @@ export {
   SectionHeader,
   Select,
   Toggle,
-} from "@/features/config/components/config-fields";
+} from "@/features/containers/config/components/config-fields";

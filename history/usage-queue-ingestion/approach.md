@@ -45,7 +45,7 @@ Implement the feature foundation-first: land schema and collector contracts befo
 | Usage record repository | `src/usage-collector/repositories/usage-record-repository.ts` | Batch persist normalized events into `usage_records` with `eventKey` conflict protection. | Keep `usage_dedup_key` as safety net in first migration. |
 | Ownership resolver | `src/usage-collector/core/ownership-resolver.ts` | Resolve `userId`/`apiKeyId` using current API key, auth-file, source, username, and prefix rules. | Valid events persist even if ownership remains partial. |
 | Worker runner | `src/usage-collector/runner.ts` plus entrypoint/coordinator | Long-lived loops for pull, process, metadata/cleanup. | Advisory leadership before draining upstream queue. |
-| Manual trigger route | `dashboard/src/app/api/usage/collect/route.ts` | Preserve dual auth, origin validation, and return quickly after kick/bounded drain. | No legacy `/usage` fetch. |
+| Manual trigger route | `apps/dashboard/src/app/api/usage/collect/route.ts` | Preserve dual auth, origin validation, and return quickly after kick/bounded drain. | No legacy `/usage` fetch. |
 
 ## 3. Alternatives Considered
 - Keep 5-minute cron and call RESP from `POST /api/usage/collect` — rejected because upstream queue retention can be shorter than cron cadence and D1/D2 require resident worker plus fast route.
@@ -106,7 +106,7 @@ Implement the feature foundation-first: land schema and collector contracts befo
 
 ## 5. Proposed File Structure
 ```text
-dashboard/
+apps/dashboard/
 ├── prisma/
 │   ├── schema.prisma
 │   └── migrations/<timestamp>_usage_queue_ingestion/

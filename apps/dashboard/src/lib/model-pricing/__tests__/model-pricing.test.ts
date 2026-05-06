@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@/server/db/generated/prisma/client";
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/env", () => ({
   env: {
@@ -14,7 +14,7 @@ vi.mock("@/lib/env", () => ({
     LOG_LEVEL: "info",
   },
 }));
-vi.mock("@/lib/db", () => ({
+vi.mock("@/server/db/client", () => ({
   prisma: {},
 }));
 import {

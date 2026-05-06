@@ -11,7 +11,7 @@
 - Exit code: `0`
 - Result: canonical docs now consistently describe resident/embedded worker as default, keep `POST /api/usage/collect` in fast trigger semantics, and preserve `GET /api/usage/history` as durable read surface.
 
-2. `npm --prefix "/Users/quannv.dev/Workspace/Personal/cliproxyapi-dashboard/dashboard" run build`
+2. `npm --prefix "/Users/quannv.dev/Workspace/Personal/cliproxyapi-apps/dashboard/dashboard" run build`
 - Exit code: `0`
 - Result: build passed (`prisma generate`, `build:collector`, `next build`) with no failures.
 

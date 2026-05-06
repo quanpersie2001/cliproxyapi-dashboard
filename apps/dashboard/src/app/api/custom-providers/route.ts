@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifySession } from "@/lib/auth/session";
-import { validateOrigin } from "@/lib/auth/origin";
-import { prisma } from "@/lib/db";
+import { verifySession } from "@/server/auth/lib/session";
+import { validateOrigin } from "@/server/auth/lib/origin";
+import { prisma } from "@/server/db/client";
 import { hashProviderKey } from "@/lib/providers/hash";
 import { encryptProviderKey } from "@/lib/providers/encrypt";
 import { z } from "zod";
-import { checkRateLimitWithPreset } from "@/lib/auth/rate-limit";
+import { checkRateLimitWithPreset } from "@/server/auth/lib/rate-limit";
 import { AUDIT_ACTION, extractIpAddress, logAuditAsync } from "@/lib/audit";
 import { syncCustomProviderToProxy } from "@/lib/providers/custom-provider-sync";
 import { CreateCustomProviderSchema } from "@/lib/validation/schemas";

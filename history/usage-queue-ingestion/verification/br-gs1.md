@@ -7,8 +7,8 @@
 
 ## Implemented Changes
 
-- Added migration: `dashboard/prisma/migrations/20260505170500_collector_state_runtime_columns/migration.sql`
-- Added migrated-DB integration test: `dashboard/src/usage-collector/__tests__/collector-state-repository.postgres.test.ts`
+- Added migration: `apps/dashboard/prisma/migrations/20260505170500_collector_state_runtime_columns/migration.sql`
+- Added migrated-DB integration test: `apps/dashboard/src/usage-collector/__tests__/collector-state-repository.postgres.test.ts`
   - test asserts required `collector_state` runtime columns are physically present
   - test exercises `PrismaCollectorStateRepository` writes (`ensureSingletonState`, `markRunning`, `markWakeHandled`, `markSuccess`)
   - test does not create or alter `collector_state` inside the harness
@@ -66,6 +66,6 @@ Observed result:
 
 ## Generated Proof Artifacts
 
-- Migration SQL: `dashboard/prisma/migrations/20260505170500_collector_state_runtime_columns/migration.sql`
-- Integration test: `dashboard/src/usage-collector/__tests__/collector-state-repository.postgres.test.ts`
+- Migration SQL: `apps/dashboard/prisma/migrations/20260505170500_collector_state_runtime_columns/migration.sql`
+- Integration test: `apps/dashboard/src/usage-collector/__tests__/collector-state-repository.postgres.test.ts`
 - This verification record: `history/usage-queue-ingestion/verification/br-gs1.md`

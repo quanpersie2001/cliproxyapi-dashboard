@@ -2,7 +2,7 @@ import { NextRequest } from "next/server";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock external dependencies before importing route
-vi.mock("@/lib/auth/session", () => ({
+vi.mock("@/server/auth/lib/session", () => ({
   verifySession: vi.fn(() => ({ userId: "test-user" })),
 }));
 
@@ -15,7 +15,7 @@ vi.mock("@/lib/logger", () => ({
   logger: { error: vi.fn(), info: vi.fn(), warn: vi.fn() },
 }));
 
-vi.mock("@/lib/db", () => ({
+vi.mock("@/server/db/client", () => ({
   prisma: {},
 }));
 

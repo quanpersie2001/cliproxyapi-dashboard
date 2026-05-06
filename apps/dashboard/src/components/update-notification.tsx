@@ -3,7 +3,7 @@
 import Markdown from "react-markdown";
 import { Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
-import { useUpdateCheck } from "@/hooks/use-update-check";
+import { useUpdateCheck } from "@/lib/hooks/use-update-check";
 import { UpdateOverlay } from "@/components/update-overlay";
 import { getStateToneStyle } from "@/components/ui/state-styles";
 

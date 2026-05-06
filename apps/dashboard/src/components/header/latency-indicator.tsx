@@ -1,6 +1,6 @@
 "use client";
 
-import { useHealthStatus } from "@/hooks/use-health-status";
+import { useHealthStatus } from "@/lib/hooks/use-health-status";
 
 const LATENCY_TONE_STYLES = {
   success: {

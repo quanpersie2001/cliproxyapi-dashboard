@@ -1,8 +1,8 @@
 import { existsSync } from "node:fs";
 import { NextRequest } from "next/server";
-import { verifySession } from "@/lib/auth/session";
-import { validateOrigin } from "@/lib/auth/origin";
-import { prisma } from "@/lib/db";
+import { verifySession } from "@/server/auth/lib/session";
+import { validateOrigin } from "@/server/auth/lib/origin";
+import { prisma } from "@/server/db/client";
 import { execFile } from "child_process";
 import { promisify } from "util";
 import { Errors, apiSuccess } from "@/lib/errors";

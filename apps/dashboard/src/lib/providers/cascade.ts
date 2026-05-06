@@ -1,5 +1,5 @@
 import "server-only";
-import { prisma } from "@/lib/db";
+import { prisma } from "@/server/db/client";
 import { removeKey, removeOAuthAccount } from "./dual-write";
 import { logger } from "@/lib/logger";
 

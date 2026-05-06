@@ -26,13 +26,13 @@ The feature intentionally changes ingestion only. The final analytics source rem
 ### Ownership Boundaries
 | Area / Module | Owner | Responsibilities In Scope | Explicitly Out Of Scope |
 |---|---|---|---|
-| Prisma schema | `dashboard/prisma/schema.prisma` and migration | Add `usage_queue_inbox`, nullable unique `eventKey`, optional event metadata, and keep existing dedupe safety net. | Removing `usage_dedup_key` in this first migration. |
-| Collector core | `dashboard/src/usage-collector/core/*` | Pull/process orchestration, status transitions, event normalization, ownership resolution, cache invalidation hooks. | RESP wire protocol details. |
-| Source adapter | `dashboard/src/usage-collector/sources/resp-queue-source.ts` | RESP connection, auth, probe, and `LPOP` batch behavior. | Redis Streams/RabbitMQ adapters. |
-| Decoder | `dashboard/src/usage-collector/decoders/cliproxy-v1-decoder.ts` | Decode CLIProxyAPI queued payloads and preserve malformed raw rows as failures. | Legacy `/usage` aggregate payload parsing. |
-| Repositories | `dashboard/src/usage-collector/repositories/*` | Batch inbox insert/claim/update and batch fact persistence into `usage_records`. | Per-event audit logging. |
-| Runtime coordinator | `dashboard/entrypoint.sh`, `collector-bootstrap.js`, build scripts, Dockerfile | Compile/copy worker output and start server plus worker with shutdown handling. | Separate Compose service or external supervisor. |
-| Manual route | `dashboard/src/app/api/usage/collect/route.ts` | Preserve dual auth/origin validation and trigger/kick collector quickly. | Full synchronous HTTP drain of the source queue. |
+| Prisma schema | `apps/dashboard/prisma/schema.prisma` and migration | Add `usage_queue_inbox`, nullable unique `eventKey`, optional event metadata, and keep existing dedupe safety net. | Removing `usage_dedup_key` in this first migration. |
+| Collector core | `apps/dashboard/src/usage-collector/core/*` | Pull/process orchestration, status transitions, event normalization, ownership resolution, cache invalidation hooks. | RESP wire protocol details. |
+| Source adapter | `apps/dashboard/src/usage-collector/sources/resp-queue-source.ts` | RESP connection, auth, probe, and `LPOP` batch behavior. | Redis Streams/RabbitMQ adapters. |
+| Decoder | `apps/dashboard/src/usage-collector/decoders/cliproxy-v1-decoder.ts` | Decode CLIProxyAPI queued payloads and preserve malformed raw rows as failures. | Legacy `/usage` aggregate payload parsing. |
+| Repositories | `apps/dashboard/src/usage-collector/repositories/*` | Batch inbox insert/claim/update and batch fact persistence into `usage_records`. | Per-event audit logging. |
+| Runtime coordinator | `apps/dashboard/entrypoint.sh`, `collector-bootstrap.js`, build scripts, Dockerfile | Compile/copy worker output and start server plus worker with shutdown handling. | Separate Compose service or external supervisor. |
+| Manual route | `apps/dashboard/src/app/api/usage/collect/route.ts` | Preserve dual auth/origin validation and trigger/kick collector quickly. | Full synchronous HTTP drain of the source queue. |
 | Docs/install | `install.sh`, canonical docs | Remove default cron install and document embedded worker/env/manual trigger. | New analytics UI or CPA UI/API layer. |
 
 ### Interfaces and Contracts

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifySession } from "@/lib/auth/session";
+import { verifySession } from "@/server/auth/lib/session";
 import {
   MANAGEMENT_BASE_URL,
   MANAGEMENT_API_KEY,

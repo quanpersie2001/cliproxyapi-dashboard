@@ -7,10 +7,15 @@
     "incremental": false,
     "tsBuildInfoFile": "./.next/cache/collector.tsbuildinfo",
     "module": "commonjs",
-    "moduleResolution": "node"
+    "moduleResolution": "node",
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    }
   },
   "include": [
-    "src/workers/usage-collector/**/*.ts"
+    "src/server/jobs/workers/usage-collector/**/*.ts"
   ],
   "exclude": [
     "**/__tests__/**",

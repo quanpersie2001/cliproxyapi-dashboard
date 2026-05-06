@@ -1,5 +1,5 @@
 import "server-only";
-import { prisma } from "@/lib/db";
+import { prisma } from "@/server/db/client";
 import { buildCliProxyApiKeyPayload } from "@/lib/api-keys/payload";
 import { logger } from "@/lib/logger";
 

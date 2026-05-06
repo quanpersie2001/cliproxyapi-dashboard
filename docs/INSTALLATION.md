@@ -4,9 +4,11 @@ Canonical docs hub: [`docs/README.md`](README.md)
 
 ## Workspace Status
 
-Root workspace scaffolding is in place (`package.json`, `tsconfig.base.json`, plus `apps/`, `workers/`, and `packages/` directories), and the runnable dashboard application now lives under `apps/dashboard/`.
+This repository runs in a workspace layout with the active dashboard application under `apps/dashboard/`, a standalone worker workspace under `workers/`, and shared modules under `packages/`.
 
-Root npm scripts currently delegate to `apps/dashboard`.
+Root npm scripts proxy to `apps/dashboard`, including `npm run build:collector` for the collector runtime build step.
+
+`apps/dashboard/src/server/jobs/workers/usage-collector/` remains the embedded runtime source boundary packaged into the dashboard image, while `workers/usage-collector/` is kept as a separate workspace boundary for worker artifacts and local experiments. Shared contracts/modules should live in `packages/*`.
 
 ## Deployment Modes
 
@@ -15,7 +17,7 @@ This repo supports three distinct ways to run the project:
 | Mode | Primary script | Best for |
 | --- | --- | --- |
 | Local appliance stack | [`../setup-local.sh`](../setup-local.sh) / [`../setup-local.ps1`](../setup-local.ps1) | Running the published dashboard image locally with minimal setup |
-| Source development | [`../apps/dashboard/dev-local.sh`](../apps/dashboard/dev-local.sh) / [`../apps/dashboard/dev-local.ps1`](../apps/dashboard/dev-local.ps1) | Working on dashboard code from this checkout |
+| Source development | [`../apps/dashboard/tools/dev/dev-local.sh`](../apps/dashboard/tools/dev/dev-local.sh) / [`../apps/dashboard/tools/dev/dev-local.ps1`](../apps/dashboard/tools/dev/dev-local.ps1) | Working on dashboard code from this checkout |
 | Server install | [`../install.sh`](../install.sh) | Provisioning the bundled production compose stack on Ubuntu/Debian, with or without pre-cloning the repo |
 
 ## Bundled Stack Topology
@@ -102,25 +104,29 @@ Use the source-dev scripts when you want to modify the Next.js app from this che
 
 ```bash
 cd apps/dashboard
-./dev-local.sh
+./tools/dev/dev-local.sh
 ```
 
 Windows:
 
 ```powershell
 cd apps/dashboard
-.\dev-local.ps1
+.\tools\dev\dev-local.ps1
 ```
 
 What the source-dev script does:
 
-- starts [`../apps/dashboard/docker-compose.dev.yml`](../apps/dashboard/docker-compose.dev.yml)
+- starts [`../apps/dashboard/tools/dev/docker-compose.dev.yml`](../apps/dashboard/tools/dev/docker-compose.dev.yml)
 - waits for PostgreSQL and CLIProxyAPI
-- creates `apps/dashboard/config.dev.yaml` from [`../apps/dashboard/config.dev.yaml.example`](../apps/dashboard/config.dev.yaml.example) when needed
+- creates `apps/dashboard/tools/dev/config.dev.yaml` from [`../apps/dashboard/tools/dev/config.dev.yaml.example`](../apps/dashboard/tools/dev/config.dev.yaml.example) when needed
 - runs `prisma migrate deploy`
 - generates the Prisma client
 - writes `apps/dashboard/.env.local`
 - starts `npm run dev`
+
+Load-bearing note:
+
+- keep `apps/dashboard/src/instrumentation.ts` and `apps/dashboard/src/instrumentation-node.ts` intact unless you are intentionally changing Next.js instrumentation behavior.
 
 Source-dev endpoints:
 
@@ -140,8 +146,8 @@ Lifecycle helpers:
 
 ```bash
 cd apps/dashboard
-./dev-local.sh --down
-./dev-local.sh --reset
+./tools/dev/dev-local.sh --down
+./tools/dev/dev-local.sh --reset
 ```
 
 ## Option 3: Server Install

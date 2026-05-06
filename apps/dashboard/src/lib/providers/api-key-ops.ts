@@ -1,7 +1,7 @@
 import "server-only";
-import { prisma } from "@/lib/db";
+import { prisma } from "@/server/db/client";
 import { logger } from "@/lib/logger";
-import { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@/server/db/generated/prisma/client";
 import { hashProviderKey, maskProviderKey } from "./hash";
 import { PROVIDER, PROVIDER_ENDPOINT, type Provider } from "./constants";
 import { getMaxProviderKeysPerUser } from "./settings";

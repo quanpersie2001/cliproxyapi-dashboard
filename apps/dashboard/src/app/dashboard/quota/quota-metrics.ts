@@ -1,4 +1,4 @@
-import { QUOTA_WARNING_THRESHOLD } from "@/hooks/notification-utils";
+import { QUOTA_WARNING_THRESHOLD } from "@/lib/hooks/notification-utils";
 
 export interface QuotaModel {
   id: string;

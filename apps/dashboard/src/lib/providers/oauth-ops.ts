@@ -1,7 +1,7 @@
 import "server-only";
-import { prisma } from "@/lib/db";
+import { prisma } from "@/server/db/client";
 import { logger } from "@/lib/logger";
-import { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@/server/db/generated/prisma/client";
 import { type OAuthProvider } from "./constants";
 import { invalidateUsageCaches, invalidateProxyModelsCache } from "@/lib/cache";
 import {

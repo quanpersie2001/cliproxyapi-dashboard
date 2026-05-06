@@ -18,7 +18,7 @@ vi.mock("@/lib/env", () => ({
 const verifySessionMock = vi.fn();
 const listModelPricingMock = vi.fn();
 
-vi.mock("@/lib/auth/session", () => ({
+vi.mock("@/server/auth/lib/session", () => ({
   verifySession: verifySessionMock,
 }));
 

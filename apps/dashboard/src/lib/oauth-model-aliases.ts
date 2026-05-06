@@ -1,4 +1,4 @@
-import type { OAuthModelAliasEntry } from "@/features/config/types";
+import type { OAuthModelAliasEntry } from "@/features/containers/config/types";
 
 type OAuthModelAliasMap = Record<string, OAuthModelAliasEntry[]>;
 type OAuthAliasDraftMapping = {

@@ -1,7 +1,7 @@
 import "server-only";
-import { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@/server/db/generated/prisma/client";
 import { usageCache } from "@/lib/cache";
-import { prisma } from "@/lib/db";
+import { prisma } from "@/server/db/client";
 import { logger } from "@/lib/logger";
 import {
   MANAGEMENT_API_KEY,

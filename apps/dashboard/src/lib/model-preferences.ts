@@ -1,6 +1,6 @@
 import "server-only";
-import { Prisma } from "@/generated/prisma/client";
-import { prisma } from "@/lib/db";
+import { Prisma } from "@/server/db/generated/prisma/client";
+import { prisma } from "@/server/db/client";
 import { logger } from "@/lib/logger";
 
 function getErrorMessage(error: unknown): string {

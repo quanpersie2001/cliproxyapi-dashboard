@@ -3,16 +3,51 @@
 const fs = require("node:fs");
 const path = require("node:path");
 
-const clientPath = path.resolve(
-  __dirname,
-  "..",
-  "dist-collector",
-  "generated",
-  "prisma",
-  "client.js",
-);
+const candidateClientPaths = [
+  path.resolve(
+    __dirname,
+    "..",
+    "dist-collector",
+    "server",
+    "db",
+    "generated",
+    "prisma",
+    "client.js",
+  ),
+  path.resolve(
+    __dirname,
+    "..",
+    "dist-collector",
+    "generated",
+    "prisma",
+    "client.js",
+  ),
+  path.resolve(
+    __dirname,
+    "..",
+    "dist-collector",
+    "apps",
+    "dashboard",
+    "src",
+    "generated",
+    "prisma",
+    "client.js",
+  ),
+  path.resolve(
+    __dirname,
+    "..",
+    "dist-collector",
+    "packages",
+    "db",
+    "src",
+    "generated",
+    "prisma",
+    "client.js",
+  ),
+];
 
-if (!fs.existsSync(clientPath)) {
+const clientPath = candidateClientPaths.find((candidate) => fs.existsSync(candidate));
+if (!clientPath) {
   process.exit(0);
 }
 

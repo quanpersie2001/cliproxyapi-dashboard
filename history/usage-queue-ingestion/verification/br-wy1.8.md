@@ -8,14 +8,14 @@
 ## Scope Implemented
 
 - Added collector runtime build target and wiring:
-  - `dashboard/package.json`
-  - `dashboard/tsconfig.collector.json`
+  - `apps/dashboard/package.json`
+  - `apps/dashboard/tsconfig.collector.json`
 - Added signal-aware bootstrap coordinator with collector placeholder process:
-  - `dashboard/collector-bootstrap.js`
+  - `apps/dashboard/collector-bootstrap.js`
 - Wired runtime startup to coordinator:
-  - `dashboard/entrypoint.sh`
+  - `apps/dashboard/entrypoint.sh`
 - Copied collector runtime artifacts into the production runner image:
-  - `dashboard/Dockerfile`
+  - `apps/dashboard/Dockerfile`
 
 ## Verify Commands (as declared in bead)
 
@@ -56,9 +56,9 @@
 
 ## Changed Files
 
-- `dashboard/package.json`
-- `dashboard/tsconfig.collector.json`
-- `dashboard/collector-bootstrap.js`
-- `dashboard/entrypoint.sh`
-- `dashboard/Dockerfile`
+- `apps/dashboard/package.json`
+- `apps/dashboard/tsconfig.collector.json`
+- `apps/dashboard/collector-bootstrap.js`
+- `apps/dashboard/entrypoint.sh`
+- `apps/dashboard/Dockerfile`
 - `history/usage-queue-ingestion/verification/br-wy1.8.md`

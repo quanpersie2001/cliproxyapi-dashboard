@@ -3,8 +3,8 @@
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { HelpTooltip } from "@/components/ui/tooltip";
-import { QuotaDetails } from "@/components/quota/quota-details";
-import { QUOTA_WARNING_THRESHOLD } from "@/hooks/notification-utils";
+import { QuotaDetails } from "@/features/quota/components/quota-details";
+import { QUOTA_WARNING_THRESHOLD } from "@/lib/hooks/notification-utils";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { useEffect, useState } from "react";
 import {
@@ -16,7 +16,7 @@ import {
 } from "./quota-metrics";
 
 const QuotaChart = dynamic(
-  () => import("@/components/quota/quota-chart").then(mod => ({ default: mod.QuotaChart })),
+  () => import("@/features/quota/components/quota-chart").then(mod => ({ default: mod.QuotaChart })),
   { ssr: false, loading: () => <div className="h-64 animate-pulse rounded-lg bg-[var(--surface-muted)]" /> }
 );
 

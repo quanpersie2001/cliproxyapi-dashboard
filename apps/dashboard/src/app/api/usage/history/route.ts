@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifySession } from "@/lib/auth/session";
+import { verifySession } from "@/server/auth/lib/session";
 import { Errors } from "@/lib/errors";
-import { loadUsageHistorySnapshot } from "@/server/usage/services/get-usage-history-snapshot";
+import { loadUsageHistorySnapshot } from "@/server/services/get-usage-history-snapshot";
 import {
   buildExplicitUsageRange,
   buildUsageWindowRange,
   isUsageWindow,
-} from "@/server/usage/services/resolve-usage-range";
+} from "@/server/services/resolve-usage-range";
 
 export async function GET(request: NextRequest) {
   const session = await verifySession();

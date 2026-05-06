@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import { verifySession } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
-import { CONTAINER_CONFIG, getAllowedActions, type ContainerAction } from "@/lib/containers";
+import { verifySession } from "@/server/auth/lib/session";
+import { prisma } from "@/server/db/client";
+import { CONTAINER_CONFIG, getAllowedActions, type ContainerAction } from "@/features/containers/containers";
 import { execFile } from "child_process";
 import { promisify } from "util";
 import { logger } from "@/lib/logger";

@@ -8,14 +8,14 @@
 ## Scope Implemented
 
 - Added ownership resolver:
-  - `dashboard/src/usage-collector/core/ownership-resolver.ts`
+  - `apps/dashboard/src/usage-collector/core/ownership-resolver.ts`
 - Added usage record persistence repository:
-  - `dashboard/src/usage-collector/repositories/usage-record-repository.ts`
+  - `apps/dashboard/src/usage-collector/repositories/usage-record-repository.ts`
 - Added focused TDD suites:
-  - `dashboard/src/usage-collector/__tests__/ownership-resolver.test.ts`
-  - `dashboard/src/usage-collector/__tests__/usage-record-repository.test.ts`
+  - `apps/dashboard/src/usage-collector/__tests__/ownership-resolver.test.ts`
+  - `apps/dashboard/src/usage-collector/__tests__/usage-record-repository.test.ts`
 - Added compatibility assertion update for usage-history read path:
-  - `dashboard/src/lib/__tests__/usage-history.test.ts`
+  - `apps/dashboard/src/lib/__tests__/usage-history.test.ts`
 
 ## TDD Evidence
 
@@ -60,8 +60,8 @@
 
 ## Changed Files
 
-- `dashboard/src/usage-collector/core/ownership-resolver.ts`
-- `dashboard/src/usage-collector/repositories/usage-record-repository.ts`
-- `dashboard/src/usage-collector/__tests__/ownership-resolver.test.ts`
-- `dashboard/src/usage-collector/__tests__/usage-record-repository.test.ts`
-- `dashboard/src/lib/__tests__/usage-history.test.ts`
+- `apps/dashboard/src/usage-collector/core/ownership-resolver.ts`
+- `apps/dashboard/src/usage-collector/repositories/usage-record-repository.ts`
+- `apps/dashboard/src/usage-collector/__tests__/ownership-resolver.test.ts`
+- `apps/dashboard/src/usage-collector/__tests__/usage-record-repository.test.ts`
+- `apps/dashboard/src/lib/__tests__/usage-history.test.ts`

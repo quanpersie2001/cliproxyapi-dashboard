@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Modal, ModalHeader, ModalTitle, ModalContent, ModalFooter } from "@/components/ui/modal";
 import { Button } from "@/components/ui/button";
-import { useProxyUpdateCheck } from "@/hooks/use-proxy-update-check";
+import { useProxyUpdateCheck } from "@/lib/hooks/use-proxy-update-check";
 import { UpdateOverlay } from "@/components/update-overlay";
 import { getStateToneStyle } from "@/components/ui/state-styles";
 

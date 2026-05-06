@@ -89,17 +89,17 @@ These are fixed. Planning must implement them exactly. No creative reinterpretat
 From the quick codebase scout during exploring. Downstream agents: read these files before planning to avoid reinventing existing patterns.
 
 ### Reusable Assets
-- `dashboard/src/app/api/usage/collect/route.ts:218-591` — current collector route auth, lease, old `/usage` fetch, auth-file parsing, ownership resolution, createMany persistence, latency backfill, collector state updates, and cache invalidation.
-- `dashboard/src/lib/usage/history.ts:1294-1531` — current usage-history aggregation pipeline reading `usage_records`, `collector_state`, ownership metadata, and cache state for `/dashboard/usage`.
-- `dashboard/src/app/api/usage/history/route.ts:11-58` — authenticated read route that resolves date/window params and returns the usage snapshot.
-- `dashboard/prisma/schema.prisma:214-257` — current `UsageRecord` and `CollectorState` models.
-- `dashboard/src/lib/env.ts:20-69` — startup env validation surface that needs collector env additions.
-- `dashboard/Dockerfile:51-58` — standalone runner copy list; arbitrary TypeScript source will not exist at runtime unless compiled/copied.
-- `dashboard/entrypoint.sh:11-16` — current startup path runs Prisma migrations then `exec node server.js`.
-- `dashboard/package.json:5-18` — scripts currently generate Prisma, build Next, typecheck, test, and run the app; there is no collector build target yet.
+- `apps/dashboard/src/app/api/usage/collect/route.ts:218-591` — current collector route auth, lease, old `/usage` fetch, auth-file parsing, ownership resolution, createMany persistence, latency backfill, collector state updates, and cache invalidation.
+- `apps/dashboard/src/lib/usage/history.ts:1294-1531` — current usage-history aggregation pipeline reading `usage_records`, `collector_state`, ownership metadata, and cache state for `/dashboard/usage`.
+- `apps/dashboard/src/app/api/usage/history/route.ts:11-58` — authenticated read route that resolves date/window params and returns the usage snapshot.
+- `apps/dashboard/prisma/schema.prisma:214-257` — current `UsageRecord` and `CollectorState` models.
+- `apps/dashboard/src/lib/env.ts:20-69` — startup env validation surface that needs collector env additions.
+- `apps/dashboard/Dockerfile:51-58` — standalone runner copy list; arbitrary TypeScript source will not exist at runtime unless compiled/copied.
+- `apps/dashboard/entrypoint.sh:11-16` — current startup path runs Prisma migrations then `exec node server.js`.
+- `apps/dashboard/package.json:5-18` — scripts currently generate Prisma, build Next, typecheck, test, and run the app; there is no collector build target yet.
 
 ### Established Patterns
-- Usage analytics already read local facts: `GET /api/usage/history` and `dashboard/src/lib/usage/history.ts` are the read path to preserve.
+- Usage analytics already read local facts: `GET /api/usage/history` and `apps/dashboard/src/lib/usage/history.ts` are the read path to preserve.
 - Current write path uses `prisma.usageRecord.createMany({ skipDuplicates: true })` and `invalidateUsageCaches()` after collection; new persistence should keep cache invalidation semantics.
 - State-changing session-authenticated routes validate origin; the manual trigger route must preserve that for admin-session callers.
 - Production image uses Next standalone output; new runtime code must be part of the build/copy pipeline.
@@ -123,7 +123,7 @@ From the quick codebase scout during exploring. Downstream agents: read these fi
 - `CONTEXT.md` — repo-level proxy-only boundary and current source-of-truth map.
 - `docs/ARCHITECTURE.md` — current runtime topology, data model overview, and startup notes.
 - `docs/FEATURES.md` — current product surface and constraint that new consumers should use usage history, not deprecated usage routes.
-- `dashboard/prisma/schema.prisma` — active Prisma data model source of truth.
+- `apps/dashboard/prisma/schema.prisma` — active Prisma data model source of truth.
 - `.pulse/memory/critical-patterns.md` — critical planning baseline; current relevant pattern warns to preserve hidden/non-visible persisted data when editing full backing documents.
 
 ---

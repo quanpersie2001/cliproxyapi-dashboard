@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
-import { verifySession, createSession } from "@/lib/auth/session";
-import { validateOrigin } from "@/lib/auth/origin";
-import { signToken } from "@/lib/auth/jwt";
-import { prisma } from "@/lib/db";
+import { verifySession, createSession } from "@/server/auth/lib/session";
+import { validateOrigin } from "@/server/auth/lib/origin";
+import { signToken } from "@/server/auth/lib/jwt";
+import { prisma } from "@/server/db/client";
 import { AUDIT_ACTION, extractIpAddress, logAuditAsync } from "@/lib/audit";
 import { Errors, apiSuccess } from "@/lib/errors";
 

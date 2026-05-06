@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import { type ReactNode, useEffect, useId, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
 import { getStateActionStyle, getStateIconToneStyle } from "@/components/ui/state-styles";
 
 interface ConfirmDialogProps {

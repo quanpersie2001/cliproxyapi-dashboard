@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
-vi.mock("@/lib/db", () => ({
+vi.mock("@/server/db/client", () => ({
   prisma: {},
 }));
 vi.mock("@/lib/logger", () => ({

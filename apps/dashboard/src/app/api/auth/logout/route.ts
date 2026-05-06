@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { deleteSession, verifySession } from "@/lib/auth/session";
-import { validateOrigin } from "@/lib/auth/origin";
+import { deleteSession, verifySession } from "@/server/auth/lib/session";
+import { validateOrigin } from "@/server/auth/lib/origin";
 import { logger } from "@/lib/logger";
 
 export async function POST(request: NextRequest) {

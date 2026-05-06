@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { AlertSurface } from "@/components/ui/alert-surface";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
-import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
 
 interface UserPanelProps {
   isOpen: boolean;

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { validateOrigin } from "@/lib/auth/origin";
-import { verifySession } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { validateOrigin } from "@/server/auth/lib/origin";
+import { verifySession } from "@/server/auth/lib/session";
+import { prisma } from "@/server/db/client";
 import { Errors, apiSuccess } from "@/lib/errors";
 import {
   loadExcludedModelsForUser,

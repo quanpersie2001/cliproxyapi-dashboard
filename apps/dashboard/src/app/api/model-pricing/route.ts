@@ -1,4 +1,4 @@
-import { verifySession } from "@/lib/auth/session";
+import { verifySession } from "@/server/auth/lib/session";
 import { Errors, apiSuccess } from "@/lib/errors";
 import { listModelPricing } from "@/lib/model-pricing";
 

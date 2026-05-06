@@ -5,16 +5,28 @@ on:
     paths:
       - ".github/workflows/**"
       - ".release-please-manifest.json"
-      - "apps/dashboard/**"
       - "release-please-config.json"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.base.json"
+      - "scripts/**"
+      - "apps/dashboard/**"
+      - "workers/**"
+      - "packages/**"
   push:
     branches:
       - main
     paths:
       - ".github/workflows/**"
       - ".release-please-manifest.json"
-      - "apps/dashboard/**"
       - "release-please-config.json"
+      - "package.json"
+      - "package-lock.json"
+      - "tsconfig.base.json"
+      - "scripts/**"
+      - "apps/dashboard/**"
+      - "workers/**"
+      - "packages/**"
 
 permissions:
   contents: read

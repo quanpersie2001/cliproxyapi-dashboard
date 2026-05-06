@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
-import { verifySession } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
-import { CONTAINER_CONFIG, isValidContainerName } from "@/lib/containers";
+import { verifySession } from "@/server/auth/lib/session";
+import { prisma } from "@/server/db/client";
+import { CONTAINER_CONFIG, isValidContainerName } from "@/features/containers/containers";
 import { execFile } from "child_process";
 import { promisify } from "util";
 import { Errors, apiSuccess } from "@/lib/errors";

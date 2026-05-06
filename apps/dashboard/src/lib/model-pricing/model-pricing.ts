@@ -1,5 +1,5 @@
-import { Prisma } from "@/generated/prisma/client";
-import { prisma } from "@/lib/db";
+import { Prisma } from "@/server/db/generated/prisma/client";
+import { prisma } from "@/server/db/client";
 import { z } from "zod";
 
 export const MODEL_PRICING_SOURCE_TYPES = [

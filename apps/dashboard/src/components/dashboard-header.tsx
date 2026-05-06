@@ -5,8 +5,8 @@ import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { NotificationBell } from "@/components/header/notification-bell";
 import { LatencyIndicator } from "@/components/header/latency-indicator";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { useHeaderNotifications } from "@/hooks/use-header-notifications";
-import { useAuth } from "@/hooks/use-auth";
+import { useHeaderNotifications } from "@/lib/hooks/use-header-notifications";
+import { useAuth } from "@/features/auth/hooks/use-auth";
 
 interface DashboardHeaderProps {
   onUserClick: () => void;

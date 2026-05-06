@@ -13,9 +13,9 @@
   - new enum `UsageQueueInboxStatus`
   - new `UsageQueueInbox` model with raw-message + lifecycle status fields
 - Added additive SQL migration:
-  - `dashboard/prisma/migrations/20260505105500_usage_queue_ingestion_phase1/migration.sql`
+  - `apps/dashboard/prisma/migrations/20260505105500_usage_queue_ingestion_phase1/migration.sql`
 - Added focused schema contract test:
-  - `dashboard/src/usage-collector/__tests__/schema-contract.test.ts`
+  - `apps/dashboard/src/usage-collector/__tests__/schema-contract.test.ts`
 
 ## TDD Evidence
 
@@ -56,11 +56,11 @@
 ## Constraint Checks
 
 - Existing dedupe contract is still present in schema:
-  - `dashboard/prisma/schema.prisma` contains `@@unique([authIndex, model, timestamp, source, totalTokens], name: "usage_dedup_key")`
+  - `apps/dashboard/prisma/schema.prisma` contains `@@unique([authIndex, model, timestamp, source, totalTokens], name: "usage_dedup_key")`
 - This bead did not edit route/runtime/docs files that are out of Phase 1 scope.
 
 ## Changed Files
 
-- `dashboard/prisma/schema.prisma`
-- `dashboard/prisma/migrations/20260505105500_usage_queue_ingestion_phase1/migration.sql`
-- `dashboard/src/usage-collector/__tests__/schema-contract.test.ts`
+- `apps/dashboard/prisma/schema.prisma`
+- `apps/dashboard/prisma/migrations/20260505105500_usage_queue_ingestion_phase1/migration.sql`
+- `apps/dashboard/src/usage-collector/__tests__/schema-contract.test.ts`

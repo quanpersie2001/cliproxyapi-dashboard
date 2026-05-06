@@ -41,7 +41,7 @@ vi.mock("@/lib/cache", () => ({
   usageCache,
 }));
 
-vi.mock("@/lib/db", () => ({
+vi.mock("@/server/db/client", () => ({
   prisma,
 }));
 

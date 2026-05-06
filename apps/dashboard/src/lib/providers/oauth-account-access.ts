@@ -1,6 +1,6 @@
 import "server-only";
 
-import { prisma } from "@/lib/db";
+import { prisma } from "@/server/db/client";
 import { logger } from "@/lib/logger";
 import {
   FETCH_TIMEOUT_MS,

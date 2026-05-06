@@ -2,7 +2,7 @@ import { z } from "zod";
 import {
   PASSWORD_MIN_LENGTH,
   PASSWORD_MAX_LENGTH,
-} from "@/lib/auth/validation";
+} from "@/server/auth/lib/validation";
 import { ROUTING_STRATEGIES } from "@/lib/routing-strategy";
 
 export const ModelPreferencesSchema = z.object({

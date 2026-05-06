@@ -8,9 +8,9 @@
 ## Scope Implemented
 
 - Rewrote usage collect API route into a fast authenticated wake trigger:
-  - `dashboard/src/app/api/usage/collect/route.ts`
+  - `apps/dashboard/src/app/api/usage/collect/route.ts`
 - Added route-boundary tests for dual auth, quick `200/202` behavior, and no legacy in-request fetch path:
-  - `dashboard/src/app/api/usage/collect/route.test.ts`
+  - `apps/dashboard/src/app/api/usage/collect/route.test.ts`
 
 ## TDD Evidence
 
@@ -65,6 +65,6 @@
 
 ## Changed Files
 
-- `dashboard/src/app/api/usage/collect/route.ts`
-- `dashboard/src/app/api/usage/collect/route.test.ts`
+- `apps/dashboard/src/app/api/usage/collect/route.ts`
+- `apps/dashboard/src/app/api/usage/collect/route.test.ts`
 - `history/usage-queue-ingestion/verification/br-wy1.10.md`

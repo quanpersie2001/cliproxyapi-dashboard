@@ -16,11 +16,11 @@ After this phase, cron is no longer the primary collection mechanism even though
 - Locking the worker/runtime contract before doc cleanup prevents Phase 4 from documenting speculative behavior.
 
 ## 3. Entry State
-- Phase 2 one-shot collector seams exist in `dashboard/src/usage-collector/core/orchestrator.ts` and `dashboard/src/usage-collector/core/one-shot-orchestrator.ts`.
-- `dashboard/entrypoint.sh` only runs Prisma migrations and then `exec node server.js`.
-- `dashboard/Dockerfile` copies Next standalone output, Prisma assets, and `entrypoint.sh`, but no dedicated collector runtime artifact.
-- `dashboard/src/app/api/usage/collect/route.ts` still acquires a lease and synchronously fetches CLIProxyAPI `/usage` plus `/auth-files` inside the request.
-- `dashboard/src/features/usage/components/usage-analytics.tsx` treats either `200` or `202` from `POST /api/usage/collect` as a successful refresh trigger.
+- Phase 2 one-shot collector seams exist in `apps/dashboard/src/usage-collector/core/orchestrator.ts` and `apps/dashboard/src/usage-collector/core/one-shot-orchestrator.ts`.
+- `apps/dashboard/entrypoint.sh` only runs Prisma migrations and then `exec node server.js`.
+- `apps/dashboard/Dockerfile` copies Next standalone output, Prisma assets, and `entrypoint.sh`, but no dedicated collector runtime artifact.
+- `apps/dashboard/src/app/api/usage/collect/route.ts` still acquires a lease and synchronously fetches CLIProxyAPI `/usage` plus `/auth-files` inside the request.
+- `apps/dashboard/src/features/usage/components/usage-analytics.tsx` treats either `200` or `202` from `POST /api/usage/collect` as a successful refresh trigger.
 - `install.sh` still installs a five-minute cron trigger and canonical docs still describe cron-driven collection; that cleanup is deferred to Phase 4.
 
 ## 4. Exit State

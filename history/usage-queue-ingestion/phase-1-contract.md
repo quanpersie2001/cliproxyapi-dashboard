@@ -20,7 +20,7 @@ After this phase, the repo can represent CLIProxyAPI queued usage events, malfor
 - `CollectorState` exists and is used by the legacy route as a run-state/lease surface.
 - `POST /api/usage/collect` still performs legacy `/usage` collection.
 - `/api/usage/history` and `/dashboard/usage` read from existing `usage_records` facts.
-- There is no `dashboard/src/usage-collector/` contract layer.
+- There is no `apps/dashboard/src/usage-collector/` contract layer.
 
 ## 4. Exit State
 - Prisma schema and migration add transport-neutral `UsageQueueInbox` with raw string messages and statuses `pending`, `processed`, `decode_failed`, `process_failed`, and `discarded`.

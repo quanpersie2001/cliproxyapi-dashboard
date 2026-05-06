@@ -23,12 +23,12 @@
 ## Architecture Snapshot
 | Area | Purpose | Key Paths |
 |------|---------|-----------|
-| Current collector write path | `POST /api/usage/collect` authenticates admin/bearer callers, calls legacy CLIProxyAPI `/usage`, resolves ownership, writes `usage_records`, updates `collector_state`, and invalidates usage caches. | `dashboard/src/app/api/usage/collect/route.ts:218-591` |
-| Usage read model | `/dashboard/usage`, `/api/usage/history`, and dashboard overview read from PostgreSQL `usage_records` through `getUsageHistorySnapshot`; this is the contract to preserve. | `dashboard/src/app/api/usage/history/route.ts:11-58`, `dashboard/src/lib/usage/history.ts:1294-1531`, `dashboard/src/server/usage/services/get-usage-history-snapshot.ts:16-35` |
-| Data model | Current final fact table is `UsageRecord`; current collector health is `CollectorState`; no inbox table or `eventKey` exists yet. | `dashboard/prisma/schema.prisma:214-257` |
-| UI refresh trigger | Admin refresh on `/dashboard/usage` calls `POST /api/usage/collect`, then reloads the history snapshot; the UI does not require synchronous full ingestion if the route returns accepted/success quickly. | `dashboard/src/features/usage/components/usage-analytics.tsx:410-439` |
-| Route constants | Usage route literals are centralized; route users should keep using `API_ENDPOINTS.USAGE.COLLECT` and `.HISTORY`. | `dashboard/src/lib/api-endpoints.ts:30-33` |
-| Runtime packaging | Production uses Next standalone output and only copies specific runtime artifacts; arbitrary new TypeScript files will not exist in the runner unless compiled/copied. | `dashboard/Dockerfile:51-58`, `dashboard/entrypoint.sh:11-16`, `dashboard/package.json:5-18` |
+| Current collector write path | `POST /api/usage/collect` authenticates admin/bearer callers, calls legacy CLIProxyAPI `/usage`, resolves ownership, writes `usage_records`, updates `collector_state`, and invalidates usage caches. | `apps/dashboard/src/app/api/usage/collect/route.ts:218-591` |
+| Usage read model | `/dashboard/usage`, `/api/usage/history`, and dashboard overview read from PostgreSQL `usage_records` through `getUsageHistorySnapshot`; this is the contract to preserve. | `apps/dashboard/src/app/api/usage/history/route.ts:11-58`, `apps/dashboard/src/lib/usage/history.ts:1294-1531`, `apps/dashboard/src/server/usage/services/get-usage-history-snapshot.ts:16-35` |
+| Data model | Current final fact table is `UsageRecord`; current collector health is `CollectorState`; no inbox table or `eventKey` exists yet. | `apps/dashboard/prisma/schema.prisma:214-257` |
+| UI refresh trigger | Admin refresh on `/dashboard/usage` calls `POST /api/usage/collect`, then reloads the history snapshot; the UI does not require synchronous full ingestion if the route returns accepted/success quickly. | `apps/dashboard/src/features/usage/components/usage-analytics.tsx:410-439` |
+| Route constants | Usage route literals are centralized; route users should keep using `API_ENDPOINTS.USAGE.COLLECT` and `.HISTORY`. | `apps/dashboard/src/lib/api-endpoints.ts:30-33` |
+| Runtime packaging | Production uses Next standalone output and only copies specific runtime artifacts; arbitrary new TypeScript files will not exist in the runner unless compiled/copied. | `apps/dashboard/Dockerfile:51-58`, `apps/dashboard/entrypoint.sh:11-16`, `apps/dashboard/package.json:5-18` |
 | Installer/docs cron contract | Current bundled install and operator docs describe a 5-minute host cron calling `POST /api/usage/collect`; that must be retired as default behavior. | `install.sh:758-779`, `docs/OPERATIONS.md:133-150`, `docs/ENV.md:15-18` |
 | Upstream event source | CLIProxyAPI emits one JSON payload per request into its internal usage queue with `timestamp`, `latency_ms`, `source`, `auth_index`, `tokens`, `failed`, `provider`, `model`, `endpoint`, `auth_type`, `api_key`, `request_id`. | `references/CLIProxyAPI/internal/redisqueue/plugin.go:19-88` |
 | RESP queue adapter reference | CPA opens a Redis-compatible connection, `AUTH`s with the management key, then `LPOP`s the queue with a batch size. | `references/cpa-usage-keeper/internal/cpa/redis_queue_client.go:36-109` |
@@ -36,10 +36,10 @@
 ## Pattern Search
 | Implementation | Location | Pattern Used | Reusable? |
 |----------------|----------|--------------|-----------|
-| Current collector route auth | `dashboard/src/app/api/usage/collect/route.ts:218-248` | Dual bearer `COLLECTOR_API_KEY` or admin session + origin validation. | Yes, preserve wrapper exactly while changing route body. |
-| Current ownership resolution | `dashboard/src/app/api/usage/collect/route.ts:356-465` | API-key grouping, auth-file metadata, source/user matching, auth-index prefix fallback. | Yes, port into collector core/repository boundary. |
-| Current bulk persistence | `dashboard/src/app/api/usage/collect/route.ts:470-499` | `createMany({ skipDuplicates: true })` in batches and endpoint compatibility fallback. | Partial; keep batch-first discipline but move to `eventKey` conflict protection. |
-| Usage cache invalidation | `dashboard/src/app/api/usage/collect/route.ts:548` | Invalidate usage caches after successful writes. | Yes, must be retained after event persistence. |
+| Current collector route auth | `apps/dashboard/src/app/api/usage/collect/route.ts:218-248` | Dual bearer `COLLECTOR_API_KEY` or admin session + origin validation. | Yes, preserve wrapper exactly while changing route body. |
+| Current ownership resolution | `apps/dashboard/src/app/api/usage/collect/route.ts:356-465` | API-key grouping, auth-file metadata, source/user matching, auth-index prefix fallback. | Yes, port into collector core/repository boundary. |
+| Current bulk persistence | `apps/dashboard/src/app/api/usage/collect/route.ts:470-499` | `createMany({ skipDuplicates: true })` in batches and endpoint compatibility fallback. | Partial; keep batch-first discipline but move to `eventKey` conflict protection. |
+| Usage cache invalidation | `apps/dashboard/src/app/api/usage/collect/route.ts:548` | Invalidate usage caches after successful writes. | Yes, must be retained after event persistence. |
 | CPA split queue processing | `references/cpa-usage-keeper/internal/service/sync.go:212-367` | Pull raw inbox first, then decode/process local rows with status transitions. | Yes, core reliability pattern. |
 | CPA event key generation | `references/cpa-usage-keeper/internal/service/redis_usage.go:86-115`, `references/cpa-usage-keeper/internal/service/flatten.go:62-89` | `request_id` or normalized SHA-256 fallback. | Yes, align with D15. |
 

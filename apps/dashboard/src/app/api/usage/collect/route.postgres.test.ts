@@ -4,9 +4,9 @@ import { randomUUID } from "node:crypto";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { NextRequest } from "next/server";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { PrismaClient } from "@/generated/prisma/client";
-import { PrismaCollectorStateRepository } from "@/workers/usage-collector/repositories/collector-state-repository";
-import { UsageCollectorWorkerRunner } from "@/workers/usage-collector/runner";
+import { PrismaClient } from "@/server/db/generated/prisma/client";
+import { PrismaCollectorStateRepository } from "@/server/jobs/workers/usage-collector/repositories/collector-state-repository";
+import { UsageCollectorWorkerRunner } from "@/server/jobs/workers/usage-collector/runner";
 
 const verifySessionMock = vi.fn();
 const validateOriginMock = vi.fn();
@@ -20,11 +20,11 @@ const TEST_SCHEMA = `usage_collect_route_${randomUUID().replace(/-/g, "")}`;
 
 let prismaClientForRoute: PrismaClient;
 
-vi.mock("@/lib/auth/session", () => ({
+vi.mock("@/server/auth/lib/session", () => ({
   verifySession: verifySessionMock,
 }));
 
-vi.mock("@/lib/auth/origin", () => ({
+vi.mock("@/server/auth/lib/origin", () => ({
   validateOrigin: validateOriginMock,
 }));
 
@@ -32,7 +32,7 @@ vi.mock("@/lib/logger", () => ({
   logger: loggerMock,
 }));
 
-vi.mock("@/lib/db", () => ({
+vi.mock("@/server/db/client", () => ({
   get prisma() {
     return prismaClientForRoute;
   },

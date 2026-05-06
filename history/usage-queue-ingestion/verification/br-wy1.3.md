@@ -8,9 +8,9 @@
 ## Scope Implemented
 
 - Added event identity utility:
-  - `dashboard/src/usage-collector/core/event-key.ts`
+  - `apps/dashboard/src/usage-collector/core/event-key.ts`
 - Added focused TDD test suite:
-  - `dashboard/src/usage-collector/__tests__/event-key.test.ts`
+  - `apps/dashboard/src/usage-collector/__tests__/event-key.test.ts`
 
 ## TDD Evidence
 
@@ -54,5 +54,5 @@
 
 ## Changed Files
 
-- `dashboard/src/usage-collector/core/event-key.ts`
-- `dashboard/src/usage-collector/__tests__/event-key.test.ts`
+- `apps/dashboard/src/usage-collector/core/event-key.ts`
+- `apps/dashboard/src/usage-collector/__tests__/event-key.test.ts`

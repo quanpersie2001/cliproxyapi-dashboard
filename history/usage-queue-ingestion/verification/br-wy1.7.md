@@ -8,13 +8,13 @@
 ## Scope Implemented
 
 - Added one-shot pull service:
-  - `dashboard/src/usage-collector/core/pull-service.ts`
+  - `apps/dashboard/src/usage-collector/core/pull-service.ts`
 - Added one-shot process service:
-  - `dashboard/src/usage-collector/core/process-service.ts`
+  - `apps/dashboard/src/usage-collector/core/process-service.ts`
 - Added one-shot orchestrator composer:
-  - `dashboard/src/usage-collector/core/one-shot-orchestrator.ts`
+  - `apps/dashboard/src/usage-collector/core/one-shot-orchestrator.ts`
 - Added mixed-batch orchestration TDD suite:
-  - `dashboard/src/usage-collector/__tests__/one-shot-orchestrator.test.ts`
+  - `apps/dashboard/src/usage-collector/__tests__/one-shot-orchestrator.test.ts`
 
 ## TDD Evidence
 
@@ -54,7 +54,7 @@
 
 ## Changed Files
 
-- `dashboard/src/usage-collector/core/pull-service.ts`
-- `dashboard/src/usage-collector/core/process-service.ts`
-- `dashboard/src/usage-collector/core/one-shot-orchestrator.ts`
-- `dashboard/src/usage-collector/__tests__/one-shot-orchestrator.test.ts`
+- `apps/dashboard/src/usage-collector/core/pull-service.ts`
+- `apps/dashboard/src/usage-collector/core/process-service.ts`
+- `apps/dashboard/src/usage-collector/core/one-shot-orchestrator.ts`
+- `apps/dashboard/src/usage-collector/__tests__/one-shot-orchestrator.test.ts`

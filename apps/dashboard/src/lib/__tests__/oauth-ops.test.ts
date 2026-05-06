@@ -16,7 +16,7 @@ vi.mock("@/lib/env", () => ({
   },
 }));
 
-vi.mock("@/lib/db", () => ({
+vi.mock("@/server/db/client", () => ({
   prisma: {
     providerOAuthOwnership: {
       create: vi.fn(),
@@ -29,7 +29,7 @@ vi.mock("@/lib/db", () => ({
   },
 }));
 
-vi.mock("@/generated/prisma/client", () => ({
+vi.mock("@/server/db/generated/prisma/client", () => ({
   Prisma: {
     PrismaClientKnownRequestError: class PrismaClientKnownRequestError extends Error {
       code?: string;
@@ -137,7 +137,7 @@ describe("listOAuthWithOwnership", () => {
       body: { cancel: vi.fn() },
     });
 
-    const { prisma } = await import("@/lib/db");
+    const { prisma } = await import("@/server/db/client");
     const findManyMock = prisma.providerOAuthOwnership.findMany as unknown as ReturnType<typeof vi.fn>;
     findManyMock.mockResolvedValueOnce([]);
 
@@ -207,7 +207,7 @@ describe("listOAuthWithOwnership", () => {
       body: { cancel: vi.fn() },
     });
 
-    const { prisma } = await import("@/lib/db");
+    const { prisma } = await import("@/server/db/client");
     const findManyMock = prisma.providerOAuthOwnership.findMany as unknown as ReturnType<typeof vi.fn>;
     findManyMock.mockResolvedValueOnce([
       {
@@ -307,7 +307,7 @@ describe("listOAuthWithOwnership", () => {
       body: { cancel: vi.fn() },
     });
 
-    const { prisma } = await import("@/lib/db");
+    const { prisma } = await import("@/server/db/client");
     const findManyMock = prisma.providerOAuthOwnership.findMany as unknown as ReturnType<typeof vi.fn>;
     findManyMock.mockResolvedValueOnce([]);
 
@@ -359,7 +359,7 @@ describe("toggleOAuthAccountByIdOrName", () => {
   });
 
   it("calls the upstream auth status endpoint with PATCH", async () => {
-    const { prisma } = await import("@/lib/db");
+    const { prisma } = await import("@/server/db/client");
     const findUniqueMock = prisma.providerOAuthOwnership.findUnique as unknown as ReturnType<typeof vi.fn>;
     findUniqueMock.mockResolvedValueOnce({
       id: "ownership-1",

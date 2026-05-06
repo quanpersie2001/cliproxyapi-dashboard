@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserCount } from "@/lib/auth/dal";
-import { hashPassword } from "@/lib/auth/password";
-import { signToken } from "@/lib/auth/jwt";
-import { createSession } from "@/lib/auth/session";
-import { checkRateLimitWithPreset } from "@/lib/auth/rate-limit";
-import { Prisma } from "@/generated/prisma/client";
+import { getUserCount } from "@/server/auth/lib/dal";
+import { hashPassword } from "@/server/auth/lib/password";
+import { signToken } from "@/server/auth/lib/jwt";
+import { createSession } from "@/server/auth/lib/session";
+import { checkRateLimitWithPreset } from "@/server/auth/lib/rate-limit";
+import { Prisma } from "@/server/db/generated/prisma/client";
 import {
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
   USERNAME_MAX_LENGTH,
   USERNAME_MIN_LENGTH,
   isValidUsernameFormat,
-} from "@/lib/auth/validation";
-import { prisma } from "@/lib/db";
+} from "@/server/auth/lib/validation";
+import { prisma } from "@/server/db/client";
 import { ERROR_CODE, Errors, apiError } from "@/lib/errors";
 
 const MAX_SETUP_RETRIES = 5;

@@ -1,1 +1,1 @@
-export { default } from "@/features/config/components/agent-config-editor";
+export { default } from "@/features/containers/config/components/agent-config-editor";

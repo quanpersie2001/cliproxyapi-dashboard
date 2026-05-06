@@ -7,10 +7,10 @@
 
 ## Commands
 
-1. `npm --prefix "/Users/quannv.dev/Workspace/Personal/cliproxyapi-dashboard/dashboard" run test -- src/usage-collector/__tests__/usage-record-repository.postgres.test.ts`
+1. `npm --prefix "/Users/quannv.dev/Workspace/Personal/cliproxyapi-apps/dashboard/dashboard" run test -- src/usage-collector/__tests__/usage-record-repository.postgres.test.ts`
    - Exit code: `0`
    - Observed result: `1` test file passed, `1` test passed.
-2. `npm --prefix "/Users/quannv.dev/Workspace/Personal/cliproxyapi-dashboard/dashboard" run test -- src/usage-collector/__tests__/usage-record-repository.test.ts`
+2. `npm --prefix "/Users/quannv.dev/Workspace/Personal/cliproxyapi-apps/dashboard/dashboard" run test -- src/usage-collector/__tests__/usage-record-repository.test.ts`
    - Exit code: `0`
    - Observed result: `1` test file passed, `4` tests passed.
 
@@ -21,5 +21,5 @@
 
 ## Artifacts
 
-- `dashboard/src/usage-collector/__tests__/usage-record-repository.postgres.test.ts`
-- `dashboard/src/usage-collector/repositories/usage-record-repository.ts`
+- `apps/dashboard/src/usage-collector/__tests__/usage-record-repository.postgres.test.ts`
+- `apps/dashboard/src/usage-collector/repositories/usage-record-repository.ts`

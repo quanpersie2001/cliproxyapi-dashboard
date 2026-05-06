@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils";
 import { createContext, useContext, type ReactNode, useEffect, useId, useRef } from "react";
-import { useFocusTrap } from "@/hooks/use-focus-trap";
+import { useFocusTrap } from "@/lib/hooks/use-focus-trap";
 
 const ModalTitleIdContext = createContext<string>("");
 

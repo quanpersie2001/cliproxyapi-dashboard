@@ -14,7 +14,7 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { Input } from "@/components/ui/input";
 import { Modal, ModalContent, ModalFooter, ModalHeader, ModalTitle } from "@/components/ui/modal";
 import { useToast } from "@/components/ui/toast";
-import { Select } from "@/features/config/components/config-fields";
+import { Select } from "@/features/containers/config/components/config-fields";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";
 import { mergeConfigYaml } from "@/lib/config-yaml";
 import {
@@ -27,7 +27,7 @@ import {
   stripOAuthModelAliasIds,
 } from "@/lib/oauth-model-aliases";
 import { cn, extractApiError } from "@/lib/utils";
-import type { OAuthModelAliasEntry } from "@/features/config/types";
+import type { OAuthModelAliasEntry } from "@/features/containers/config/types";
 
 type ShowToast = ReturnType<typeof useToast>["showToast"];
 type ViewMode = "list" | "diagram";

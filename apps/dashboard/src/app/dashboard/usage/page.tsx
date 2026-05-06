@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { UsageAnalytics } from "@/features/usage/components/usage-analytics";
 import { loadModelPricing } from "@/features/usage/model-pricing";
-import { verifySession } from "@/lib/auth/session";
-import { loadRecentUsageHistorySnapshot } from "@/server/usage/services/get-usage-history-snapshot";
+import { verifySession } from "@/server/auth/lib/session";
+import { loadRecentUsageHistorySnapshot } from "@/server/services/get-usage-history-snapshot";
 import { headers } from "next/headers";
 
 export default async function UsagePage() {

@@ -1,0 +1,19 @@
+{
+  "name": "@cliproxyapi/usage-collector-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "build": "../../apps/dashboard/node_modules/.bin/tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@cliproxyapi/usage-contracts": "file:../../packages/usage-contracts",
+    "@prisma/adapter-pg": "^7.0.0",
+    "@prisma/client": "^7.0.0",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/node": "^22.18.10",
+    "typescript": "^5.9.3"
+  }
+}

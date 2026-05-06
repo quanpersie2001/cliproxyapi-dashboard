@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifySession } from "@/lib/auth/session";
-import { validateOrigin } from "@/lib/auth/origin";
+import { verifySession } from "@/server/auth/lib/session";
+import { validateOrigin } from "@/server/auth/lib/origin";
 import { Errors, apiSuccess } from "@/lib/errors";
 import { logger } from "@/lib/logger";
 import {

@@ -8,12 +8,12 @@
 ## Scope Implemented
 
 - Added RESP source adapter:
-  - `dashboard/src/usage-collector/sources/resp-queue-source.ts`
+  - `apps/dashboard/src/usage-collector/sources/resp-queue-source.ts`
 - Added CLIProxyAPI v1 decoder with fail-closed decode path:
-  - `dashboard/src/usage-collector/decoders/cliproxy-v1-decoder.ts`
+  - `apps/dashboard/src/usage-collector/decoders/cliproxy-v1-decoder.ts`
 - Added focused TDD suites:
-  - `dashboard/src/usage-collector/__tests__/resp-queue-source.test.ts`
-  - `dashboard/src/usage-collector/__tests__/cliproxy-v1-decoder.test.ts`
+  - `apps/dashboard/src/usage-collector/__tests__/resp-queue-source.test.ts`
+  - `apps/dashboard/src/usage-collector/__tests__/cliproxy-v1-decoder.test.ts`
 
 ## TDD Evidence
 
@@ -53,7 +53,7 @@
 
 ## Changed Files
 
-- `dashboard/src/usage-collector/sources/resp-queue-source.ts`
-- `dashboard/src/usage-collector/decoders/cliproxy-v1-decoder.ts`
-- `dashboard/src/usage-collector/__tests__/resp-queue-source.test.ts`
-- `dashboard/src/usage-collector/__tests__/cliproxy-v1-decoder.test.ts`
+- `apps/dashboard/src/usage-collector/sources/resp-queue-source.ts`
+- `apps/dashboard/src/usage-collector/decoders/cliproxy-v1-decoder.ts`
+- `apps/dashboard/src/usage-collector/__tests__/resp-queue-source.test.ts`
+- `apps/dashboard/src/usage-collector/__tests__/cliproxy-v1-decoder.test.ts`

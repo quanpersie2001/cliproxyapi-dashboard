@@ -5,8 +5,8 @@
  */
 
 import { NextResponse } from "next/server";
-import { verifySession } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { verifySession } from "@/server/auth/lib/session";
+import { prisma } from "@/server/db/client";
 import { usageCache, CACHE_TTL, CACHE_KEYS } from "@/lib/cache";
 import { logger } from "@/lib/logger";
 import { Errors } from "@/lib/errors";

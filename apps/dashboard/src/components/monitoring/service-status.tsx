@@ -1,1 +1,1 @@
-export { ServiceStatus } from "@/features/monitoring/components/service-status";
+export { ServiceStatus } from "@/features/containers/monitoring/components/service-status";

@@ -29,13 +29,13 @@ const listOAuthWithOwnershipMock = vi.fn();
 const contributeOAuthAccountMock = vi.fn();
 const findUniqueMock = vi.fn();
 
-vi.mock("@/lib/auth/session", () => ({
+vi.mock("@/server/auth/lib/session", () => ({
   verifySession: verifySessionMock,
 }));
-vi.mock("@/lib/auth/origin", () => ({
+vi.mock("@/server/auth/lib/origin", () => ({
   validateOrigin: vi.fn(() => null),
 }));
-vi.mock("@/lib/auth/rate-limit", () => ({
+vi.mock("@/server/auth/lib/rate-limit", () => ({
   checkRateLimitWithPreset: vi.fn(() => ({ allowed: true })),
 }));
 
@@ -44,7 +44,7 @@ vi.mock("@/lib/providers/dual-write", () => ({
   contributeOAuthAccount: contributeOAuthAccountMock,
 }));
 
-vi.mock("@/lib/db", () => ({
+vi.mock("@/server/db/client", () => ({
   prisma: {
     user: {
       findUnique: findUniqueMock,

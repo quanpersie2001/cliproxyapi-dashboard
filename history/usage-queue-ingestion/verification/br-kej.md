@@ -28,5 +28,5 @@ Runtime coverage now includes the default coordinator mode used by `entrypoint.s
 
 ## Files Changed
 
-- `dashboard/src/usage-collector/__tests__/collector-bootstrap.runtime.test.ts`
+- `apps/dashboard/src/usage-collector/__tests__/collector-bootstrap.runtime.test.ts`
 - `history/usage-queue-ingestion/verification/br-kej.md`

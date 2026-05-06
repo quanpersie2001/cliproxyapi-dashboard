@@ -8,15 +8,15 @@
 ## Implemented Changes
 
 - Replaced placeholder collector mode in production bootstrap with real runtime loading:
-  - `dashboard/collector-bootstrap.js`
+  - `apps/dashboard/collector-bootstrap.js`
 - Added real worker runtime composition (source + pull/process/orchestrator + runner):
-  - `dashboard/src/usage-collector/runtime-main.ts`
+  - `apps/dashboard/src/usage-collector/runtime-main.ts`
 - Added runtime smoke test that proves `--collector` mode starts the worker path (not placeholder):
-  - `dashboard/src/usage-collector/__tests__/collector-bootstrap.runtime.test.ts`
+  - `apps/dashboard/src/usage-collector/__tests__/collector-bootstrap.runtime.test.ts`
 - Hardened collector build output for production runtime execution:
-  - `dashboard/tsconfig.collector.json`
-  - `dashboard/package.json`
-  - `dashboard/scripts/postbuild-collector.cjs`
+  - `apps/dashboard/tsconfig.collector.json`
+  - `apps/dashboard/package.json`
+  - `apps/dashboard/scripts/postbuild-collector.cjs`
 
 ## TDD Evidence
 
@@ -80,7 +80,7 @@ Observed result:
 
 ## Generated Proof Artifacts
 
-- Runtime entry: `dashboard/src/usage-collector/runtime-main.ts`
-- Runtime smoke test: `dashboard/src/usage-collector/__tests__/collector-bootstrap.runtime.test.ts`
-- Collector postbuild patch helper: `dashboard/scripts/postbuild-collector.cjs`
+- Runtime entry: `apps/dashboard/src/usage-collector/runtime-main.ts`
+- Runtime smoke test: `apps/dashboard/src/usage-collector/__tests__/collector-bootstrap.runtime.test.ts`
+- Collector postbuild patch helper: `apps/dashboard/scripts/postbuild-collector.cjs`
 - This verification record: `history/usage-queue-ingestion/verification/br-hk7.md`

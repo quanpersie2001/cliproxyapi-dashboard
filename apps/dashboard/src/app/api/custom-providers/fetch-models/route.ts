@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifySession } from "@/lib/auth/session";
-import { validateOrigin } from "@/lib/auth/origin";
+import { verifySession } from "@/server/auth/lib/session";
+import { validateOrigin } from "@/server/auth/lib/origin";
 import { z } from "zod";
-import { checkRateLimitWithPreset } from "@/lib/auth/rate-limit";
+import { checkRateLimitWithPreset } from "@/server/auth/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { FetchModelsSchema } from "@/lib/validation/schemas";
 import { lookup } from "dns/promises";

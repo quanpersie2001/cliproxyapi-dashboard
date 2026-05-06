@@ -38,6 +38,6 @@
 
 ## Files Changed
 
-- `dashboard/src/usage-collector/infra/leader-lock.ts`
-- `dashboard/src/usage-collector/__tests__/leader-lock.postgres.test.ts`
+- `apps/dashboard/src/usage-collector/infra/leader-lock.ts`
+- `apps/dashboard/src/usage-collector/__tests__/leader-lock.postgres.test.ts`
 - `history/usage-queue-ingestion/verification/br-nx4.md`

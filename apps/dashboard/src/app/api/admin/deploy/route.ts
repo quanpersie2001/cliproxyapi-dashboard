@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
-import { verifySession } from "@/lib/auth/session";
-import { validateOrigin } from "@/lib/auth/origin";
-import { prisma } from "@/lib/db";
+import { verifySession } from "@/server/auth/lib/session";
+import { validateOrigin } from "@/server/auth/lib/origin";
+import { prisma } from "@/server/db/client";
 import { Errors, apiSuccess } from "@/lib/errors";
 import { ConfirmActionSchema } from "@/lib/validation/schemas";
 import { logger } from "@/lib/logger";

@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUserByUsername } from "@/lib/auth/dal";
-import { verifyPassword } from "@/lib/auth/password";
-import { signToken } from "@/lib/auth/jwt";
-import { createSession } from "@/lib/auth/session";
-import { checkRateLimit } from "@/lib/auth/rate-limit";
+import { getUserByUsername } from "@/server/auth/lib/dal";
+import { verifyPassword } from "@/server/auth/lib/password";
+import { signToken } from "@/server/auth/lib/jwt";
+import { createSession } from "@/server/auth/lib/session";
+import { checkRateLimit } from "@/server/auth/lib/rate-limit";
 import {
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
   USERNAME_MAX_LENGTH,
   USERNAME_MIN_LENGTH,
   isValidUsernameFormat,
-} from "@/lib/auth/validation";
+} from "@/server/auth/lib/validation";
 import { ERROR_CODE, Errors, apiErrorWithHeaders } from "@/lib/errors";
 import { AUDIT_ACTION, logAuditAsync } from "@/lib/audit";
 import { logger } from "@/lib/logger";

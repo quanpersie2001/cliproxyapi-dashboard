@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { verifySession } from "@/lib/auth/session";
+import { verifySession } from "@/server/auth/lib/session";
 import { resyncCustomProviders } from "@/lib/providers/resync";
 import { Errors } from "@/lib/errors";
 

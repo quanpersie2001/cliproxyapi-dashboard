@@ -7,7 +7,7 @@
 
 ## Summary
 
-Added a focused real-Postgres advisory-lock proof at `dashboard/src/usage-collector/__tests__/leader-lock.postgres.test.ts` to validate two required behaviors:
+Added a focused real-Postgres advisory-lock proof at `apps/dashboard/src/usage-collector/__tests__/leader-lock.postgres.test.ts` to validate two required behaviors:
 - exclusivity under contention (second contender cannot acquire while first holds leadership)
 - release handoff (later contender can acquire after release)
 
@@ -28,5 +28,5 @@ Added a focused real-Postgres advisory-lock proof at `dashboard/src/usage-collec
 
 ## Files Changed
 
-- `dashboard/src/usage-collector/__tests__/leader-lock.postgres.test.ts`
+- `apps/dashboard/src/usage-collector/__tests__/leader-lock.postgres.test.ts`
 - `history/usage-queue-ingestion/verification/br-vq4.md`

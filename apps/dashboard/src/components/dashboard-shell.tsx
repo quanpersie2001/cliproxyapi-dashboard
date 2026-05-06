@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo, createContext, useContext } from "react";
 import { DashboardHeader } from "@/components/dashboard-header";
 import { UserPanel } from "@/components/user-panel";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/features/auth/hooks/use-auth";
 
 interface ProxyStatus {
   running: boolean;

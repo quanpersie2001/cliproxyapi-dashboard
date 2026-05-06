@@ -27,6 +27,8 @@ export function getProxyComposeFileCandidates(
   const candidates = [
     ...(isDevContainer
       ? [
+          path.resolve(cwd, "tools/dev/docker-compose.dev.yml"),
+          path.resolve(cwd, "dashboard/tools/dev/docker-compose.dev.yml"),
           path.resolve(cwd, "docker-compose.dev.yml"),
           path.resolve(cwd, "dashboard/docker-compose.dev.yml"),
         ]

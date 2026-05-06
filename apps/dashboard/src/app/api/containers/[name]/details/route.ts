@@ -1,12 +1,12 @@
 import { NextRequest } from "next/server";
-import { verifySession } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
-import { isValidContainerName, normalizeHealthStatus, extractEnvKeys, parseRestartInfo, parseServiceLabels } from "@/lib/containers";
+import { verifySession } from "@/server/auth/lib/session";
+import { prisma } from "@/server/db/client";
+import { isValidContainerName, normalizeHealthStatus, extractEnvKeys, parseRestartInfo, parseServiceLabels } from "@/features/containers/containers";
 import { execFile } from "child_process";
 import { promisify } from "util";
 import { Errors, apiSuccess } from "@/lib/errors";
 import { logger } from "@/lib/logger";
-import type { ContainerPort, ContainerMount } from "@/lib/containers";
+import type { ContainerPort, ContainerMount } from "@/features/containers/containers";
 
 const execFileAsync = promisify(execFile);
 

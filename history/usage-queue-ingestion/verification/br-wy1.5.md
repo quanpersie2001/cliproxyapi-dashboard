@@ -8,9 +8,9 @@
 ## Scope Implemented
 
 - Added inbox repository lifecycle implementation:
-  - `dashboard/src/usage-collector/repositories/inbox-repository.ts`
+  - `apps/dashboard/src/usage-collector/repositories/inbox-repository.ts`
 - Added focused TDD suite:
-  - `dashboard/src/usage-collector/__tests__/inbox-repository.test.ts`
+  - `apps/dashboard/src/usage-collector/__tests__/inbox-repository.test.ts`
 
 ## TDD Evidence
 
@@ -52,5 +52,5 @@
 
 ## Changed Files
 
-- `dashboard/src/usage-collector/repositories/inbox-repository.ts`
-- `dashboard/src/usage-collector/__tests__/inbox-repository.test.ts`
+- `apps/dashboard/src/usage-collector/repositories/inbox-repository.ts`
+- `apps/dashboard/src/usage-collector/__tests__/inbox-repository.test.ts`

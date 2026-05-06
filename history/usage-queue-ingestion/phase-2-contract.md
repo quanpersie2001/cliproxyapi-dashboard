@@ -17,7 +17,7 @@ After this phase, the repo can prove end-to-end queue ingestion correctness with
 
 ## 3. Entry State
 - Phase 1 additive schema, collector contracts, and event-key utility exist and have review-backed evidence.
-- `dashboard/src/usage-collector/` has no RESP adapter, decoder, repositories, ownership resolver, or executable one-shot implementation yet.
+- `apps/dashboard/src/usage-collector/` has no RESP adapter, decoder, repositories, ownership resolver, or executable one-shot implementation yet.
 - `POST /api/usage/collect` still performs legacy `/usage` collection directly in the route.
 - `/api/usage/history` and `/dashboard/usage` still read existing `usage_records` facts unchanged.
 - No queue messages are persisted into `usage_queue_inbox`.

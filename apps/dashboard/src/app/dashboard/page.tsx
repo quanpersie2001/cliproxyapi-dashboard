@@ -4,8 +4,8 @@ import { redirect } from "next/navigation";
 import { AvailableModelGroups } from "@/components/dashboard/available-model-groups";
 import { Badge } from "@/components/ui/badge";
 import { UsageAnalytics } from "@/features/usage/components/usage-analytics";
-import { verifySession } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { verifySession } from "@/server/auth/lib/session";
+import { prisma } from "@/server/db/client";
 import {
   fetchAvailableAuthFileModels,
   fetchAvailableProxyModels,

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifySession } from "@/lib/auth/session";
-import { validateOrigin } from "@/lib/auth/origin";
-import { checkRateLimitWithPreset } from "@/lib/auth/rate-limit";
+import { verifySession } from "@/server/auth/lib/session";
+import { validateOrigin } from "@/server/auth/lib/origin";
+import { checkRateLimitWithPreset } from "@/server/auth/lib/rate-limit";
 import { importOAuthCredential } from "@/lib/providers/dual-write";
 import { OAUTH_PROVIDER, type OAuthProvider } from "@/lib/providers/constants";
 import { ImportOAuthCredentialSchema } from "@/lib/validation/schemas";

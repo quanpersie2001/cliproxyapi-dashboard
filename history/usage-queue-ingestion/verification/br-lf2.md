@@ -38,6 +38,6 @@ Bounded follower standby after wake advancement is now enforced in `UsageCollect
 
 ## Files Changed
 
-- `dashboard/src/usage-collector/runner.ts`
-- `dashboard/src/usage-collector/__tests__/worker-runner.test.ts`
+- `apps/dashboard/src/usage-collector/runner.ts`
+- `apps/dashboard/src/usage-collector/__tests__/worker-runner.test.ts`
 - `history/usage-queue-ingestion/verification/br-lf2.md`

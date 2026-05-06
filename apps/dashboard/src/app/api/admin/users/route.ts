@@ -1,16 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifySession } from "@/lib/auth/session";
-import { validateOrigin } from "@/lib/auth/origin";
-import { checkRateLimitWithPreset } from "@/lib/auth/rate-limit";
-import { hashPassword } from "@/lib/auth/password";
+import { verifySession } from "@/server/auth/lib/session";
+import { validateOrigin } from "@/server/auth/lib/origin";
+import { checkRateLimitWithPreset } from "@/server/auth/lib/rate-limit";
+import { hashPassword } from "@/server/auth/lib/password";
 import {
   PASSWORD_MAX_LENGTH,
   PASSWORD_MIN_LENGTH,
   USERNAME_MAX_LENGTH,
   USERNAME_MIN_LENGTH,
   isValidUsernameFormat,
-} from "@/lib/auth/validation";
-import { prisma } from "@/lib/db";
+} from "@/server/auth/lib/validation";
+import { prisma } from "@/server/db/client";
 import { Errors } from "@/lib/errors";
 import { cascadeDeleteUserProviders } from "@/lib/providers/cascade";
 import { AUDIT_ACTION, extractIpAddress, logAuditAsync } from "@/lib/audit";

@@ -11,9 +11,11 @@ Canonical docs hub: [`docs/README.md`](docs/README.md)
 
 ## Workspace Status
 
-The repository now has root workspace scaffolding (`package.json`, `tsconfig.base.json`, plus `apps/`, `workers/`, `packages/` directories), and the runnable app lives in [`apps/dashboard/`](apps/dashboard/).
+The repository uses a workspace layout with the active app in [`apps/dashboard/`](apps/dashboard/), a standalone worker workspace under `workers/`, and shared modules under `packages/`.
 
-Root scripts are available as convenience entrypoints and currently delegate to `apps/dashboard`.
+Root scripts are convenience entrypoints that proxy into `apps/dashboard`, including `npm run build:collector` for collector-runtime build output.
+
+`apps/dashboard/src/server/jobs/workers/usage-collector/` remains the embedded runtime source boundary packaged into the dashboard image, while `workers/usage-collector/` is kept as a separate workspace boundary for worker artifacts and local experiments. Keep shared contracts/modules in `packages/*`. 
 
 ## Recommended Development Workflow
 
@@ -21,14 +23,14 @@ Use the source-dev scripts from [`apps/dashboard/`](apps/dashboard/):
 
 ```bash
 cd apps/dashboard
-./dev-local.sh
+./tools/dev/dev-local.sh
 ```
 
 Windows:
 
 ```powershell
 cd apps/dashboard
-.\dev-local.ps1
+.\tools\dev\dev-local.ps1
 ```
 
 This gives you:
@@ -53,6 +55,7 @@ npm run typecheck
 npm run lint
 npm test
 npm run build
+npm run build:collector
 ```
 
 Direct execution in [`apps/dashboard/`](apps/dashboard/) is also valid:
@@ -74,7 +77,7 @@ Direct execution in [`apps/dashboard/`](apps/dashboard/) is also valid:
 - Use `apiError`, `apiSuccess`, or `Errors.*` from [`apps/dashboard/src/lib/errors.ts`](apps/dashboard/src/lib/errors.ts) for API responses.
 - Do not add new consumers of the deprecated `GET /api/usage` route; use `GET /api/usage/history`.
 - Do not treat `providerMutex` as a distributed lock.
-- Do not edit generated Prisma internals under `apps/dashboard/src/generated/prisma/internal/`.
+- Do not edit generated Prisma internals under `apps/dashboard/src/server/db/generated/prisma/internal/`.
 - Keep secrets and API URLs out of source control.
 
 ## Testing Checklist

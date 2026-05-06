@@ -8,17 +8,17 @@
 ## Scope Implemented
 
 - Added resident worker loop orchestration with leadership gate, wake awareness, and error backoff handling:
-  - `dashboard/src/usage-collector/runner.ts`
+  - `apps/dashboard/src/usage-collector/runner.ts`
 - Added PostgreSQL advisory leadership lock adapter:
-  - `dashboard/src/usage-collector/infra/leader-lock.ts`
+  - `apps/dashboard/src/usage-collector/infra/leader-lock.ts`
 - Added bounded collector-state repository for standby/running/success/error + wake metadata updates:
-  - `dashboard/src/usage-collector/repositories/collector-state-repository.ts`
+  - `apps/dashboard/src/usage-collector/repositories/collector-state-repository.ts`
 - Added worker runtime TDD coverage:
-  - `dashboard/src/usage-collector/__tests__/worker-runner.test.ts`
+  - `apps/dashboard/src/usage-collector/__tests__/worker-runner.test.ts`
 - Added runtime env contract knobs for resident worker behavior:
-  - `dashboard/src/lib/env.ts`
+  - `apps/dashboard/src/lib/env.ts`
 - Extended `CollectorState` schema with bounded wake/heartbeat/run metadata:
-  - `dashboard/prisma/schema.prisma`
+  - `apps/dashboard/prisma/schema.prisma`
 
 ## TDD Evidence
 
@@ -73,10 +73,10 @@
 
 ## Changed Files
 
-- `dashboard/prisma/schema.prisma`
-- `dashboard/src/lib/env.ts`
-- `dashboard/src/usage-collector/runner.ts`
-- `dashboard/src/usage-collector/infra/leader-lock.ts`
-- `dashboard/src/usage-collector/repositories/collector-state-repository.ts`
-- `dashboard/src/usage-collector/__tests__/worker-runner.test.ts`
+- `apps/dashboard/prisma/schema.prisma`
+- `apps/dashboard/src/lib/env.ts`
+- `apps/dashboard/src/usage-collector/runner.ts`
+- `apps/dashboard/src/usage-collector/infra/leader-lock.ts`
+- `apps/dashboard/src/usage-collector/repositories/collector-state-repository.ts`
+- `apps/dashboard/src/usage-collector/__tests__/worker-runner.test.ts`
 - `history/usage-queue-ingestion/verification/br-wy1.9.md`

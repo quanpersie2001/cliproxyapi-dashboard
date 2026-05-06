@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
-import { verifySession } from "@/lib/auth/session";
-import { validateOrigin } from "@/lib/auth/origin";
+import { verifySession } from "@/server/auth/lib/session";
+import { validateOrigin } from "@/server/auth/lib/origin";
 import { removeOAuthAccountByIdOrName, toggleOAuthAccountByIdOrName } from "@/lib/providers/dual-write";
-import { prisma } from "@/lib/db";
+import { prisma } from "@/server/db/client";
 import { Errors, apiSuccess } from "@/lib/errors";
 
 export async function DELETE(

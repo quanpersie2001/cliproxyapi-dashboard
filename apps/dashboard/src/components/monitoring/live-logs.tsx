@@ -1,1 +1,1 @@
-export { LiveLogs } from "@/features/monitoring/components/live-logs";
+export { LiveLogs } from "@/features/containers/monitoring/components/live-logs";

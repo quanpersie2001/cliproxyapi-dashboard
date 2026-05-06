@@ -25,15 +25,15 @@ const {
   },
 }));
 
-vi.mock("@/lib/auth/session", () => ({
+vi.mock("@/server/auth/lib/session", () => ({
   verifySession: verifySessionMock,
 }));
 
-vi.mock("@/lib/auth/origin", () => ({
+vi.mock("@/server/auth/lib/origin", () => ({
   validateOrigin: validateOriginMock,
 }));
 
-vi.mock("@/lib/db", () => ({
+vi.mock("@/server/db/client", () => ({
   prisma: prismaMock,
 }));
 

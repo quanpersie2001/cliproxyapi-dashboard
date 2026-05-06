@@ -1,1 +1,1 @@
-export { default } from "@/features/config/components/config-preview";
+export { default } from "@/features/containers/config/components/config-preview";

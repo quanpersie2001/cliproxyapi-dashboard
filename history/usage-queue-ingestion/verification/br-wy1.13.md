@@ -7,7 +7,7 @@
 
 ## Commands
 
-1. `npm --prefix "/Users/quannv.dev/Workspace/Personal/cliproxyapi-dashboard/dashboard" run test -- src/usage-collector/__tests__/inbox-repository.test.ts src/usage-collector/__tests__/inbox-repository.postgres.test.ts src/usage-collector/__tests__/schema-contract.test.ts`
+1. `npm --prefix "/Users/quannv.dev/Workspace/Personal/cliproxyapi-apps/dashboard/dashboard" run test -- src/usage-collector/__tests__/inbox-repository.test.ts src/usage-collector/__tests__/inbox-repository.postgres.test.ts src/usage-collector/__tests__/schema-contract.test.ts`
    - Exit code: `0`
    - Observed result: `3` test files passed, `9` tests passed.
 
@@ -19,8 +19,8 @@
 
 ## Artifacts
 
-- `dashboard/src/usage-collector/repositories/inbox-repository.ts`
-- `dashboard/src/usage-collector/__tests__/inbox-repository.postgres.test.ts`
-- `dashboard/src/usage-collector/__tests__/inbox-repository.test.ts`
-- `dashboard/src/usage-collector/__tests__/schema-contract.test.ts`
-- `dashboard/prisma/migrations/20260506073500_usage_queue_inbox_processing_claim_state/migration.sql`
+- `apps/dashboard/src/usage-collector/repositories/inbox-repository.ts`
+- `apps/dashboard/src/usage-collector/__tests__/inbox-repository.postgres.test.ts`
+- `apps/dashboard/src/usage-collector/__tests__/inbox-repository.test.ts`
+- `apps/dashboard/src/usage-collector/__tests__/schema-contract.test.ts`
+- `apps/dashboard/prisma/migrations/20260506073500_usage_queue_inbox_processing_claim_state/migration.sql`

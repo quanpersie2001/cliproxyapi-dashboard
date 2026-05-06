@@ -1,6 +1,6 @@
 import "server-only";
-import { Prisma } from "@/generated/prisma/client";
-import { prisma } from "./db";
+import { Prisma } from "@/server/db/generated/prisma/client";
+import { prisma } from "@/server/db/client";
 import { logger } from "./logger";
 
 export const AUDIT_ACTION = {

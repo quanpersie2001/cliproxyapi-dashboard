@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifySession } from "@/lib/auth/session";
-import { validateOrigin } from "@/lib/auth/origin";
-import { checkRateLimitWithPreset } from "@/lib/auth/rate-limit";
+import { verifySession } from "@/server/auth/lib/session";
+import { validateOrigin } from "@/server/auth/lib/origin";
+import { checkRateLimitWithPreset } from "@/server/auth/lib/rate-limit";
 import { Errors } from "@/lib/errors";
-import { prisma } from "@/lib/db";
-import { Prisma } from "@/generated/prisma/client";
+import { prisma } from "@/server/db/client";
+import { Prisma } from "@/server/db/generated/prisma/client";
 import { logger } from "@/lib/logger";
 import {
   fetchWithTimeout,

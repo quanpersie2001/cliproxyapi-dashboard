@@ -1,1 +1,1 @@
-export { UsageStats } from "@/features/monitoring/components/usage-stats";
+export { UsageStats } from "@/features/containers/monitoring/components/usage-stats";

@@ -27,6 +27,6 @@ RESP address parsing is now IPv6-safe with explicit contract handling. Bracketed
 
 ## Files Changed
 
-- `dashboard/src/usage-collector/runtime-main.ts`
-- `dashboard/src/usage-collector/__tests__/resp-queue-source.test.ts`
+- `apps/dashboard/src/usage-collector/runtime-main.ts`
+- `apps/dashboard/src/usage-collector/__tests__/resp-queue-source.test.ts`
 - `history/usage-queue-ingestion/verification/br-p2j.md`

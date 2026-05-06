@@ -32,8 +32,8 @@
    - Result: pass; TypeScript checks clean after ownership persistence wiring.
 
 ## Changed Files (bead scope)
-- `dashboard/src/usage-collector/repositories/usage-record-repository.ts`
-- `dashboard/src/usage-collector/__tests__/usage-record-repository.test.ts`
+- `apps/dashboard/src/usage-collector/repositories/usage-record-repository.ts`
+- `apps/dashboard/src/usage-collector/__tests__/usage-record-repository.test.ts`
 - `history/usage-queue-ingestion/verification/br-jv2.md`
 
 ## Notes

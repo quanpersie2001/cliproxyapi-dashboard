@@ -2,7 +2,7 @@
 
 **Generated:** 2026-04-09T03:00:00Z  
 **Commit:** working-tree  
-**Branch:** main
+**Branch:** snapshot from generation time (may differ from current working branch)
 
 ## OVERVIEW
 CLIProxyAPI Dashboard monorepo: Next.js 16/React 19 control plane for CLIProxyAPI, focused on proxy administration only.
@@ -27,7 +27,7 @@ cliproxyapi-dashboard/
 | Provider key/OAuth flows | `apps/dashboard/src/lib/providers/*`, `apps/dashboard/src/app/api/providers/*` | Ownership + dual-write rules |
 | Quota/usage behavior | `apps/dashboard/src/app/api/quota/route.ts`, `apps/dashboard/src/app/api/usage/*` | `/api/usage` is deprecated |
 | Container/update actions | `apps/dashboard/src/app/api/containers/*`, `apps/dashboard/src/app/api/update/*` | Docker proxy constrained |
-| Local bootstrap issues | `setup-local.sh`, `apps/dashboard/dev-local.sh` | Migration bootstrap/drift recovery logic |
+| Local bootstrap issues | `setup-local.sh`, `apps/dashboard/tools/dev/dev-local.sh` | Migration bootstrap/drift recovery logic |
 | Production stack issues | `infrastructure/docker-compose.yml`, `infrastructure/config/*` | Loopback-bound dashboard/proxy, internal DB network |
 
 ## CODE MAP
@@ -51,7 +51,7 @@ cliproxyapi-dashboard/
 - Do not treat `providerMutex` as distributed lock; it is single-process only.
 - Do not add new consumers of deprecated `/api/usage`; use `/api/usage/history`.
 - Do not hardcode API URLs or secrets.
-- Do not edit Prisma generated internals (`apps/dashboard/src/generated/prisma/internal/*`).
+- Do not edit Prisma generated internals (`apps/dashboard/src/server/db/generated/prisma/internal/*`).
 - Do not enable UFW before allowing SSH in server setup docs/scripts.
 
 ## UNIQUE STYLES
@@ -70,7 +70,7 @@ npm run build
 
 # local stack
 ./setup-local.sh
-cd apps/dashboard && ./dev-local.sh
+cd apps/dashboard && ./tools/dev/dev-local.sh
 
 # production stack
 cd infrastructure
@@ -84,7 +84,7 @@ docker compose up -d
 <!-- gitnexus:start -->
 # GitNexus — Code Intelligence
 
-This project is indexed by GitNexus as **cliproxyapi-dashboard** (6598 symbols, 11002 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
+This project is indexed by GitNexus as **cliproxyapi-dashboard** (6596 symbols, 11000 relationships, 300 execution flows). Use the GitNexus MCP tools to understand code, assess impact, and navigate safely.
 
 > If any GitNexus tool warns the index is stale, run `npx gitnexus analyze` in terminal first.
 

@@ -8,11 +8,11 @@
 ## Scope Implemented
 
 - Added collector contract entrypoint:
-  - `dashboard/src/usage-collector/contracts.ts`
+  - `apps/dashboard/src/usage-collector/contracts.ts`
 - Added core transport-neutral collector types:
-  - `dashboard/src/usage-collector/core/types.ts`
+  - `apps/dashboard/src/usage-collector/core/types.ts`
 - Added one-shot orchestration boundary contracts:
-  - `dashboard/src/usage-collector/core/orchestrator.ts`
+  - `apps/dashboard/src/usage-collector/core/orchestrator.ts`
 
 ## Verify Commands
 
@@ -26,11 +26,11 @@
 
 - Reviewed new contract files for transport neutrality and compile-only scope.
 - Boundary grep check for RESP/runtime-specific imports returned no matches:
-  - `rg -n "resp|redis|lpop|management|/api/usage|prisma" dashboard/src/usage-collector/contracts.ts dashboard/src/usage-collector/core/types.ts dashboard/src/usage-collector/core/orchestrator.ts`
+  - `rg -n "resp|redis|lpop|management|/api/usage|prisma" apps/dashboard/src/usage-collector/contracts.ts apps/dashboard/src/usage-collector/core/types.ts apps/dashboard/src/usage-collector/core/orchestrator.ts`
   - Exit: `1` (expected: no match)
 
 ## Changed Files
 
-- `dashboard/src/usage-collector/contracts.ts`
-- `dashboard/src/usage-collector/core/types.ts`
-- `dashboard/src/usage-collector/core/orchestrator.ts`
+- `apps/dashboard/src/usage-collector/contracts.ts`
+- `apps/dashboard/src/usage-collector/core/types.ts`
+- `apps/dashboard/src/usage-collector/core/orchestrator.ts`

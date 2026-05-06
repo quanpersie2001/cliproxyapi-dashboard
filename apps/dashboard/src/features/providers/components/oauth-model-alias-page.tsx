@@ -4,7 +4,7 @@ import Link from "next/link";
 import { OAuthModelAliasEditor } from "@/features/providers/components/oauth-model-alias-editor";
 import { Breadcrumbs } from "@/components/ui/breadcrumbs";
 import { useToast } from "@/components/ui/toast";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth } from "@/features/auth/hooks/use-auth";
 
 export function OAuthModelAliasPage() {
   const { showToast } = useToast();

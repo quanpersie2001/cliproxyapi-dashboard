@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { verifySession } from "@/lib/auth/session";
-import { prisma } from "@/lib/db";
+import { verifySession } from "@/server/auth/lib/session";
+import { prisma } from "@/server/db/client";
 import { Errors } from "@/lib/errors";
 
 const CLIPROXYAPI_MANAGEMENT_URL =

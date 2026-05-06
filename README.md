@@ -41,19 +41,23 @@
 
 ## Workspace Status
 
-The repository now includes root workspace scaffolding (`package.json`, `tsconfig.base.json`, and placeholder `apps/`, `workers/`, `packages/` directories).
+This repository is a workspace-structured monorepo with the active application in `apps/dashboard/`.
 
 Current state:
 
-- the runnable app lives in `apps/dashboard/`
-- root npm scripts delegate to `apps/dashboard` (for example, `npm run dev` runs `npm --prefix apps/dashboard run dev`)
+- `apps/dashboard/` is the runnable Next.js app and remains the primary surface for dashboard UI/API behavior
+- root scripts proxy to the app workspace (for example, `npm run dev` runs `npm --prefix apps/dashboard run dev`)
+- `npm run build:collector` is available at the repository root and delegates to the dashboard workspace collector build
+- the embedded usage collector runtime lives under `apps/dashboard/src/server/jobs/workers/usage-collector/` and is packaged into the dashboard image
+- `workers/usage-collector/` remains in the repo as a standalone worker workspace boundary for the collector runtime artifacts and local experiments
+- `packages/*` now holds shared contracts and foundations (`api-contracts`, `auth-contracts`, `config`, `db`, `logger`, `shared`, `usage-contracts`) used by the refactored structure
 
 ## Deployment Modes
 
 | Mode | Use it when | Command |
 | --- | --- | --- |
 | Local appliance | You want the published dashboard image and bundled proxy stack running locally | `./setup-local.sh` |
-| Source development | You want to run the dashboard from the checked-out source tree | `cd apps/dashboard && ./dev-local.sh` |
+| Source development | You want to run the dashboard from the checked-out source tree | `cd apps/dashboard && ./tools/dev/dev-local.sh` |
 | Server install | You want the bundled production compose stack on Ubuntu/Debian | `curl -fsSL .../install.sh | sudo bash` |
 
 ## Runtime Topology
@@ -69,8 +73,13 @@ The bundled deployment is a four-service Docker stack:
 
 Operational boundaries:
 
-- `apps/dashboard/`: application code, Prisma schema, local source-dev workflow
+- `apps/dashboard/`: application code, Prisma schema, local source-dev workflow, and load-bearing Next instrumentation entrypoints (`src/instrumentation.ts`, `src/instrumentation-node.ts`)
+- `apps/dashboard/src/server/jobs/workers/usage-collector/`: embedded worker runtime sources that are packaged into the dashboard image
+- `workers/usage-collector/`: standalone worker workspace boundary kept alongside the embedded runtime sources
+- `packages/`: shared workspace modules for contracts, db foundations, config, and logging
 - `infrastructure/`: production compose stack, runtime config, `manage.sh`, backup/restore ops, webhook helpers
+- `apps/dashboard/scripts/runtime/`: dashboard runtime scripts (`entrypoint.sh`, collector bootstrap)
+- `apps/dashboard/tools/dev/`: local source-dev orchestration scripts and dev compose assets
 - `docs/`: canonical documentation set
 
 Default bundled endpoints:
@@ -125,8 +134,8 @@ Useful commands:
 
 ```bash
 cd apps/dashboard
-./dev-local.sh
-# Windows: .\dev-local.ps1
+./tools/dev/dev-local.sh
+# Windows: .\tools\dev\dev-local.ps1
 ```
 
 The source-dev workflow starts PostgreSQL and CLIProxyAPI in Docker, applies Prisma bootstrap and migrations, writes `apps/dashboard/.env.local`, and runs `npm run dev`.
@@ -208,6 +217,7 @@ npm run typecheck
 npm run lint
 npm test
 npm run build
+npm run build:collector
 ```
 
 Equivalent direct run inside `apps/dashboard/` is still supported.
@@ -215,7 +225,7 @@ Equivalent direct run inside `apps/dashboard/` is still supported.
 Implementation notes:
 
 - Prisma client generation is wired into `predev`, `prebuild`, and `pretest`
-- The production image uses [`apps/dashboard/entrypoint.sh`](apps/dashboard/entrypoint.sh) to bootstrap core tables at startup with a PostgreSQL advisory lock
+- The production image uses [`apps/dashboard/scripts/runtime/entrypoint.sh`](apps/dashboard/scripts/runtime/entrypoint.sh) to bootstrap core tables at startup with a PostgreSQL advisory lock
 - The bundled deployment runs an embedded resident usage collector worker; `POST /api/usage/collect` is an authenticated fast trigger/wake seam
 - `GET /api/usage` remains a compatibility route, but new code should use `GET /api/usage/history`
 

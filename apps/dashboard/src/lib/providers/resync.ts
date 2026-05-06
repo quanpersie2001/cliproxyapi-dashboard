@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@/server/db/client";
 import { decryptProviderKey } from "@/lib/providers/encrypt";
 import { syncCustomProviderToProxy } from "@/lib/providers/custom-provider-sync";
 import { invalidateProxyModelsCache } from "@/lib/cache";

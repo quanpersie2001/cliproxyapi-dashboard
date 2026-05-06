@@ -7,7 +7,7 @@
 
 ## Commands
 
-1. `npm --prefix "/Users/quannv.dev/Workspace/Personal/cliproxyapi-dashboard/dashboard" run test -- src/app/api/usage/collect/route.postgres.test.ts`
+1. `npm --prefix "/Users/quannv.dev/Workspace/Personal/cliproxyapi-apps/dashboard/dashboard" run test -- src/app/api/usage/collect/route.postgres.test.ts`
    - Exit code: `0`
    - Observed result: `1` test file passed, `1` test passed.
 
@@ -18,4 +18,4 @@
 
 ## Artifacts
 
-- `dashboard/src/app/api/usage/collect/route.postgres.test.ts`
+- `apps/dashboard/src/app/api/usage/collect/route.postgres.test.ts`

@@ -1,4 +1,4 @@
-import { prisma } from "@/lib/db";
+import { prisma } from "@/server/db/client";
 import { logger } from "@/lib/logger";
 
 const MAX_PROVIDER_KEYS_PER_USER_KEY = "max_provider_keys_per_user";

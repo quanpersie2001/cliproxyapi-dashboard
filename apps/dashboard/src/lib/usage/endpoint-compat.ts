@@ -1,4 +1,4 @@
-import { Prisma } from "@/generated/prisma/client";
+import { Prisma } from "@/server/db/generated/prisma/client";
 
 function getErrorMessage(error: unknown): string {
   if (error instanceof Error) {

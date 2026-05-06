@@ -1,8 +1,8 @@
 import { NextRequest } from "next/server";
-import { verifySession } from "@/lib/auth/session";
-import { validateOrigin } from "@/lib/auth/origin";
+import { verifySession } from "@/server/auth/lib/session";
+import { validateOrigin } from "@/server/auth/lib/origin";
 import { removeKey, removeKeyByAdmin } from "@/lib/providers/dual-write";
-import { prisma } from "@/lib/db";
+import { prisma } from "@/server/db/client";
 import { PROVIDER, type Provider } from "@/lib/providers/constants";
 import { AUDIT_ACTION, extractIpAddress, logAuditAsync } from "@/lib/audit";
 import { Errors, apiSuccess } from "@/lib/errors";
