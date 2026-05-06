@@ -41,32 +41,37 @@ export class PrismaUsageRecordRepository implements UsageRecordRepository {
     const ownershipDirectories = await this.getOwnershipDirectories();
 
     const result = await this.prismaClient.usageRecord.createMany({
-      data: deduplicatedEvents.map((event) => ({
-        ...resolveUsageOwnership(
+      data: deduplicatedEvents.map((event) => {
+        const ownership = resolveUsageOwnership(
           {
             apiGroupKey: event.apiGroupKey,
             authIndex: event.authIndex,
             source: event.source,
           },
           ownershipDirectories
-        ),
-        eventKey: event.eventKey,
-        requestId: event.requestId,
-        provider: event.provider,
-        authType: event.authType,
-        authIndex: event.authIndex,
-        endpoint: event.apiGroupKey,
-        model: event.model,
-        source: event.source,
-        timestamp: event.timestamp,
-        latencyMs: event.latencyMs,
-        inputTokens: event.tokens.inputTokens,
-        outputTokens: event.tokens.outputTokens,
-        reasoningTokens: event.tokens.reasoningTokens,
-        cachedTokens: event.tokens.cachedTokens,
-        totalTokens: event.tokens.totalTokens,
-        failed: event.failed,
-      })),
+        );
+
+        return {
+          userId: ownership.userId,
+          apiKeyId: ownership.apiKeyId,
+          eventKey: event.eventKey,
+          requestId: event.requestId,
+          provider: event.provider,
+          authType: event.authType,
+          authIndex: event.authIndex,
+          endpoint: event.apiGroupKey,
+          model: event.model,
+          source: event.source,
+          timestamp: event.timestamp,
+          latencyMs: event.latencyMs,
+          inputTokens: event.tokens.inputTokens,
+          outputTokens: event.tokens.outputTokens,
+          reasoningTokens: event.tokens.reasoningTokens,
+          cachedTokens: event.tokens.cachedTokens,
+          totalTokens: event.tokens.totalTokens,
+          failed: event.failed,
+        };
+      }),
       skipDuplicates: true,
     });
 
