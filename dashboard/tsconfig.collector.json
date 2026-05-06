@@ -10,7 +10,7 @@
     "moduleResolution": "node"
   },
   "include": [
-    "src/usage-collector/**/*.ts"
+    "src/workers/usage-collector/**/*.ts"
   ],
   "exclude": [
     "**/__tests__/**",

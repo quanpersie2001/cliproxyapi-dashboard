@@ -5,8 +5,8 @@ import { PrismaPg } from "@prisma/adapter-pg";
 import { NextRequest } from "next/server";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { PrismaClient } from "@/generated/prisma/client";
-import { PrismaCollectorStateRepository } from "@/usage-collector/repositories/collector-state-repository";
-import { UsageCollectorWorkerRunner } from "@/usage-collector/runner";
+import { PrismaCollectorStateRepository } from "@/workers/usage-collector/repositories/collector-state-repository";
+import { UsageCollectorWorkerRunner } from "@/workers/usage-collector/runner";
 
 const verifySessionMock = vi.fn();
 const validateOriginMock = vi.fn();

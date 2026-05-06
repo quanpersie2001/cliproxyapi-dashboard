@@ -3,7 +3,7 @@ import path from "node:path";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { PrismaClient } from "@/generated/prisma/client";
-import type { NormalizedQueuedUsageEvent } from "@/usage-collector/core/types";
+import type { NormalizedQueuedUsageEvent } from "@/workers/usage-collector/core/types";
 
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/db", () => ({
@@ -13,7 +13,7 @@ vi.mock("@/lib/cache", () => ({
   invalidateUsageCaches: vi.fn(),
 }));
 
-import { PrismaUsageRecordRepository } from "@/usage-collector/repositories/usage-record-repository";
+import { PrismaUsageRecordRepository } from "@/workers/usage-collector/repositories/usage-record-repository";
 
 function resolveDatabaseUrl(): string {
   const envLocalPath = path.resolve(process.cwd(), ".env.local");

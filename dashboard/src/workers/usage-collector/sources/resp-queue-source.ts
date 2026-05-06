@@ -1,6 +1,6 @@
-import type { UsageMessageSource } from "@/usage-collector/contracts";
-import type { PullOnceOptions } from "@/usage-collector/core/orchestrator";
-import type { UsageSourceEnvelope } from "@/usage-collector/core/types";
+import type { UsageMessageSource } from "@/workers/usage-collector/contracts";
+import type { PullOnceOptions } from "@/workers/usage-collector/core/orchestrator";
+import type { UsageSourceEnvelope } from "@/workers/usage-collector/core/types";
 
 export interface RespQueueClient {
   auth(password: string): Promise<void>;

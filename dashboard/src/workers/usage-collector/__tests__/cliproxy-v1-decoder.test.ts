@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { CLIProxyV1Decoder } from "@/usage-collector/decoders/cliproxy-v1-decoder";
-import type { UsageSourceEnvelope } from "@/usage-collector/core/types";
+import { CLIProxyV1Decoder } from "@/workers/usage-collector/decoders/cliproxy-v1-decoder";
+import type { UsageSourceEnvelope } from "@/workers/usage-collector/core/types";
 
 function createEnvelope(rawMessage: string): UsageSourceEnvelope {
   return {

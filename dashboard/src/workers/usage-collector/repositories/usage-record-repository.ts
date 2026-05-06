@@ -1,10 +1,10 @@
 import type { PrismaClient } from "@/generated/prisma/client";
-import type { UsageRecordRepository } from "@/usage-collector/contracts";
+import type { UsageRecordRepository } from "@/workers/usage-collector/contracts";
 import {
   resolveUsageOwnership,
   type UsageOwnershipDirectories,
-} from "@/usage-collector/core/ownership-resolver";
-import type { NormalizedQueuedUsageEvent } from "@/usage-collector/core/types";
+} from "@/workers/usage-collector/core/ownership-resolver";
+import type { NormalizedQueuedUsageEvent } from "@/workers/usage-collector/core/types";
 import { invalidateUsageCaches } from "@/lib/cache";
 import { prisma as defaultPrisma } from "@/lib/db";
 

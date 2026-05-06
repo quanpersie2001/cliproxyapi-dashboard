@@ -2,7 +2,7 @@ import { execFileSync, spawn } from "node:child_process";
 import path from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 
-const DASHBOARD_ROOT = path.resolve(__dirname, "../../..");
+const DASHBOARD_ROOT = path.resolve(__dirname, "../../../..");
 
 const childProcesses: Array<ReturnType<typeof spawn>> = [];
 

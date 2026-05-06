@@ -1,6 +1,6 @@
 import net from "node:net";
 import { describe, expect, it, vi } from "vitest";
-import { RespQueueSource, type RespQueueClient } from "@/usage-collector/sources/resp-queue-source";
+import { RespQueueSource, type RespQueueClient } from "@/workers/usage-collector/sources/resp-queue-source";
 
 function createClient(overrides: Partial<RespQueueClient> = {}): RespQueueClient {
   return {
@@ -190,7 +190,7 @@ async function loadRuntimeRespFactory(): Promise<{
   await neutralizeServerOnlyModuleForRuntimeImport();
 
   try {
-    return await import("@/usage-collector/runtime-main");
+    return await import("@/workers/usage-collector/runtime-main");
   } finally {
     process.env.DATABASE_URL = originalEnv.DATABASE_URL;
     process.env.JWT_SECRET = originalEnv.JWT_SECRET;

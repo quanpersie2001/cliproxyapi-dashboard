@@ -2,9 +2,9 @@ import type {
   UsagePayloadDecoder,
   UsageQueueInboxRepository,
   UsageRecordRepository,
-} from "@/usage-collector/contracts";
-import type { ProcessOnceOptions, ProcessOnceResult } from "@/usage-collector/core/orchestrator";
-import type { NormalizedQueuedUsageEvent, UsageInboxRecord } from "@/usage-collector/core/types";
+} from "@/workers/usage-collector/contracts";
+import type { ProcessOnceOptions, ProcessOnceResult } from "@/workers/usage-collector/core/orchestrator";
+import type { NormalizedQueuedUsageEvent, UsageInboxRecord } from "@/workers/usage-collector/core/types";
 
 const DEFAULT_MAX_PROCESS_ATTEMPTS = 10;
 

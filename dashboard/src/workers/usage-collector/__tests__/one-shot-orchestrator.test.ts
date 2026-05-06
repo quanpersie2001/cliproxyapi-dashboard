@@ -4,11 +4,11 @@ import type {
   UsagePayloadDecoder,
   UsageQueueInboxRepository,
   UsageRecordRepository,
-} from "@/usage-collector/contracts";
-import { OneShotCollectorOrchestrator } from "@/usage-collector/core/one-shot-orchestrator";
-import { CollectorProcessService } from "@/usage-collector/core/process-service";
-import { CollectorPullService } from "@/usage-collector/core/pull-service";
-import type { NormalizedQueuedUsageEvent, UsageInboxRecord } from "@/usage-collector/core/types";
+} from "@/workers/usage-collector/contracts";
+import { OneShotCollectorOrchestrator } from "@/workers/usage-collector/core/one-shot-orchestrator";
+import { CollectorProcessService } from "@/workers/usage-collector/core/process-service";
+import { CollectorPullService } from "@/workers/usage-collector/core/pull-service";
+import type { NormalizedQueuedUsageEvent, UsageInboxRecord } from "@/workers/usage-collector/core/types";
 
 function createEvent(eventKey: string): NormalizedQueuedUsageEvent {
   return {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { buildUsageEventKey } from "@/usage-collector/core/event-key";
-import type { NormalizedQueuedUsageEvent } from "@/usage-collector/core/types";
+import { buildUsageEventKey } from "@/workers/usage-collector/core/event-key";
+import type { NormalizedQueuedUsageEvent } from "@/workers/usage-collector/core/types";
 
 type EventKeyInput = Omit<NormalizedQueuedUsageEvent, "eventKey">;
 

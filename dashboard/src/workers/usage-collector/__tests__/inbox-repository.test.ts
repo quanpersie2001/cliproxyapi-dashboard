@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 import { UsageQueueInboxStatus } from "@/generated/prisma/enums";
-import type { UsageSourceEnvelope } from "@/usage-collector/core/types";
+import type { UsageSourceEnvelope } from "@/workers/usage-collector/core/types";
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/db", () => ({
   prisma: {},
 }));
-import { PrismaUsageQueueInboxRepository } from "@/usage-collector/repositories/inbox-repository";
+import { PrismaUsageQueueInboxRepository } from "@/workers/usage-collector/repositories/inbox-repository";
 
 function createPrismaMock() {
   const usageQueueInbox = {

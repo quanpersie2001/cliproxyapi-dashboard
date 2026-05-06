@@ -1,13 +1,13 @@
 import type { PrismaClient, UsageQueueInbox } from "@/generated/prisma/client";
 import { Prisma } from "@/generated/prisma/client";
 import { UsageQueueInboxStatus } from "@/generated/prisma/enums";
-import type { UsageQueueInboxRepository } from "@/usage-collector/contracts";
-import type { ProcessOnceOptions } from "@/usage-collector/core/orchestrator";
+import type { UsageQueueInboxRepository } from "@/workers/usage-collector/contracts";
+import type { ProcessOnceOptions } from "@/workers/usage-collector/core/orchestrator";
 import type {
   NormalizedQueuedUsageEvent,
   UsageInboxRecord,
   UsageSourceEnvelope,
-} from "@/usage-collector/core/types";
+} from "@/workers/usage-collector/core/types";
 import { prisma as defaultPrisma } from "@/lib/db";
 
 const DEFAULT_MAX_PROCESS_ATTEMPTS = 10;

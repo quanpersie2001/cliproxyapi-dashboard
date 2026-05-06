@@ -9,7 +9,7 @@ vi.mock("@/lib/db", () => ({
   prisma: {},
 }));
 
-import { PostgresCollectorLeaderLock } from "@/usage-collector/infra/leader-lock";
+import { PostgresCollectorLeaderLock } from "@/workers/usage-collector/infra/leader-lock";
 
 type AdvisoryLockRow = { acquired: boolean };
 type AdvisoryUnlockRow = { released: boolean };

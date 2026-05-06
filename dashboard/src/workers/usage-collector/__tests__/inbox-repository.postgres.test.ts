@@ -8,7 +8,7 @@ vi.mock("server-only", () => ({}));
 vi.mock("@/lib/db", () => ({
   prisma: {},
 }));
-import { PrismaUsageQueueInboxRepository } from "@/usage-collector/repositories/inbox-repository";
+import { PrismaUsageQueueInboxRepository } from "@/workers/usage-collector/repositories/inbox-repository";
 
 const TEST_SOURCE_PREFIX = "vitest_claim_semantics";
 

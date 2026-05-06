@@ -1,19 +1,19 @@
 import net from "node:net";
 import { env } from "@/lib/env";
-import { CLIProxyV1Decoder } from "@/usage-collector/decoders/cliproxy-v1-decoder";
-import { PostgresCollectorLeaderLock } from "@/usage-collector/infra/leader-lock";
-import { OneShotCollectorOrchestrator } from "@/usage-collector/core/one-shot-orchestrator";
-import { CollectorProcessService } from "@/usage-collector/core/process-service";
-import { CollectorPullService } from "@/usage-collector/core/pull-service";
-import { PrismaCollectorStateRepository } from "@/usage-collector/repositories/collector-state-repository";
-import { PrismaUsageQueueInboxRepository } from "@/usage-collector/repositories/inbox-repository";
-import { PrismaUsageRecordRepository } from "@/usage-collector/repositories/usage-record-repository";
-import { UsageCollectorWorkerRunner, type CollectorRunSignal } from "@/usage-collector/runner";
+import { CLIProxyV1Decoder } from "@/workers/usage-collector/decoders/cliproxy-v1-decoder";
+import { PostgresCollectorLeaderLock } from "@/workers/usage-collector/infra/leader-lock";
+import { OneShotCollectorOrchestrator } from "@/workers/usage-collector/core/one-shot-orchestrator";
+import { CollectorProcessService } from "@/workers/usage-collector/core/process-service";
+import { CollectorPullService } from "@/workers/usage-collector/core/pull-service";
+import { PrismaCollectorStateRepository } from "@/workers/usage-collector/repositories/collector-state-repository";
+import { PrismaUsageQueueInboxRepository } from "@/workers/usage-collector/repositories/inbox-repository";
+import { PrismaUsageRecordRepository } from "@/workers/usage-collector/repositories/usage-record-repository";
+import { UsageCollectorWorkerRunner, type CollectorRunSignal } from "@/workers/usage-collector/runner";
 import {
   RespQueueSource,
   type RespQueueClient,
   type RespQueueClientFactory,
-} from "@/usage-collector/sources/resp-queue-source";
+} from "@/workers/usage-collector/sources/resp-queue-source";
 
 type RuntimeLogger = Pick<typeof console, "info" | "warn" | "error">;
 

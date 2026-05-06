@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   resolveUsageOwnership,
   type UsageOwnershipDirectories,
-} from "@/usage-collector/core/ownership-resolver";
+} from "@/workers/usage-collector/core/ownership-resolver";
 
 function createDirectories(): UsageOwnershipDirectories {
   return {

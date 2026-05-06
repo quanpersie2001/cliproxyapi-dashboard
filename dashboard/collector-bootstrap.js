@@ -24,7 +24,7 @@ if (process.argv.includes(COLLECTOR_MODE_FLAG)) {
 async function runCollectorWorkerProcess() {
   neutralizeServerOnlyModule();
   enableCollectorAliasResolution();
-  const runtimeModulePath = path.join(__dirname, "usage-collector", "runtime-main.js");
+  const runtimeModulePath = path.join(__dirname, "workers", "usage-collector", "runtime-main.js");
   const runtimeModule = require(runtimeModulePath);
   if (typeof runtimeModule.runCollectorRuntime !== "function") {
     throw new Error("collector runtime export runCollectorRuntime() not found");

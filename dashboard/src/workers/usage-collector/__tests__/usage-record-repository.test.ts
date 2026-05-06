@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import type { NormalizedQueuedUsageEvent } from "@/usage-collector/core/types";
+import type { NormalizedQueuedUsageEvent } from "@/workers/usage-collector/core/types";
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/db", () => ({
   prisma: {},
@@ -13,7 +13,7 @@ vi.mock("@/lib/cache", () => ({
   invalidateUsageCaches,
 }));
 
-import { PrismaUsageRecordRepository } from "@/usage-collector/repositories/usage-record-repository";
+import { PrismaUsageRecordRepository } from "@/workers/usage-collector/repositories/usage-record-repository";
 
 function createEvent(overrides: Partial<NormalizedQueuedUsageEvent> = {}): NormalizedQueuedUsageEvent {
   return {

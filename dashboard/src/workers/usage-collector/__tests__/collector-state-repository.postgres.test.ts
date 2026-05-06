@@ -10,7 +10,7 @@ vi.mock("@/lib/db", () => ({
   prisma: {},
 }));
 
-import { PrismaCollectorStateRepository } from "@/usage-collector/repositories/collector-state-repository";
+import { PrismaCollectorStateRepository } from "@/workers/usage-collector/repositories/collector-state-repository";
 
 const TEST_SCHEMA = `collector_state_repo_${randomUUID().replace(/-/g, "")}`;
 

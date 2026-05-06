@@ -1,12 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
-import type { CollectorOrchestrator } from "@/usage-collector/core/orchestrator";
-import type { CollectorLeaderLock } from "@/usage-collector/infra/leader-lock";
-import type { CollectorStateRepository } from "@/usage-collector/repositories/collector-state-repository";
+import type { CollectorOrchestrator } from "@/workers/usage-collector/core/orchestrator";
+import type { CollectorLeaderLock } from "@/workers/usage-collector/infra/leader-lock";
+import type { CollectorStateRepository } from "@/workers/usage-collector/repositories/collector-state-repository";
 import type {
   CollectorRunSignal,
   UsageCollectorWorkerRunnerOptions,
-} from "@/usage-collector/runner";
-import { UsageCollectorWorkerRunner } from "@/usage-collector/runner";
+} from "@/workers/usage-collector/runner";
+import { UsageCollectorWorkerRunner } from "@/workers/usage-collector/runner";
 
 function createRunner(
   overrides: Partial<UsageCollectorWorkerRunnerOptions> = {}
