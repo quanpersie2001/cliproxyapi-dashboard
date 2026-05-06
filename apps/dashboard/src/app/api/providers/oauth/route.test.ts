@@ -1,4 +1,3 @@
-import { NextRequest } from "next/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("server-only", () => ({}));
@@ -65,11 +64,8 @@ describe("GET /api/providers/oauth", () => {
 
   it("loads OAuth accounts with ownership from the primary list endpoint", async () => {
     const { GET } = await import("./route");
-    const request = new NextRequest(
-      "http://localhost/api/providers/oauth?maskedProxyFor=one&maskedProxyFor=two&maskedProxyFor=one"
-    );
 
-    const response = await GET(request);
+    const response = await GET();
     const body = await response.json();
 
     expect(listOAuthWithOwnershipMock).toHaveBeenCalledWith("user-1", true);
