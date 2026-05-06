@@ -205,6 +205,7 @@ Implementation notes:
 
 - Prisma client generation is wired into `predev`, `prebuild`, and `pretest`
 - The production image uses [`dashboard/entrypoint.sh`](dashboard/entrypoint.sh) to bootstrap core tables at startup with a PostgreSQL advisory lock
+- The bundled deployment runs an embedded resident usage collector worker; `POST /api/usage/collect` is an authenticated fast trigger/wake seam
 - `GET /api/usage` remains a compatibility route, but new code should use `GET /api/usage/history`
 
 ## Release Model

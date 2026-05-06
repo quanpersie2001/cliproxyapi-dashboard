@@ -137,11 +137,13 @@ The dashboard currently exposes these operator actions directly in the UI:
 | Provider ownership | `/api/providers/keys`, `/api/providers/oauth/*`, `/api/custom-providers/*`, `/api/provider-groups/*`, `/api/model-preferences` |
 | Proxy management passthrough | `/api/management/[...path]`, `/api/management/oauth-callback` |
 | Runtime operations | `/api/proxy/status`, `/api/proxy/oauth-settings`, `/api/restart`, `/api/containers/*`, `/api/update*` |
-| Usage and quota | `/api/quota`, `/api/usage/collect`, `/api/usage/history`, `/api/usage` |
+| Usage and quota | `/api/quota`, `/api/usage/collect` (authenticated fast trigger), `/api/usage/history`, `/api/usage` |
 
 ## Current Product Constraints
 
 - The bundled stack assumes a single dashboard instance.
 - `providerMutex` is process-local only; it is not a distributed lock.
+- The bundled deployment runs a resident embedded usage collector worker by default.
+- `POST /api/usage/collect` is an authenticated fast wake/trigger seam for manual intervention and automation.
 - `GET /api/usage` remains a compatibility route. New consumers should use `GET /api/usage/history`.
 - The bundled deployment intentionally keeps the dashboard and primary proxy API loopback-only by default.

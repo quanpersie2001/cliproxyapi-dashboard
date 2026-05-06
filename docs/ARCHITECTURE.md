@@ -19,7 +19,7 @@ flowchart TD
     dockerproxy["docker-socket-proxy<br/>internal Docker network"]
     authvol["auth volume"]
     logsvol["logs volume"]
-    collector["Usage collector<br/>POST /api/usage/collect"]
+    collector["Embedded usage collector worker<br/>resident in dashboard container"]
 
     internet --> nginx
     nginx -->|"dashboard host"| dashboard
@@ -158,7 +158,7 @@ The 48 route handlers fall into these groups.
 ### Usage and Quota
 
 - `/api/quota`
-- `/api/usage/collect`
+- `/api/usage/collect` as an authenticated fast wake/trigger seam for the resident worker
 - `/api/usage/history`
 - `/api/usage` as a deprecated compatibility route
 
@@ -193,7 +193,7 @@ CollectorState
 - `SystemSetting`: global dashboard settings such as provider-key limits
 - `AuditLog`: admin and security trail
 - `UsageRecord`: persistent usage facts collected from CLIProxyAPI
-- `CollectorState`: serialized `POST /api/usage/collect` run state
+- `CollectorState`: runtime metadata for collector leadership, trigger overlap, and progress visibility
 
 ## Runtime Dependencies
 
