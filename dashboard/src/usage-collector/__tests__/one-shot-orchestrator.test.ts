@@ -177,7 +177,11 @@ describe("OneShotCollectorOrchestrator", () => {
       createEvent("evt-1"),
       createEvent("evt-2"),
     ]);
-    expect(inboxRepository.markDecodeFailed).toHaveBeenCalledWith("r2", "invalid_payload");
+    expect(inboxRepository.markDecodeFailed).toHaveBeenCalledWith(
+      "r2",
+      "invalid_payload",
+      1
+    );
     expect(inboxRepository.markProcessed).toHaveBeenCalledTimes(2);
     expect(result.metrics).toEqual({
       claimed: 3,
@@ -231,11 +235,13 @@ describe("OneShotCollectorOrchestrator", () => {
 
     expect(inboxRepository.markDiscarded).toHaveBeenCalledWith(
       "high-attempt",
-      "db write failed"
+      "db write failed",
+      10
     );
     expect(inboxRepository.markProcessFailed).toHaveBeenCalledWith(
       "retryable",
-      "db write failed"
+      "db write failed",
+      2
     );
     expect(result.metrics).toEqual({
       claimed: 2,
@@ -296,7 +302,8 @@ describe("OneShotCollectorOrchestrator", () => {
     expect(inboxRepository.markProcessFailed).toHaveBeenCalledTimes(1);
     expect(inboxRepository.markProcessFailed).toHaveBeenCalledWith(
       "mark-fails",
-      "mark failed"
+      "mark failed",
+      2
     );
     expect(inboxRepository.markDiscarded).not.toHaveBeenCalled();
     expect(result.metrics).toEqual({
@@ -306,6 +313,57 @@ describe("OneShotCollectorOrchestrator", () => {
       processFailed: 1,
       discarded: 0,
       durationMs: 6,
+    });
+  });
+
+  it("keeps processOnce successful when retention cleanup throws", async () => {
+    const inboxRepository: UsageQueueInboxRepository = {
+      storeRawMessages: vi.fn(),
+      claimForProcessing: vi
+        .fn()
+        .mockResolvedValue([createInboxRecord("cleanup-1", '{"kind":"valid","key":"evt-clean"}', 1)]),
+      markProcessed: vi.fn().mockResolvedValue(undefined),
+      markDecodeFailed: vi.fn().mockResolvedValue(undefined),
+      markProcessFailed: vi.fn().mockResolvedValue(undefined),
+      markDiscarded: vi.fn().mockResolvedValue(undefined),
+      cleanupExpiredRecords: vi.fn().mockRejectedValue(new Error("cleanup failed")),
+    };
+
+    const decoder: UsagePayloadDecoder = {
+      decode: vi.fn((envelope) => {
+        const payload = JSON.parse(envelope.rawMessage) as { key: string };
+        return {
+          ok: true,
+          event: createEvent(payload.key),
+        } as const;
+      }),
+    };
+
+    const usageRecordRepository: UsageRecordRepository = {
+      persistNormalizedEvents: vi.fn().mockResolvedValue(1),
+    };
+
+    const processService = new CollectorProcessService({
+      decoder,
+      inboxRepository,
+      usageRecordRepository,
+      now: (() => {
+        const times = [0, 4];
+        return () => new Date(times.shift() ?? 4);
+      })(),
+    });
+
+    const result = await processService.processOnce({ maxRecords: 1 });
+
+    expect(inboxRepository.cleanupExpiredRecords).toHaveBeenCalledTimes(1);
+    expect(inboxRepository.markProcessed).toHaveBeenCalledTimes(1);
+    expect(result.metrics).toEqual({
+      claimed: 1,
+      processed: 1,
+      decodeFailed: 0,
+      processFailed: 0,
+      discarded: 0,
+      durationMs: 4,
     });
   });
 
