@@ -47,10 +47,14 @@ export interface UsagePayloadDecoder {
 export interface UsageQueueInboxRepository {
   storeRawMessages(messages: UsageSourceEnvelope[]): Promise<number>;
   claimForProcessing(options: ProcessOnceOptions): Promise<UsageInboxRecord[]>;
-  markProcessed(recordId: string, event: NormalizedQueuedUsageEvent): Promise<void>;
-  markDecodeFailed(recordId: string, reason: string): Promise<void>;
-  markProcessFailed(recordId: string, reason: string): Promise<void>;
-  markDiscarded(recordId: string, reason: string): Promise<void>;
+  markProcessed(
+    recordId: string,
+    event: NormalizedQueuedUsageEvent,
+    claimAttemptCount: number
+  ): Promise<void>;
+  markDecodeFailed(recordId: string, reason: string, claimAttemptCount: number): Promise<void>;
+  markProcessFailed(recordId: string, reason: string, claimAttemptCount: number): Promise<void>;
+  markDiscarded(recordId: string, reason: string, claimAttemptCount: number): Promise<void>;
   cleanupExpiredRecords?(): Promise<number>;
 }
 

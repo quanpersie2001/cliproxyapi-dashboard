@@ -73,7 +73,7 @@ describe("PrismaUsageQueueInboxRepository", () => {
           {
             id: "inbox_1",
             rawMessage: '{"request_id":"req_1"}',
-            status: UsageQueueInboxStatus.pending,
+            status: UsageQueueInboxStatus.processing,
             createdAt: new Date("2026-05-05T09:59:00.000Z"),
             updatedAt: new Date("2026-05-05T09:59:00.000Z"),
             eventKey: null,
@@ -116,6 +116,7 @@ describe("PrismaUsageQueueInboxRepository", () => {
     expect(tx.usageQueueInbox.updateMany).toHaveBeenCalledWith({
       where: { id: { in: ["inbox_1"] } },
       data: {
+        status: UsageQueueInboxStatus.processing,
         attemptCount: { increment: 1 },
         lastAttemptAt: now,
       },
@@ -131,16 +132,20 @@ describe("PrismaUsageQueueInboxRepository", () => {
   it("marks decode failures with status and reason", async () => {
     const now = new Date("2026-05-05T10:10:00.000Z");
     const { prisma, usageQueueInbox } = createPrismaMock();
-    usageQueueInbox.update.mockResolvedValue({});
+    usageQueueInbox.updateMany.mockResolvedValue({ count: 1 });
     const repository = new PrismaUsageQueueInboxRepository({
       prisma: prisma as never,
       now: () => now,
     });
 
-    await repository.markDecodeFailed("inbox_2", "invalid_json");
+    await repository.markDecodeFailed("inbox_2", "invalid_json", 3);
 
-    expect(usageQueueInbox.update).toHaveBeenCalledWith({
-      where: { id: "inbox_2" },
+    expect(usageQueueInbox.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: "inbox_2",
+        status: UsageQueueInboxStatus.processing,
+        attemptCount: 3,
+      },
       data: {
         status: UsageQueueInboxStatus.decode_failed,
         failedAt: now,
@@ -152,16 +157,20 @@ describe("PrismaUsageQueueInboxRepository", () => {
   it("marks discarded rows with timestamp and discard reason", async () => {
     const now = new Date("2026-05-05T10:20:00.000Z");
     const { prisma, usageQueueInbox } = createPrismaMock();
-    usageQueueInbox.update.mockResolvedValue({});
+    usageQueueInbox.updateMany.mockResolvedValue({ count: 1 });
     const repository = new PrismaUsageQueueInboxRepository({
       prisma: prisma as never,
       now: () => now,
     });
 
-    await repository.markDiscarded("inbox_3", "max_attempts_exceeded");
+    await repository.markDiscarded("inbox_3", "max_attempts_exceeded", 5);
 
-    expect(usageQueueInbox.update).toHaveBeenCalledWith({
-      where: { id: "inbox_3" },
+    expect(usageQueueInbox.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: "inbox_3",
+        status: UsageQueueInboxStatus.processing,
+        attemptCount: 5,
+      },
       data: {
         status: UsageQueueInboxStatus.discarded,
         discardedAt: now,

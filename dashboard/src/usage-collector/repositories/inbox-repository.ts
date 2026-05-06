@@ -94,6 +94,7 @@ export class PrismaUsageQueueInboxRepository implements UsageQueueInboxRepositor
           },
         },
         data: {
+          status: UsageQueueInboxStatus.processing,
           attemptCount: {
             increment: 1,
           },
@@ -118,10 +119,10 @@ export class PrismaUsageQueueInboxRepository implements UsageQueueInboxRepositor
 
   public async markProcessed(
     recordId: string,
-    event: NormalizedQueuedUsageEvent
+    event: NormalizedQueuedUsageEvent,
+    claimAttemptCount: number
   ): Promise<void> {
-    await this.prismaClient.usageQueueInbox.update({
-      where: { id: recordId },
+    await this.finalizeClaimedRecord(recordId, claimAttemptCount, {
       data: {
         status: UsageQueueInboxStatus.processed,
         eventKey: event.eventKey,
@@ -142,9 +143,12 @@ export class PrismaUsageQueueInboxRepository implements UsageQueueInboxRepositor
     });
   }
 
-  public async markDecodeFailed(recordId: string, reason: string): Promise<void> {
-    await this.prismaClient.usageQueueInbox.update({
-      where: { id: recordId },
+  public async markDecodeFailed(
+    recordId: string,
+    reason: string,
+    claimAttemptCount: number
+  ): Promise<void> {
+    await this.finalizeClaimedRecord(recordId, claimAttemptCount, {
       data: {
         status: UsageQueueInboxStatus.decode_failed,
         failedAt: this.now(),
@@ -153,9 +157,12 @@ export class PrismaUsageQueueInboxRepository implements UsageQueueInboxRepositor
     });
   }
 
-  public async markProcessFailed(recordId: string, reason: string): Promise<void> {
-    await this.prismaClient.usageQueueInbox.update({
-      where: { id: recordId },
+  public async markProcessFailed(
+    recordId: string,
+    reason: string,
+    claimAttemptCount: number
+  ): Promise<void> {
+    await this.finalizeClaimedRecord(recordId, claimAttemptCount, {
       data: {
         status: UsageQueueInboxStatus.process_failed,
         failedAt: this.now(),
@@ -164,9 +171,12 @@ export class PrismaUsageQueueInboxRepository implements UsageQueueInboxRepositor
     });
   }
 
-  public async markDiscarded(recordId: string, reason: string): Promise<void> {
-    await this.prismaClient.usageQueueInbox.update({
-      where: { id: recordId },
+  public async markDiscarded(
+    recordId: string,
+    reason: string,
+    claimAttemptCount: number
+  ): Promise<void> {
+    await this.finalizeClaimedRecord(recordId, claimAttemptCount, {
       data: {
         status: UsageQueueInboxStatus.discarded,
         discardedAt: this.now(),
@@ -216,6 +226,23 @@ export class PrismaUsageQueueInboxRepository implements UsageQueueInboxRepositor
     ]);
 
     return processedResult.count + failedResult.count;
+  }
+
+  private async finalizeClaimedRecord(
+    recordId: string,
+    claimAttemptCount: number,
+    options: {
+      data: Prisma.UsageQueueInboxUpdateManyMutationInput;
+    }
+  ): Promise<void> {
+    await this.prismaClient.usageQueueInbox.updateMany({
+      where: {
+        id: recordId,
+        status: UsageQueueInboxStatus.processing,
+        attemptCount: normalizePositiveInt(claimAttemptCount),
+      },
+      data: options.data,
+    });
   }
 }
 

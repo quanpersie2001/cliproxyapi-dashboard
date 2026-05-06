@@ -1,5 +1,6 @@
 export const USAGE_QUEUE_INBOX_STATUSES = [
   "pending",
+  "processing",
   "processed",
   "decode_failed",
   "process_failed",

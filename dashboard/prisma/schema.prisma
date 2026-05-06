@@ -251,6 +251,7 @@ model UsageRecord {
 
 enum UsageQueueInboxStatus {
   pending
+  processing
   processed
   decode_failed
   process_failed

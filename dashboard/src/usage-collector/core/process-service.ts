@@ -43,6 +43,7 @@ export class CollectorProcessService {
 
     const persistableEvents: PendingProcessedEvent[] = [];
     for (const record of claimedRecords) {
+      const claimAttemptCount = normalizePositiveInt(record.attemptCount ?? 0);
       const decoded = this.options.decoder.decode({
         source: record.source ?? "usage_queue_inbox",
         receivedAt: record.createdAt,
@@ -52,10 +53,18 @@ export class CollectorProcessService {
 
       if (!decoded.ok) {
         if (shouldDiscard(record, this.maxProcessAttempts)) {
-          await this.options.inboxRepository.markDiscarded(record.id, decoded.error.reason);
+          await this.options.inboxRepository.markDiscarded(
+            record.id,
+            decoded.error.reason,
+            claimAttemptCount
+          );
           discarded += 1;
         } else {
-          await this.options.inboxRepository.markDecodeFailed(record.id, decoded.error.reason);
+          await this.options.inboxRepository.markDecodeFailed(
+            record.id,
+            decoded.error.reason,
+            claimAttemptCount
+          );
           decodeFailed += 1;
         }
         continue;
@@ -75,11 +84,20 @@ export class CollectorProcessService {
       } catch (error) {
         const failureReason = toErrorMessage(error);
         for (const entry of persistableEvents) {
+          const claimAttemptCount = normalizePositiveInt(entry.record.attemptCount ?? 0);
           if (shouldDiscard(entry.record, this.maxProcessAttempts)) {
-            await this.options.inboxRepository.markDiscarded(entry.record.id, failureReason);
+            await this.options.inboxRepository.markDiscarded(
+              entry.record.id,
+              failureReason,
+              claimAttemptCount
+            );
             discarded += 1;
           } else {
-            await this.options.inboxRepository.markProcessFailed(entry.record.id, failureReason);
+            await this.options.inboxRepository.markProcessFailed(
+              entry.record.id,
+              failureReason,
+              claimAttemptCount
+            );
             processFailed += 1;
           }
         }
@@ -98,16 +116,29 @@ export class CollectorProcessService {
       }
 
       for (const entry of persistableEvents) {
+        const claimAttemptCount = normalizePositiveInt(entry.record.attemptCount ?? 0);
         try {
-          await this.options.inboxRepository.markProcessed(entry.record.id, entry.event);
+          await this.options.inboxRepository.markProcessed(
+            entry.record.id,
+            entry.event,
+            claimAttemptCount
+          );
           processed += 1;
         } catch (error) {
           const failureReason = toErrorMessage(error);
           if (shouldDiscard(entry.record, this.maxProcessAttempts)) {
-            await this.options.inboxRepository.markDiscarded(entry.record.id, failureReason);
+            await this.options.inboxRepository.markDiscarded(
+              entry.record.id,
+              failureReason,
+              claimAttemptCount
+            );
             discarded += 1;
           } else {
-            await this.options.inboxRepository.markProcessFailed(entry.record.id, failureReason);
+            await this.options.inboxRepository.markProcessFailed(
+              entry.record.id,
+              failureReason,
+              claimAttemptCount
+            );
             processFailed += 1;
           }
         }

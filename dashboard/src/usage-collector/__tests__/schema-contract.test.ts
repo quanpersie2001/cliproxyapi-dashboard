@@ -7,6 +7,7 @@ describe("usage queue ingestion schema contract", () => {
     expect(Object.values(Prisma.ModelName)).toContain("UsageQueueInbox");
     expect(UsageQueueInboxStatus).toMatchObject({
       pending: "pending",
+      processing: "processing",
       processed: "processed",
       decode_failed: "decode_failed",
       process_failed: "process_failed",

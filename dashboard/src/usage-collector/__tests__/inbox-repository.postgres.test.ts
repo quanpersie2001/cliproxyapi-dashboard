@@ -38,6 +38,7 @@ async function ensureUsageQueueInboxTable(prisma: PrismaClient): Promise<void> {
     BEGIN
       CREATE TYPE "UsageQueueInboxStatus" AS ENUM (
         'pending',
+        'processing',
         'processed',
         'decode_failed',
         'process_failed',
@@ -46,6 +47,10 @@ async function ensureUsageQueueInboxTable(prisma: PrismaClient): Promise<void> {
     EXCEPTION
       WHEN duplicate_object THEN NULL;
     END $$;
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    ALTER TYPE "UsageQueueInboxStatus" ADD VALUE IF NOT EXISTS 'processing';
   `);
 
   await prisma.$executeRawUnsafe(`
@@ -135,10 +140,86 @@ describe("PrismaUsageQueueInboxRepository (Postgres integration)", () => {
     });
     expect(persistedRows).toHaveLength(2);
     expect(
-      persistedRows.every((row: UsageQueueInbox) => row.status === UsageQueueInboxStatus.pending)
+      persistedRows.every(
+        (row: UsageQueueInbox) => row.status === UsageQueueInboxStatus.processing
+      )
     ).toBe(true);
     expect(persistedRows.every((row: UsageQueueInbox) => row.attemptCount === 1)).toBe(true);
     expect(persistedRows.every((row: UsageQueueInbox) => row.lastAttemptAt !== null)).toBe(true);
+
+    await prisma.usageQueueInbox.deleteMany({
+      where: { source },
+    });
+  });
+
+  it("keeps claimed rows ineligible until finalized and ignores stale finalize attempts", async () => {
+    const source = `${TEST_SOURCE_PREFIX}_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    const now = new Date("2026-05-05T14:10:00.000Z");
+    const repoA = new PrismaUsageQueueInboxRepository({
+      prisma: prisma as never,
+      now: () => now,
+    });
+    const repoB = new PrismaUsageQueueInboxRepository({
+      prisma: prisma as never,
+      now: () => now,
+    });
+
+    await prisma.usageQueueInbox.deleteMany({
+      where: { source },
+    });
+
+    await repoA.storeRawMessages([
+      {
+        source,
+        receivedAt: new Date("2026-05-05T14:00:00.000Z"),
+        rawMessage: '{"request_id":"claim-guard"}',
+      },
+    ]);
+
+    const claimedByA = await repoA.claimForProcessing({ maxRecords: 1 });
+    expect(claimedByA).toHaveLength(1);
+
+    const claimedByB = await repoB.claimForProcessing({ maxRecords: 1 });
+    expect(claimedByB).toHaveLength(0);
+
+    const claim = claimedByA[0];
+    if (!claim) {
+      throw new Error("expected claimed row");
+    }
+
+    await repoA.markProcessed(
+      claim.id,
+      {
+        eventKey: "evt-claim-guard",
+        requestId: "req-claim-guard",
+        provider: "openai",
+        authType: "api-key",
+        authIndex: "auth-claim-guard",
+        apiGroupKey: "/v1/chat/completions",
+        model: "gpt-4.1",
+        source,
+        timestamp: new Date("2026-05-05T14:00:05.000Z"),
+        failed: false,
+        latencyMs: 120,
+        tokens: {
+          inputTokens: 10,
+          outputTokens: 20,
+          reasoningTokens: 0,
+          cachedTokens: 0,
+          totalTokens: 30,
+        },
+      },
+      claim.attemptCount ?? 0
+    );
+
+    await repoB.markProcessFailed(claim.id, "stale-writer", (claim.attemptCount ?? 0) - 1);
+
+    const row = await prisma.usageQueueInbox.findUnique({
+      where: { id: claim.id },
+    });
+
+    expect(row?.status).toBe(UsageQueueInboxStatus.processed);
+    expect(row?.failureReason).toBeNull();
 
     await prisma.usageQueueInbox.deleteMany({
       where: { source },
