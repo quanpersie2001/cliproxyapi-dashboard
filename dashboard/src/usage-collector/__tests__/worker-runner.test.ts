@@ -63,6 +63,7 @@ function createRunner(
     enabled: true,
     pullBatchSize: 50,
     processBatchSize: 50,
+    maxDrainCycles: 3,
     idleMs: 1_000,
     errorBackoffMs: 5_000,
     sleep: async () => undefined,
@@ -236,6 +237,97 @@ describe("UsageCollectorWorkerRunner", () => {
 
     expect(sleepCalls.length).toBe(1);
     expect(sleepCalls[0]).toBeGreaterThanOrEqual(0);
+  });
+
+  it("drains multiple batches before sleeping when backlog still appears full-batch", async () => {
+    const { runner, orchestrator } = createRunner({
+      stateRepository: {
+        ensureSingletonState: vi.fn().mockResolvedValue(undefined),
+        getWakeSequence: vi.fn().mockResolvedValue(0),
+        markStandby: vi.fn().mockResolvedValue(undefined),
+        markRunning: vi.fn().mockResolvedValue(undefined),
+        markSuccess: vi.fn().mockResolvedValue(undefined),
+        markError: vi.fn().mockResolvedValue(undefined),
+        markWakeHandled: vi.fn().mockResolvedValue(undefined),
+      },
+      orchestrator: {
+        pullOnce: vi.fn(),
+        processOnce: vi.fn(),
+        drainNow: vi
+          .fn()
+          .mockResolvedValueOnce({
+            summary: {
+              pulled: { pulled: 50, stored: 50, dropped: 0, durationMs: 1 },
+              processed: {
+                claimed: 50,
+                processed: 50,
+                decodeFailed: 0,
+                processFailed: 0,
+                discarded: 0,
+                durationMs: 1,
+              },
+            },
+          })
+          .mockResolvedValueOnce({
+            summary: {
+              pulled: { pulled: 2, stored: 2, dropped: 0, durationMs: 1 },
+              processed: {
+                claimed: 2,
+                processed: 2,
+                decodeFailed: 0,
+                processFailed: 0,
+                discarded: 0,
+                durationMs: 1,
+              },
+            },
+          }),
+      },
+    });
+
+    const result = await runner.runOnce();
+
+    expect(result).toEqual({
+      status: "success",
+      waitMs: 1000,
+      wakeSequence: 0,
+    });
+    expect(vi.mocked(orchestrator.drainNow)).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps bounded draining by maxDrainCycles even when every cycle is full-batch", async () => {
+    const { runner, orchestrator } = createRunner({
+      maxDrainCycles: 2,
+      stateRepository: {
+        ensureSingletonState: vi.fn().mockResolvedValue(undefined),
+        getWakeSequence: vi.fn().mockResolvedValue(0),
+        markStandby: vi.fn().mockResolvedValue(undefined),
+        markRunning: vi.fn().mockResolvedValue(undefined),
+        markSuccess: vi.fn().mockResolvedValue(undefined),
+        markError: vi.fn().mockResolvedValue(undefined),
+        markWakeHandled: vi.fn().mockResolvedValue(undefined),
+      },
+      orchestrator: {
+        pullOnce: vi.fn(),
+        processOnce: vi.fn(),
+        drainNow: vi.fn().mockResolvedValue({
+          summary: {
+            pulled: { pulled: 50, stored: 50, dropped: 0, durationMs: 1 },
+            processed: {
+              claimed: 50,
+              processed: 50,
+              decodeFailed: 0,
+              processFailed: 0,
+              discarded: 0,
+              durationMs: 1,
+            },
+          },
+        }),
+      },
+    });
+
+    await runner.runOnce();
+
+    expect(vi.mocked(orchestrator.drainNow)).toHaveBeenCalledTimes(2);
   });
 
   it("propagates a live abort signal into in-flight drain operations", async () => {

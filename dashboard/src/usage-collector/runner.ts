@@ -22,17 +22,22 @@ export interface UsageCollectorWorkerRunnerOptions {
   enabled: boolean;
   pullBatchSize: number;
   processBatchSize: number;
+  maxDrainCycles?: number;
   idleMs: number;
   errorBackoffMs: number;
   sleep?: (ms: number, signal: CollectorRunSignal) => Promise<void>;
 }
 
+const DEFAULT_MAX_DRAIN_CYCLES = 3;
+
 export class UsageCollectorWorkerRunner {
   private readonly sleepFn: (ms: number, signal: CollectorRunSignal) => Promise<void>;
+  private readonly maxDrainCycles: number;
   private lastObservedWakeSequence = 0;
 
   public constructor(private readonly options: UsageCollectorWorkerRunnerOptions) {
     this.sleepFn = options.sleep ?? defaultSleep;
+    this.maxDrainCycles = normalizePositiveInt(options.maxDrainCycles ?? DEFAULT_MAX_DRAIN_CYCLES);
   }
 
   public async start(signal: CollectorRunSignal): Promise<void> {
@@ -66,17 +71,7 @@ export class UsageCollectorWorkerRunner {
         async () => {
           try {
             await this.options.stateRepository.markRunning(this.options.workerId);
-            const drainResult = await this.options.orchestrator.drainNow({
-              pull: {
-                maxMessages: this.options.pullBatchSize,
-                signal: abortSignal,
-              },
-              process: {
-                maxRecords: this.options.processBatchSize,
-                signal: abortSignal,
-              },
-            });
-            const recordsStored = Math.max(0, drainResult.summary.processed.processed);
+            const recordsStored = await this.drainWithinCycleBudget(abortSignal);
             await this.options.stateRepository.markSuccess(this.options.workerId, recordsStored);
             return recordsStored;
           } finally {
@@ -127,6 +122,39 @@ export class UsageCollectorWorkerRunner {
         error: reason,
       };
     }
+  }
+
+  private async drainWithinCycleBudget(abortSignal: AbortSignal | undefined): Promise<number> {
+    let cycles = 0;
+    let processedRecords = 0;
+
+    do {
+      const drainResult = await this.options.orchestrator.drainNow({
+        pull: {
+          maxMessages: this.options.pullBatchSize,
+          signal: abortSignal,
+        },
+        process: {
+          maxRecords: this.options.processBatchSize,
+          signal: abortSignal,
+        },
+      });
+
+      processedRecords += Math.max(0, drainResult.summary.processed.processed);
+      cycles += 1;
+
+      if (abortSignal?.aborted) {
+        break;
+      }
+      if (cycles >= this.maxDrainCycles) {
+        break;
+      }
+      if (!hasPotentialBacklog(drainResult, this.options.pullBatchSize, this.options.processBatchSize)) {
+        break;
+      }
+    } while (true);
+
+    return processedRecords;
   }
 }
 
@@ -214,4 +242,31 @@ function toErrorMessage(value: unknown): string {
     return value.message;
   }
   return "collector_run_failed";
+}
+
+function hasPotentialBacklog(
+  result: {
+    summary: {
+      pulled: {
+        pulled: number;
+      };
+      processed: {
+        claimed: number;
+      };
+    };
+  },
+  pullBatchSize: number,
+  processBatchSize: number
+): boolean {
+  const pulledAtLimit = pullBatchSize > 0 && result.summary.pulled.pulled >= pullBatchSize;
+  const processedAtLimit =
+    processBatchSize > 0 && result.summary.processed.claimed >= processBatchSize;
+  return pulledAtLimit || processedAtLimit;
+}
+
+function normalizePositiveInt(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 1;
+  }
+  return Math.max(1, Math.trunc(value));
 }
