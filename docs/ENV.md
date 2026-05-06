@@ -14,7 +14,7 @@ These values are always written by `install.sh` for the bundled production compo
 | `POSTGRES_PASSWORD` | Yes | generated | Password used by the bundled `postgres` container on first volume initialization |
 | `JWT_SECRET` | Yes | generated | Secret used for dashboard session signing |
 | `MANAGEMENT_API_KEY` | Yes | generated | Bearer key used when the dashboard talks to the CLIProxyAPI management API |
-| `COLLECTOR_API_KEY` | Yes | generated | Bearer key accepted by `POST /api/usage/collect` for cron-based collection |
+| `COLLECTOR_API_KEY` | Yes | generated | Bearer key accepted by `POST /api/usage/collect` for authenticated manual trigger/automation |
 | `PROVIDER_ENCRYPTION_KEY` | Yes | 64 hex chars | AES-256-GCM key used to persist custom-provider API keys for later re-sync |
 | `CLIPROXYAPI_MANAGEMENT_URL` | No | `http://cliproxyapi:8317/v0/management` | Internal management API base URL |
 | `INSTALL_DIR` | Yes | `/opt/cliproxyapi-dashboard` | Host path mounted into the dashboard container for compose-aware operations |

@@ -161,7 +161,7 @@ The bundled installer currently:
 - generates stack secrets
 - writes `infrastructure/.env`
 - optionally installs Nginx and renders a split-host HTTP reverse proxy config from the public dashboard/API URLs you entered
-- optionally configures firewall rules, backup cron, usage collector cron, and the dashboard deploy webhook
+- optionally configures firewall rules, backup cron, and the dashboard deploy webhook
 
 After install:
 
