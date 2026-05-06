@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.8](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.7...dashboard-v0.2.8) (2026-05-06)
+
+
+### Features
+
+* add embedded usage queue ingestion ([#14](https://github.com/quanpersie2001/cliproxyapi-dashboard/issues/14)) ([5c9edef](https://github.com/quanpersie2001/cliproxyapi-dashboard/commit/5c9edef8c01db86c1bd48c559e2cacf002f1b89b))
+
+
+### Bug Fixes
+
+* **ui:** add overscroll-y-none to dashboard client layout ([91387a8](https://github.com/quanpersie2001/cliproxyapi-dashboard/commit/91387a8f8a73c5f96c763b03f56bb9b3d283e21d))
+
 ## [0.2.7](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.6...dashboard-v0.2.7) (2026-05-04)
 
 
