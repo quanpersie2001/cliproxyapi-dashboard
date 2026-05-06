@@ -3,7 +3,7 @@
 import { AlertSurface } from "@/components/ui/alert-surface";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useRef } from "react";
-import { cn, extractApiError } from "@/lib/utils";
+import { extractApiError } from "@/lib/utils";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { useToast } from "@/components/ui/toast";
 import { API_ENDPOINTS } from "@/lib/api-endpoints";

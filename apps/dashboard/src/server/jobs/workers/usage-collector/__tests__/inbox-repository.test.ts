@@ -64,7 +64,7 @@ describe("PrismaUsageQueueInboxRepository", () => {
 
   it("claims rows with FOR UPDATE SKIP LOCKED semantics and increments attempt metadata", async () => {
     const now = new Date("2026-05-05T10:00:00.000Z");
-    const { prisma, usageQueueInbox } = createPrismaMock();
+    const { prisma } = createPrismaMock();
     const tx = {
       $queryRaw: vi.fn().mockResolvedValue([{ id: "inbox_1" }]),
       usageQueueInbox: {

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const { spawn } = require("node:child_process");
+import { spawn } from "node:child_process";
 
 const isWindows = process.platform === "win32";
 const npmCommand = isWindows ? "npm.cmd" : "npm";

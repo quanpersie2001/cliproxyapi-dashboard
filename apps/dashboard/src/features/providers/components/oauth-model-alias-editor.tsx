@@ -333,7 +333,7 @@ export function OAuthModelAliasEditor({ showToast }: OAuthModelAliasEditorProps)
   const [providerFormError, setProviderFormError] = useState("");
 
   const [aliasModalOpen, setAliasModalOpen] = useState(false);
-  const [editingAlias, setEditingAlias] = useState<string | null>(null);
+  const [editingAlias] = useState<string | null>(null);
   const [aliasFormAlias, setAliasFormAlias] = useState("");
   const [aliasFormRows, setAliasFormRows] = useState<AliasFormRow[]>([buildEmptyAliasFormRow()]);
   const [aliasFormError, setAliasFormError] = useState("");
@@ -778,26 +778,6 @@ export function OAuthModelAliasEditor({ showToast }: OAuthModelAliasEditorProps)
       setProviderModalOpen(false);
       setProviderFormError("");
     }
-  };
-
-  const openEditAliasModal = (alias: string) => {
-    const summary = aliasSummaryMap.get(alias.toLowerCase());
-    if (!summary) {
-      return;
-    }
-
-    setEditingAlias(summary.alias);
-    setAliasFormAlias(summary.alias);
-    setAliasFormRows(
-      summary.mappings.map((mapping) => ({
-        id: mapping.id,
-        provider: mapping.provider,
-        name: mapping.name,
-        fork: mapping.fork,
-      }))
-    );
-    setAliasFormError("");
-    setAliasModalOpen(true);
   };
 
   const closeAliasModal = () => {

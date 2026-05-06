@@ -41,7 +41,8 @@ export function isUsageRecordEndpointUnavailableError(error: unknown): boolean {
 export function omitUsageRecordEndpoint<T extends { endpoint?: unknown }>(
   record: T
 ): Omit<T, "endpoint"> {
-  const { endpoint: _endpoint, ...rest } = record;
+  const { endpoint, ...rest } = record;
+  void endpoint;
   return rest;
 }
 

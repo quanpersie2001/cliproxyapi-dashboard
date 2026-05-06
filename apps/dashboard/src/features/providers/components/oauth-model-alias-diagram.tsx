@@ -465,7 +465,7 @@ export function OAuthModelAliasDiagram({ items }: { items: OAuthAliasDiagramItem
 
       return current;
     });
-  }, [aliasNodes, providerNodes]);
+  }, [providerNodes]);
 
   useLayoutEffect(() => {
     const rafId = window.requestAnimationFrame(updateLayout);

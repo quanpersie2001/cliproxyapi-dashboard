@@ -29,7 +29,7 @@ function isValidOAuthProvider(provider: string): provider is OAuthProvider {
   return Object.values(OAUTH_PROVIDER).includes(provider as OAuthProvider);
 }
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   const session = await verifySession();
   if (!session) {
     return Errors.unauthorized();

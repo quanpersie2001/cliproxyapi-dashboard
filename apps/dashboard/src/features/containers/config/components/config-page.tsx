@@ -344,46 +344,6 @@ export function ConfigPage() {
     return null;
   };
 
-  const FIELD_ENDPOINTS: Record<
-    keyof Pick<
-      Config,
-      | "proxy-url"
-      | "debug"
-      | "logging-to-file"
-      | "logs-max-total-size-mb"
-      | "error-logs-max-files"
-      | "usage-statistics-enabled"
-      | "request-retry"
-      | "max-retry-interval"
-      | "request-log"
-      | "ws-auth"
-      | "force-model-prefix"
-    >,
-    string
-  > = {
-    "proxy-url": API_ENDPOINTS.MANAGEMENT.PROXY_URL,
-    debug: API_ENDPOINTS.MANAGEMENT.DEBUG,
-    "logging-to-file": API_ENDPOINTS.MANAGEMENT.LOGGING_TO_FILE,
-    "logs-max-total-size-mb": API_ENDPOINTS.MANAGEMENT.LOGS_MAX_TOTAL_SIZE_MB,
-    "error-logs-max-files": API_ENDPOINTS.MANAGEMENT.ERROR_LOGS_MAX_FILES,
-    "usage-statistics-enabled": API_ENDPOINTS.MANAGEMENT.USAGE_STATISTICS_ENABLED,
-    "request-retry": API_ENDPOINTS.MANAGEMENT.REQUEST_RETRY,
-    "max-retry-interval": API_ENDPOINTS.MANAGEMENT.MAX_RETRY_INTERVAL,
-    "request-log": API_ENDPOINTS.MANAGEMENT.REQUEST_LOG,
-    "ws-auth": API_ENDPOINTS.MANAGEMENT.WS_AUTH,
-    "force-model-prefix": API_ENDPOINTS.MANAGEMENT.FORCE_MODEL_PREFIX,
-  };
-
-  const NESTED_FIELD_ENDPOINTS = {
-    "quota-exceeded": {
-      "switch-project": API_ENDPOINTS.MANAGEMENT.QUOTA_EXCEEDED_SWITCH_PROJECT,
-      "switch-preview-model": API_ENDPOINTS.MANAGEMENT.QUOTA_EXCEEDED_SWITCH_PREVIEW_MODEL,
-    },
-    routing: {
-      strategy: API_ENDPOINTS.MANAGEMENT.ROUTING_STRATEGY,
-    },
-  } as const;
-
   const executeSave = useCallback(async () => {
     if (!config || !originalConfig) {
       return;
@@ -395,6 +355,44 @@ export function ConfigPage() {
     try {
       const errors: string[] = [];
       let successCount = 0;
+      const FIELD_ENDPOINTS: Record<
+        keyof Pick<
+          Config,
+          | "proxy-url"
+          | "debug"
+          | "logging-to-file"
+          | "logs-max-total-size-mb"
+          | "error-logs-max-files"
+          | "usage-statistics-enabled"
+          | "request-retry"
+          | "max-retry-interval"
+          | "request-log"
+          | "ws-auth"
+          | "force-model-prefix"
+        >,
+        string
+      > = {
+        "proxy-url": API_ENDPOINTS.MANAGEMENT.PROXY_URL,
+        debug: API_ENDPOINTS.MANAGEMENT.DEBUG,
+        "logging-to-file": API_ENDPOINTS.MANAGEMENT.LOGGING_TO_FILE,
+        "logs-max-total-size-mb": API_ENDPOINTS.MANAGEMENT.LOGS_MAX_TOTAL_SIZE_MB,
+        "error-logs-max-files": API_ENDPOINTS.MANAGEMENT.ERROR_LOGS_MAX_FILES,
+        "usage-statistics-enabled": API_ENDPOINTS.MANAGEMENT.USAGE_STATISTICS_ENABLED,
+        "request-retry": API_ENDPOINTS.MANAGEMENT.REQUEST_RETRY,
+        "max-retry-interval": API_ENDPOINTS.MANAGEMENT.MAX_RETRY_INTERVAL,
+        "request-log": API_ENDPOINTS.MANAGEMENT.REQUEST_LOG,
+        "ws-auth": API_ENDPOINTS.MANAGEMENT.WS_AUTH,
+        "force-model-prefix": API_ENDPOINTS.MANAGEMENT.FORCE_MODEL_PREFIX,
+      };
+      const NESTED_FIELD_ENDPOINTS = {
+        "quota-exceeded": {
+          "switch-project": API_ENDPOINTS.MANAGEMENT.QUOTA_EXCEEDED_SWITCH_PROJECT,
+          "switch-preview-model": API_ENDPOINTS.MANAGEMENT.QUOTA_EXCEEDED_SWITCH_PREVIEW_MODEL,
+        },
+        routing: {
+          strategy: API_ENDPOINTS.MANAGEMENT.ROUTING_STRATEGY,
+        },
+      } as const;
 
       const updateField = async (endpoint: string, value: unknown): Promise<boolean> => {
         try {

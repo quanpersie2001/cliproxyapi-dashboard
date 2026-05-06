@@ -8,7 +8,7 @@
     "dev": "next dev",
     "dev:app": "next dev",
     "dev:collector": "tsx scripts/runtime/dev-collector.ts",
-    "dev:embedded": "node scripts/runtime/dev-runner.cjs",
+    "dev:embedded": "node scripts/runtime/dev-runner.mjs",
     "prebuild": "npm run prisma:generate",
     "build:collector": "rm -rf dist-collector && tsc -p tsconfig.collector.json && cp scripts/runtime/collector-bootstrap.js dist-collector/collector-bootstrap.js && node scripts/postbuild-collector.cjs",
     "build": "npm run build:collector && next build && rm -rf .next/standalone/apps/dashboard/.next/static && mkdir -p .next/standalone/apps/dashboard/.next && cp -R .next/static .next/standalone/apps/dashboard/.next/static",

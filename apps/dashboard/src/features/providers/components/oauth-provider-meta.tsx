@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useTheme } from "@/components/theme-provider";
 import { cn } from "@/lib/utils";
@@ -191,6 +192,7 @@ export function OAuthProviderIcon({
     typeof asset === "string" ? asset : asset ? asset.light : null;
   const darkSrc = typeof asset === "object" ? asset.dark : null;
   const iconSizeClass = size === "sm" ? "h-4 w-4" : "h-5 w-5";
+  const iconPixelSize = size === "sm" ? 16 : 20;
 
   return (
     <span
@@ -208,9 +210,11 @@ export function OAuthProviderIcon({
     >
       {lightSrc ? (
         <span className="relative flex items-center justify-center">
-          <img
+          <Image
             src={lightSrc}
             alt=""
+            width={iconPixelSize}
+            height={iconPixelSize}
             className={cn(
               iconSizeClass,
               "object-contain transition-opacity duration-200",
@@ -218,9 +222,11 @@ export function OAuthProviderIcon({
             )}
           />
           {darkSrc ? (
-            <img
+            <Image
               src={darkSrc}
               alt=""
+              width={iconPixelSize}
+              height={iconPixelSize}
               className={cn(
                 iconSizeClass,
                 "absolute inset-0 object-contain transition-opacity duration-200",
