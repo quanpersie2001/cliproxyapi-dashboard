@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { NextRequest } from "next/server";
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
@@ -14,6 +15,8 @@ const loggerMock = {
   warn: vi.fn(),
   error: vi.fn(),
 };
+
+const TEST_SCHEMA = `usage_collect_route_${randomUUID().replace(/-/g, "")}`;
 
 let prismaClientForRoute: PrismaClient;
 
@@ -43,16 +46,30 @@ function resolveDatabaseUrl(): string {
       if (!line.startsWith("DATABASE_URL=")) {
         continue;
       }
-      return line.slice("DATABASE_URL=".length).trim();
+      return withSchemaSearchPath(line.slice("DATABASE_URL=".length).trim(), TEST_SCHEMA);
     }
   }
 
   const fromEnv = process.env.DATABASE_URL?.trim();
   if (fromEnv) {
-    return fromEnv;
+    return withSchemaSearchPath(fromEnv, TEST_SCHEMA);
   }
 
   throw new Error("DATABASE_URL is required for route wake postgres integration test.");
+}
+
+function withSchemaSearchPath(connectionString: string, schema: string): string {
+  const parsed = new URL(connectionString);
+  parsed.searchParams.set("schema", schema);
+
+  const existingOptions = parsed.searchParams.get("options") ?? "";
+  const searchPathOption = `-c search_path=${schema}`;
+  const otherOptions = existingOptions
+    .split(" ")
+    .filter((option) => option && !option.includes("search_path="));
+
+  parsed.searchParams.set("options", [...otherOptions, searchPathOption].join(" "));
+  return parsed.toString();
 }
 
 async function ensureCollectorStateTable(prisma: PrismaClient): Promise<void> {
@@ -116,10 +133,12 @@ describe("POST /api/usage/collect (Postgres integration)", () => {
     prismaClientForRoute = prisma;
 
     await prisma.$connect();
+    await prisma.$executeRawUnsafe(`CREATE SCHEMA IF NOT EXISTS "${TEST_SCHEMA}"`);
     await ensureCollectorStateTable(prisma);
   });
 
   afterAll(async () => {
+    await prisma.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${TEST_SCHEMA}" CASCADE`);
     await prisma.$disconnect();
   });
 

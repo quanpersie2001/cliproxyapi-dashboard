@@ -1,5 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { PrismaClient } from "@/generated/prisma/client";
@@ -10,6 +11,8 @@ vi.mock("@/lib/db", () => ({
 }));
 
 import { PrismaCollectorStateRepository } from "@/usage-collector/repositories/collector-state-repository";
+
+const TEST_SCHEMA = `collector_state_repo_${randomUUID().replace(/-/g, "")}`;
 
 const REQUIRED_RUNTIME_COLUMNS = [
   "wakeSequence",
@@ -26,12 +29,12 @@ const REQUIRED_RUNTIME_COLUMNS = [
 function resolveDatabaseUrl(): string {
   const dedicatedUrl = process.env.COLLECTOR_STATE_TEST_DATABASE_URL?.trim();
   if (dedicatedUrl) {
-    return withSchemaSearchPath(dedicatedUrl);
+    return withSchemaSearchPath(dedicatedUrl, TEST_SCHEMA);
   }
 
   const fromEnv = process.env.DATABASE_URL?.trim();
   if (fromEnv) {
-    return withSchemaSearchPath(fromEnv);
+    return withSchemaSearchPath(fromEnv, TEST_SCHEMA);
   }
 
   const envLocalPath = path.resolve(process.cwd(), ".env.local");
@@ -41,30 +44,24 @@ function resolveDatabaseUrl(): string {
       if (!line.startsWith("DATABASE_URL=")) {
         continue;
       }
-      return withSchemaSearchPath(line.slice("DATABASE_URL=".length).trim());
+      return withSchemaSearchPath(line.slice("DATABASE_URL=".length).trim(), TEST_SCHEMA);
     }
   }
 
   throw new Error("DATABASE_URL is required for collector_state postgres integration test.");
 }
 
-function withSchemaSearchPath(connectionString: string): string {
+function withSchemaSearchPath(connectionString: string, schema: string): string {
   const parsed = new URL(connectionString);
-  const schema = parsed.searchParams.get("schema");
-  if (!schema) {
-    return connectionString;
-  }
+  parsed.searchParams.set("schema", schema);
 
-  const existingOptions = parsed.searchParams.get("options");
+  const existingOptions = parsed.searchParams.get("options") ?? "";
   const searchPathOption = `-c search_path=${schema}`;
-  if (existingOptions && existingOptions.includes("search_path")) {
-    return connectionString;
-  }
+  const otherOptions = existingOptions
+    .split(" ")
+    .filter((option) => option && !option.includes("search_path="));
 
-  parsed.searchParams.set(
-    "options",
-    existingOptions ? `${existingOptions} ${searchPathOption}` : searchPathOption
-  );
+  parsed.searchParams.set("options", [...otherOptions, searchPathOption].join(" "));
   return parsed.toString();
 }
 
@@ -113,10 +110,12 @@ describe("PrismaCollectorStateRepository (Postgres integration)", () => {
       }),
     });
     await prisma.$connect();
+    await prisma.$executeRawUnsafe(`CREATE SCHEMA IF NOT EXISTS "${TEST_SCHEMA}"`);
     await ensureCollectorStateTable(prisma);
   });
 
   afterAll(async () => {
+    await prisma.$executeRawUnsafe(`DROP SCHEMA IF EXISTS "${TEST_SCHEMA}" CASCADE`);
     await prisma.$disconnect();
   });
 
