@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.11](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.10...dashboard-v0.2.11) (2026-05-07)
+
+
+### Bug Fixes
+
+* normalize usage pricing lookup keys ([a37b40b](https://github.com/quanpersie2001/cliproxyapi-dashboard/commit/a37b40b22dff0b45a8f6ebcabd1923e44181a8cd))
+
 ## [0.2.10](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.9...dashboard-v0.2.10) (2026-05-07)
 
 
