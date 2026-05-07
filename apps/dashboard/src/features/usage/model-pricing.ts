@@ -178,7 +178,9 @@ export function normalizeSingleModelPricing(payload: unknown): ModelPricingRecor
 }
 
 export function modelPricingLookupKey(provider: string, model: string): string {
-  return `${provider}:${model}`;
+  const normalizedProvider = provider.trim().toLowerCase();
+  const normalizedModel = model.trim().toLowerCase();
+  return `${normalizedProvider}:${normalizedModel}`;
 }
 
 export function modelPricingToLookup(records: ModelPricingRecord[]): Record<string, ModelPrice> {

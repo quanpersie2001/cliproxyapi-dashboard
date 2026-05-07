@@ -1,6 +1,7 @@
 import "server-only";
 import { Prisma } from "@/server/db/generated/prisma/client";
 import { usageCache } from "@/lib/cache";
+import { modelPricingLookupKey } from "@/features/usage/model-pricing";
 import { prisma } from "@/server/db/client";
 import { logger } from "@/lib/logger";
 import {
@@ -418,7 +419,7 @@ function buildTokenBreakdownSeries(
 }
 
 function buildPricingKey(provider: string | null, model: string): string {
-  return `${provider ?? ""}:${model}`;
+  return modelPricingLookupKey(provider ?? "", model);
 }
 
 function buildCostBreakdownSeries(

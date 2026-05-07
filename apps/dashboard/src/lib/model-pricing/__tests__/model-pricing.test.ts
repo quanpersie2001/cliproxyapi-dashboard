@@ -21,7 +21,7 @@ import {
   ModelPricingCreateSchema,
   serializeModelPricing,
 } from "@/lib/model-pricing";
-import { modelPricingToLookup } from "@/features/usage/model-pricing";
+import { modelPricingLookupKey, modelPricingToLookup } from "@/features/usage/model-pricing";
 
 describe("model pricing helpers", () => {
   it("applies expected create defaults", () => {
@@ -66,11 +66,11 @@ describe("model pricing helpers", () => {
     expect(serialized.effectiveFrom).toBe("2026-04-13T00:00:00.000Z");
   });
 
-  it("builds lookup by provider:model and keeps reasoning price", () => {
+  it("builds lookup by normalized provider:model and keeps reasoning price", () => {
     const lookup = modelPricingToLookup([
       {
-        provider: "openai",
-        model: "gpt-4.1",
+        provider: " OpenAI ",
+        model: " GPT-4.1 ",
         promptPriceUsd: 2,
         completionPriceUsd: 8,
         cachePriceUsd: 1,
@@ -78,8 +78,8 @@ describe("model pricing helpers", () => {
         isActive: true,
       },
       {
-        provider: "anthropic",
-        model: "gpt-4.1",
+        provider: "Anthropic",
+        model: "gPt-4.1",
         promptPriceUsd: 1,
         completionPriceUsd: 4,
         cachePriceUsd: 0.5,
@@ -90,5 +90,9 @@ describe("model pricing helpers", () => {
 
     expect(lookup["openai:gpt-4.1"]).toEqual({ prompt: 2, completion: 8, cache: 1, reasoning: 3 });
     expect(lookup["anthropic:gpt-4.1"]).toEqual({ prompt: 1, completion: 4, cache: 0.5, reasoning: 0 });
+  });
+
+  it("normalizes provider/model keys for mixed-case usage identities", () => {
+    expect(modelPricingLookupKey(" OpenAI ", " GPT-4.1 ")).toBe("openai:gpt-4.1");
   });
 });
