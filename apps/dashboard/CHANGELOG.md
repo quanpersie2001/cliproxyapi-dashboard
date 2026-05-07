@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.9](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.8...dashboard-v0.2.9) (2026-05-07)
+
+
+### Bug Fixes
+
+* harden usage history and queue ingestion consistency ([#16](https://github.com/quanpersie2001/cliproxyapi-dashboard/issues/16)) ([9e9ade0](https://github.com/quanpersie2001/cliproxyapi-dashboard/commit/9e9ade06e83b53ab3aac81e3385ee682a8c29fc3))
+
 ## [0.2.8](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.7...dashboard-v0.2.8) (2026-05-06)
 
 
