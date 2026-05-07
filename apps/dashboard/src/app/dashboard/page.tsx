@@ -1,9 +1,11 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { headers } from "next/headers";
 import { AvailableModelGroups } from "@/components/dashboard/available-model-groups";
 import { Badge } from "@/components/ui/badge";
 import { UsageAnalytics } from "@/features/usage/components/usage-analytics";
+import { loadModelPricing } from "@/features/usage/model-pricing";
 import { verifySession } from "@/server/auth/lib/session";
 import { prisma } from "@/server/db/client";
 import {
@@ -154,6 +156,11 @@ export default async function DashboardOverviewPage() {
     redirect("/login");
   }
 
+  const headerStore = await headers();
+  const host = headerStore.get("x-forwarded-host") ?? headerStore.get("host");
+  const proto = headerStore.get("x-forwarded-proto") ?? "http";
+  const baseUrl = host ? `${proto}://${host}` : undefined;
+
   const usageWindow = getUtcDayRange(7);
   const [
     apiKeyCount,
@@ -165,6 +172,7 @@ export default async function DashboardOverviewPage() {
     managementHealthy,
     usageSnapshot,
     modelCatalogSnapshot,
+    initialModelPricing,
   ] = await Promise.all([
     prisma.userApiKey.count({ where: { userId: session.userId } }),
     prisma.providerKeyOwnership.count({ where: { userId: session.userId } }),
@@ -232,6 +240,11 @@ export default async function DashboardOverviewPage() {
         ],
       };
     })(),
+    loadModelPricing(baseUrl, {
+      headers: {
+        cookie: headerStore.get("cookie") ?? "",
+      },
+    }).then((records) => records ?? []),
   ]);
 
   const proxyStatusLabel = managementHealthy ? "Proxy healthy" : "Proxy degraded";
@@ -422,7 +435,12 @@ export default async function DashboardOverviewPage() {
       </section>
 
       <section id="usage-analytics" className="scroll-mt-6">
-        <UsageAnalytics initialSnapshot={usageSnapshot} title="Usage intelligence" embedded />
+        <UsageAnalytics
+          initialSnapshot={usageSnapshot}
+          initialModelPricing={initialModelPricing}
+          title="Usage intelligence"
+          embedded
+        />
       </section>
     </div>
   );
