@@ -49,6 +49,31 @@ describe("CLIProxyV1Decoder", () => {
     expect(result.event.tokens.totalTokens).toBe(35);
   });
 
+
+
+  it("captures api_key when present for downstream ownership attribution", () => {
+    const decoder = new CLIProxyV1Decoder();
+    const payload = createEnvelope(
+      JSON.stringify({
+        timestamp: "2026-05-05T01:02:03.000Z",
+        source: "codex",
+        auth_index: "auth-123",
+        model: "gpt-4.1",
+        endpoint: "/v1/chat/completions",
+        api_key: "sk-live-target-key",
+      })
+    );
+
+    const result = decoder.decode(payload);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) {
+      return;
+    }
+    expect(result.event.apiKey).toBe("sk-live-target-key");
+    expect(result.event.apiGroupKey).toBe("/v1/chat/completions");
+  });
+
   it("returns decode_failed for malformed JSON payloads", () => {
     const decoder = new CLIProxyV1Decoder();
     const result = decoder.decode(createEnvelope("{not-json"));

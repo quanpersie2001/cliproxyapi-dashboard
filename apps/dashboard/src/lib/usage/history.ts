@@ -65,6 +65,7 @@ export interface UsageCostBasis {
   promptTokens: number;
   cachedTokens: number;
   outputTokens: number;
+  reasoningTokens: number;
 }
 
 export interface UsageCostBreakdownPoint {
@@ -162,6 +163,7 @@ interface UsageRecordRow {
 
 interface UsageBucketRow {
   bucket: Date | string;
+  provider: string | null;
   model: string;
   requests: unknown;
   totalTokens: unknown;
@@ -415,6 +417,10 @@ function buildTokenBreakdownSeries(
     .map(([, value]) => value);
 }
 
+function buildPricingKey(provider: string | null, model: string): string {
+  return `${provider ?? ""}:${model}`;
+}
+
 function buildCostBreakdownSeries(
   bucketRows: UsageBucketRow[],
   period: "hour" | "day",
@@ -436,16 +442,19 @@ function buildCostBreakdownSeries(
   for (const row of bucketRows) {
     const label = bucketToLabel(row.bucket, period);
     const target = rowMap.get(label) ?? createCostBreakdownPoint(label, period);
-    const existing = target.models[row.model] ?? {
+    const pricingKey = buildPricingKey(row.provider, row.model);
+    const existing = target.models[pricingKey] ?? {
       promptTokens: 0,
       cachedTokens: 0,
       outputTokens: 0,
+      reasoningTokens: 0,
     };
 
     existing.promptTokens += toSafeNumber(row.promptTokens);
     existing.cachedTokens += toSafeNumber(row.cachedTokens);
     existing.outputTokens += toSafeNumber(row.outputTokens);
-    target.models[row.model] = existing;
+    existing.reasoningTokens += toSafeNumber(row.reasoningTokens);
+    target.models[pricingKey] = existing;
     rowMap.set(label, target);
   }
 
@@ -547,16 +556,19 @@ function buildCostTotals(bucketRows: UsageBucketRow[]): Record<string, UsageCost
   const totalsByModel: Record<string, UsageCostBasis> = {};
 
   for (const row of bucketRows) {
-    const entry = totalsByModel[row.model] ?? {
+    const pricingKey = buildPricingKey(row.provider, row.model);
+    const entry = totalsByModel[pricingKey] ?? {
       promptTokens: 0,
       cachedTokens: 0,
       outputTokens: 0,
+      reasoningTokens: 0,
     };
 
     entry.promptTokens += toSafeNumber(row.promptTokens);
     entry.cachedTokens += toSafeNumber(row.cachedTokens);
     entry.outputTokens += toSafeNumber(row.outputTokens);
-    totalsByModel[row.model] = entry;
+    entry.reasoningTokens += toSafeNumber(row.reasoningTokens);
+    totalsByModel[pricingKey] = entry;
   }
 
   return totalsByModel;
@@ -578,7 +590,6 @@ function buildUsageWhereSql(
   return Prisma.sql`
     "timestamp" >= ${fromDate}
     AND "timestamp" <= ${toDate}
-    AND "apiKeyId" IS NOT NULL
     ${scopedFilter}
     ${extra ? Prisma.sql` AND ${extra}` : Prisma.sql``}
   `;
@@ -639,7 +650,6 @@ function buildUsageWhereClause(
       gte: fromDate,
       lte: toDate,
     },
-    apiKeyId: { not: null },
     ...(scope.isAdmin
       ? {}
       : {
@@ -668,6 +678,7 @@ async function fetchUsageBucketRows(
   return prisma.$queryRaw<UsageBucketRow[]>(Prisma.sql`
     SELECT
       ${bucketSql} AS "bucket",
+      "provider",
       "model",
       COUNT(*)::int AS "requests",
       COALESCE(SUM("totalTokens"), 0)::bigint AS "totalTokens",
@@ -680,8 +691,8 @@ async function fetchUsageBucketRows(
       COALESCE(SUM(CASE WHEN "failed" THEN 1 ELSE 0 END), 0)::int AS "failureCount"
     FROM "usage_records"
     WHERE ${whereSql}
-    GROUP BY 1, 2
-    ORDER BY 1 ASC, 2 ASC
+    GROUP BY 1, 2, 3
+    ORDER BY 1 ASC, 2 ASC, 3 ASC
   `);
 }
 
@@ -1315,12 +1326,13 @@ export async function getUsageHistorySnapshot(
   try {
     const whereClause = buildUsageWhereClause(options.userId, scope, options.fromDate, options.toDate);
     const ownershipWhere = scope.isAdmin ? {} : { userId: options.userId };
-    const now = options.toDate;
+    const now = new Date();
+    const windowAnchor = options.toDate.getTime() > now.getTime() ? now : options.toDate;
     const hourWindow = getHourWindow(options.fromDate, options.toDate);
-    const hourLabels = buildHourlyLabels(now, hourWindow);
-    const hourRangeStart = new Date(hourLabels[0] ?? now.toISOString());
-    const recentWindowStart = new Date(now.getTime() - RECENT_WINDOW_MINUTES * 60_000);
-    const healthWindowStart = new Date(now.getTime() - SERVICE_HEALTH_DAYS * 24 * 60 * 60_000);
+    const hourLabels = buildHourlyLabels(windowAnchor, hourWindow);
+    const hourRangeStart = new Date(hourLabels[0] ?? windowAnchor.toISOString());
+    const recentWindowStart = new Date(windowAnchor.getTime() - RECENT_WINDOW_MINUTES * 60_000);
+    const healthWindowStart = new Date(windowAnchor.getTime() - SERVICE_HEALTH_DAYS * 24 * 60 * 60_000);
 
     const relatedDataPromise = Promise.all([
       prisma.collectorState.findFirst({
@@ -1368,7 +1380,7 @@ export async function getUsageHistorySnapshot(
       options.userId,
       scope,
       hourRangeStart,
-      options.toDate,
+      windowAnchor,
       "hour"
     );
     const limitedRecordsPromise = fetchLimitedUsageRecords(whereClause, options.userId);
@@ -1380,7 +1392,7 @@ export async function getUsageHistorySnapshot(
       options.toDate
     );
     const recentRatePromise = prisma.usageRecord.aggregate({
-      where: buildUsageWhereClause(options.userId, scope, recentWindowStart, options.toDate),
+      where: buildUsageWhereClause(options.userId, scope, recentWindowStart, windowAnchor),
       _count: { _all: true },
       _sum: { totalTokens: true },
     });
@@ -1388,7 +1400,7 @@ export async function getUsageHistorySnapshot(
       options.userId,
       scope,
       healthWindowStart,
-      options.toDate
+      windowAnchor
     );
 
     const [

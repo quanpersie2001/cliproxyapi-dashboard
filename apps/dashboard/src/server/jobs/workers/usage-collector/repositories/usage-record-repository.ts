@@ -2,11 +2,18 @@ import type { PrismaClient } from "../../../../db/generated/prisma/client";
 import type { UsageRecordRepository } from "../contracts";
 import {
   resolveUsageOwnership,
+  type AuthFileOwnershipHint,
   type UsageOwnershipDirectories,
 } from "../core/ownership-resolver";
 import type { NormalizedQueuedUsageEvent } from "../core/types";
 import { invalidateUsageCaches } from "../../../../../lib/cache";
 import { prisma as defaultPrisma } from "../../../../db/client";
+import { logger } from "../../../../../lib/logger";
+import {
+  fetchWithTimeout,
+  MANAGEMENT_API_KEY,
+  MANAGEMENT_BASE_URL,
+} from "../../../../../lib/providers/management-api";
 
 export interface UsageRecordRepositoryOptions {
   prisma?: PrismaClient;
@@ -45,6 +52,7 @@ export class PrismaUsageRecordRepository implements UsageRecordRepository {
         const ownership = resolveUsageOwnership(
           {
             apiGroupKey: event.apiGroupKey,
+            apiKey: event.apiKey ?? null,
             authIndex: event.authIndex,
             source: event.source,
           },
@@ -95,7 +103,7 @@ export class PrismaUsageRecordRepository implements UsageRecordRepository {
   }
 
   private async buildOwnershipDirectories(): Promise<UsageOwnershipDirectories> {
-    const [apiKeys, oauthOwnerships, keyOwnerships, users] = await Promise.all([
+    const [apiKeys, oauthOwnerships, keyOwnerships, users, authIndexToFile] = await Promise.all([
       this.prismaClient.userApiKey.findMany({
         select: {
           id: true,
@@ -125,6 +133,7 @@ export class PrismaUsageRecordRepository implements UsageRecordRepository {
           username: true,
         },
       }),
+      this.loadAuthFilesByIndex(),
     ]);
 
     const userToApiKey = new Map<string, string>();
@@ -180,11 +189,65 @@ export class PrismaUsageRecordRepository implements UsageRecordRepository {
 
     return {
       fullKeyToOwner,
-      authIndexToFile: new Map(),
+      authIndexToFile,
       sourceToUser,
       authIndexPrefixToOwner,
       userToApiKey,
     };
+  }
+
+  private async loadAuthFilesByIndex(): Promise<Map<string, AuthFileOwnershipHint>> {
+    if (!MANAGEMENT_API_KEY) {
+      return new Map();
+    }
+
+    try {
+      const response = await fetchWithTimeout(`${MANAGEMENT_BASE_URL}/auth-files`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${MANAGEMENT_API_KEY}` },
+      });
+
+      if (!response.ok) {
+        await response.body?.cancel();
+        logger.warn(
+          { status: response.status, statusText: response.statusText },
+          "Failed to fetch auth-files during usage ownership resolution"
+        );
+        return new Map();
+      }
+
+      const payload: unknown = await response.json();
+      const rawEntries = Array.isArray(payload)
+        ? payload
+        : Array.isArray((payload as { auth_files?: unknown[] })?.auth_files)
+          ? (payload as { auth_files: unknown[] }).auth_files
+          : Array.isArray((payload as { files?: unknown[] })?.files)
+            ? (payload as { files: unknown[] }).files
+            : [];
+
+      const authFilesByIndex = new Map<string, AuthFileOwnershipHint>();
+      for (const rawEntry of rawEntries) {
+        if (!rawEntry || typeof rawEntry !== "object") {
+          continue;
+        }
+
+        const entry = rawEntry as Record<string, unknown>;
+        const authIndex = normalizeLookupKey(entry.auth_index);
+        if (!authIndex) {
+          continue;
+        }
+
+        authFilesByIndex.set(authIndex, {
+          fileName: readLookupString(entry.file_name ?? entry.name),
+          email: readNullableLookupString(entry.email),
+        });
+      }
+
+      return authFilesByIndex;
+    } catch (error) {
+      logger.warn({ err: error }, "Failed to load auth-files for usage ownership resolution");
+      return new Map();
+    }
   }
 }
 
@@ -203,8 +266,20 @@ function dedupeByEventKey(events: NormalizedQueuedUsageEvent[]): NormalizedQueue
   return deduplicated;
 }
 
-function normalizeLookupKey(value: string | null | undefined): string {
-  return (value ?? "").trim().toLowerCase();
+function normalizeLookupKey(value: unknown): string {
+  if (typeof value !== "string") {
+    return "";
+  }
+  return value.trim().toLowerCase();
+}
+
+function readLookupString(value: unknown): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function readNullableLookupString(value: unknown): string | null {
+  const normalized = readLookupString(value);
+  return normalized.length > 0 ? normalized : null;
 }
 
 function normalizePositiveInt(value: number): number {

@@ -38,6 +38,7 @@ import {
   type ModelPricingDraft,
   type ModelPrice,
   type ModelPricingRecord,
+  modelPricingLookupKey,
   modelPricingToLookup,
   normalizeModelPricing,
 } from "@/features/usage/model-pricing";
@@ -175,20 +176,22 @@ function getCollectorTone(lastStatus: string, lastCollectedAt: string) {
 }
 
 function calculateCostForModel(
-  model: string,
+  pricingKey: string,
   basis: UsageCostBasis,
   prices: Record<string, ModelPrice>
 ): number {
-  const price = prices[model];
+  const price = prices[pricingKey];
   if (!price) return 0;
   const promptTokens = Math.max(basis.promptTokens, 0);
   const cachedTokens = Math.max(basis.cachedTokens, 0);
   const outputTokens = Math.max(basis.outputTokens, 0);
+  const reasoningTokens = Math.max(basis.reasoningTokens, 0);
 
   return (
     (promptTokens / 1_000_000) * price.prompt +
     (cachedTokens / 1_000_000) * price.cache +
-    (outputTokens / 1_000_000) * price.completion
+    (outputTokens / 1_000_000) * price.completion +
+    (reasoningTokens / 1_000_000) * price.reasoning
   );
 }
 

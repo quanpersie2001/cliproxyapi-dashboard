@@ -17,6 +17,7 @@ type QueuedPayload = {
   provider?: unknown;
   model?: unknown;
   endpoint?: unknown;
+  api_key?: unknown;
   auth_type?: unknown;
   request_id?: unknown;
 };
@@ -90,6 +91,7 @@ function toEventInput(payload: QueuedPayload):
       authType: normalizeNullableText(payload.auth_type),
       authIndex,
       apiGroupKey: normalizeNullableText(payload.endpoint),
+      apiKey: normalizeNullableText(payload.api_key),
       model: normalizeText(payload.model) || "unknown",
       source: normalizeText(payload.source) || "unknown",
       timestamp,
