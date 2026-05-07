@@ -9,11 +9,6 @@ import type { NormalizedQueuedUsageEvent } from "../core/types";
 import { invalidateUsageCaches } from "../../../../../lib/cache";
 import { prisma as defaultPrisma } from "../../../../db/client";
 import { logger } from "../../../../../lib/logger";
-import {
-  fetchWithTimeout,
-  MANAGEMENT_API_KEY,
-  MANAGEMENT_BASE_URL,
-} from "../../../../../lib/providers/management-api";
 
 export interface UsageRecordRepositoryOptions {
   prisma?: PrismaClient;
@@ -197,14 +192,18 @@ export class PrismaUsageRecordRepository implements UsageRecordRepository {
   }
 
   private async loadAuthFilesByIndex(): Promise<Map<string, AuthFileOwnershipHint>> {
-    if (!MANAGEMENT_API_KEY) {
+    const managementApiKey = readLookupString(process.env.MANAGEMENT_API_KEY);
+    if (!managementApiKey) {
       return new Map();
     }
 
+    const managementBaseUrl = readLookupString(process.env.CLIPROXYAPI_MANAGEMENT_URL)
+      || "http://127.0.0.1:8317/v0/management";
+
     try {
-      const response = await fetchWithTimeout(`${MANAGEMENT_BASE_URL}/auth-files`, {
+      const response = await fetch(`${managementBaseUrl}/auth-files`, {
         method: "GET",
-        headers: { Authorization: `Bearer ${MANAGEMENT_API_KEY}` },
+        headers: { Authorization: `Bearer ${managementApiKey}` },
       });
 
       if (!response.ok) {

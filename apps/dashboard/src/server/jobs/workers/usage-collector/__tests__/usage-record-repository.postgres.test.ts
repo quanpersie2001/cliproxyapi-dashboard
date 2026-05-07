@@ -12,6 +12,19 @@ vi.mock("@/server/db/client", () => ({
 vi.mock("@/lib/cache", () => ({
   invalidateUsageCaches: vi.fn(),
 }));
+vi.mock("@/lib/logger", () => ({
+  logger: {
+    warn: vi.fn(),
+    info: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
+vi.mock("@/lib/providers/management-api", () => ({
+  fetchWithTimeout: vi.fn(),
+  MANAGEMENT_API_KEY: "test-management-api-key-1234",
+  MANAGEMENT_BASE_URL: "https://management.test",
+}));
 
 import { PrismaUsageRecordRepository } from "@/server/jobs/workers/usage-collector/repositories/usage-record-repository";
 

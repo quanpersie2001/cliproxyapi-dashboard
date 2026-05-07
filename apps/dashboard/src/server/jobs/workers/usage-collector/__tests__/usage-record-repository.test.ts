@@ -5,9 +5,8 @@ vi.mock("@/server/db/client", () => ({
   prisma: {},
 }));
 
-const { invalidateUsageCaches, fetchWithTimeout } = vi.hoisted(() => ({
+const { invalidateUsageCaches } = vi.hoisted(() => ({
   invalidateUsageCaches: vi.fn(),
-  fetchWithTimeout: vi.fn(),
 }));
 
 vi.mock("@/lib/cache", () => ({
@@ -20,11 +19,6 @@ vi.mock("@/lib/logger", () => ({
   },
 }));
 
-vi.mock("@/lib/providers/management-api", () => ({
-  fetchWithTimeout,
-  MANAGEMENT_API_KEY: "test-management-key",
-  MANAGEMENT_BASE_URL: "https://management.test",
-}));
 
 import { PrismaUsageRecordRepository } from "@/server/jobs/workers/usage-collector/repositories/usage-record-repository";
 
@@ -55,11 +49,12 @@ function createEvent(overrides: Partial<NormalizedQueuedUsageEvent> = {}): Norma
 
 describe("PrismaUsageRecordRepository", () => {
   beforeEach(() => {
-    fetchWithTimeout.mockReset();
-    fetchWithTimeout.mockResolvedValue({
+    process.env.MANAGEMENT_API_KEY = "test-management-key";
+    process.env.CLIPROXYAPI_MANAGEMENT_URL = "https://management.test";
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
       ok: true,
       json: async () => [],
-    });
+    }));
   });
 
   function createOwnershipDirectoryMocks() {
@@ -247,7 +242,7 @@ describe("PrismaUsageRecordRepository", () => {
   });
 
   it("resolves ownership from auth-file index when source is not directly mapped", async () => {
-    fetchWithTimeout.mockResolvedValueOnce({
+    vi.mocked(fetch).mockResolvedValueOnce({
       ok: true,
       json: async () => [
         {
@@ -256,7 +251,7 @@ describe("PrismaUsageRecordRepository", () => {
           email: "",
         },
       ],
-    });
+    } as Response);
 
     const usageRecord = {
       createMany: vi.fn().mockResolvedValue({ count: 1 }),
