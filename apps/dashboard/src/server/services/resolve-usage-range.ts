@@ -1,4 +1,5 @@
 import "server-only";
+import { getUtcDayRange } from "@/lib/usage/dashboard-window";
 import { isValidUsageHistoryDateParam } from "@/lib/usage/history";
 
 export type UsageWindow = "7h" | "24h" | "7d" | "all";
@@ -26,9 +27,15 @@ export function buildUsageWindowRange(window: UsageWindow): UsageHistoryRange {
     case "24h":
       fromDate = new Date(now.getTime() - 24 * 60 * 60 * 1000);
       break;
-    case "7d":
-      fromDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-      break;
+    case "7d": {
+      const sevenDayRange = getUtcDayRange(7);
+      return {
+        fromDate: sevenDayRange.fromDate,
+        toDate: sevenDayRange.toDate,
+        fromParam: sevenDayRange.fromParam,
+        toParam: sevenDayRange.toParam,
+      };
+    }
     case "all":
       fromDate = new Date("2020-01-01T00:00:00.000Z");
       break;

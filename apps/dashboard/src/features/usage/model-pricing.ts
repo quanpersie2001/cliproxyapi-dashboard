@@ -4,6 +4,7 @@ export interface ModelPrice {
   prompt: number;
   completion: number;
   cache: number;
+  reasoning: number;
 }
 
 export interface ModelPricingRecord {
@@ -176,14 +177,19 @@ export function normalizeSingleModelPricing(payload: unknown): ModelPricingRecor
   return entry ? parseRecord(entry) : null;
 }
 
+export function modelPricingLookupKey(provider: string, model: string): string {
+  return `${provider}:${model}`;
+}
+
 export function modelPricingToLookup(records: ModelPricingRecord[]): Record<string, ModelPrice> {
   const lookup: Record<string, ModelPrice> = {};
   for (const record of records) {
     if (!record.isActive) continue;
-    lookup[record.model] = {
+    lookup[modelPricingLookupKey(record.provider, record.model)] = {
       prompt: record.promptPriceUsd,
       completion: record.completionPriceUsd,
       cache: record.cachePriceUsd ?? record.promptPriceUsd,
+      reasoning: record.reasoningPriceUsd ?? 0,
     };
   }
   return lookup;

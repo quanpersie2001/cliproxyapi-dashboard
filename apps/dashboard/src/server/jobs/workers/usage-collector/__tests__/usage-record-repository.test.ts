@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { NormalizedQueuedUsageEvent } from "@/server/jobs/workers/usage-collector/core/types";
 vi.mock("server-only", () => ({}));
 vi.mock("@/server/db/client", () => ({
@@ -13,6 +13,13 @@ vi.mock("@/lib/cache", () => ({
   invalidateUsageCaches,
 }));
 
+vi.mock("@/lib/logger", () => ({
+  logger: {
+    warn: vi.fn(),
+  },
+}));
+
+
 import { PrismaUsageRecordRepository } from "@/server/jobs/workers/usage-collector/repositories/usage-record-repository";
 
 function createEvent(overrides: Partial<NormalizedQueuedUsageEvent> = {}): NormalizedQueuedUsageEvent {
@@ -23,6 +30,7 @@ function createEvent(overrides: Partial<NormalizedQueuedUsageEvent> = {}): Norma
     authType: "api-key",
     authIndex: "auth-1",
     apiGroupKey: "/v1/chat/completions",
+    apiKey: null,
     model: "gpt-4.1",
     source: "source-a",
     timestamp: new Date("2026-05-05T00:00:00.000Z"),
@@ -40,6 +48,15 @@ function createEvent(overrides: Partial<NormalizedQueuedUsageEvent> = {}): Norma
 }
 
 describe("PrismaUsageRecordRepository", () => {
+  beforeEach(() => {
+    process.env.MANAGEMENT_API_KEY = "test-management-key";
+    process.env.CLIPROXYAPI_MANAGEMENT_URL = "https://management.test";
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => [],
+    }));
+  });
+
   function createOwnershipDirectoryMocks() {
     return {
       userApiKey: {
@@ -163,6 +180,124 @@ describe("PrismaUsageRecordRepository", () => {
       expect.objectContaining({
         userId: null,
         apiKeyId: null,
+      })
+    );
+  });
+
+
+
+  it("attributes usage to the exact API key when apiKey is provided", async () => {
+    const usageRecord = {
+      createMany: vi.fn().mockResolvedValue({ count: 1 }),
+    };
+    const prisma = {
+      usageRecord,
+      userApiKey: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: "api-first",
+            userId: "user-source",
+            key: "sk-first",
+          },
+          {
+            id: "api-target",
+            userId: "user-source",
+            key: "sk-live-target-key",
+          },
+        ]),
+      },
+      providerOAuthOwnership: {
+        findMany: vi.fn().mockResolvedValue([]),
+      },
+      providerKeyOwnership: {
+        findMany: vi.fn().mockResolvedValue([]),
+      },
+      user: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: "user-source",
+            username: "source-owner",
+          },
+        ]),
+      },
+    } as never;
+
+    const repository = new PrismaUsageRecordRepository({ prisma });
+
+    await repository.persistNormalizedEvents([
+      createEvent({
+        eventKey: "evt-with-key",
+        source: "source-owner",
+        apiKey: "sk-live-target-key",
+      }),
+    ]);
+
+    const firstCall = usageRecord.createMany.mock.calls[0][0];
+    expect(firstCall.data[0]).toEqual(
+      expect.objectContaining({
+        userId: "user-source",
+        apiKeyId: "api-target",
+      })
+    );
+  });
+
+  it("resolves ownership from auth-file index when source is not directly mapped", async () => {
+    vi.mocked(fetch).mockResolvedValueOnce({
+      ok: true,
+      json: async () => [
+        {
+          auth_index: "auth-file-1",
+          file_name: "claude-account.json",
+          email: "",
+        },
+      ],
+    } as Response);
+
+    const usageRecord = {
+      createMany: vi.fn().mockResolvedValue({ count: 1 }),
+    };
+    const prisma = {
+      usageRecord,
+      userApiKey: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: "api-owner",
+            userId: "user-owner",
+            key: "sk-owner",
+          },
+        ]),
+      },
+      providerOAuthOwnership: {
+        findMany: vi.fn().mockResolvedValue([]),
+      },
+      providerKeyOwnership: {
+        findMany: vi.fn().mockResolvedValue([]),
+      },
+      user: {
+        findMany: vi.fn().mockResolvedValue([
+          {
+            id: "user-owner",
+            username: "claude-account.json",
+          },
+        ]),
+      },
+    } as never;
+
+    const repository = new PrismaUsageRecordRepository({ prisma });
+
+    await repository.persistNormalizedEvents([
+      createEvent({
+        eventKey: "evt-auth-file",
+        source: "unknown-source",
+        authIndex: "auth-file-1",
+      }),
+    ]);
+
+    const firstCall = usageRecord.createMany.mock.calls[0][0];
+    expect(firstCall.data[0]).toEqual(
+      expect.objectContaining({
+        userId: "user-owner",
+        apiKeyId: "api-owner",
       })
     );
   });

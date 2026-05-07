@@ -21,6 +21,7 @@ import {
   ModelPricingCreateSchema,
   serializeModelPricing,
 } from "@/lib/model-pricing";
+import { modelPricingToLookup } from "@/features/usage/model-pricing";
 
 describe("model pricing helpers", () => {
   it("applies expected create defaults", () => {
@@ -63,5 +64,31 @@ describe("model pricing helpers", () => {
     expect(serialized.completionPriceUsd).toBe(2.5);
     expect(serialized.reasoningPriceUsd).toBe(0.125);
     expect(serialized.effectiveFrom).toBe("2026-04-13T00:00:00.000Z");
+  });
+
+  it("builds lookup by provider:model and keeps reasoning price", () => {
+    const lookup = modelPricingToLookup([
+      {
+        provider: "openai",
+        model: "gpt-4.1",
+        promptPriceUsd: 2,
+        completionPriceUsd: 8,
+        cachePriceUsd: 1,
+        reasoningPriceUsd: 3,
+        isActive: true,
+      },
+      {
+        provider: "anthropic",
+        model: "gpt-4.1",
+        promptPriceUsd: 1,
+        completionPriceUsd: 4,
+        cachePriceUsd: 0.5,
+        reasoningPriceUsd: 0,
+        isActive: true,
+      },
+    ]);
+
+    expect(lookup["openai:gpt-4.1"]).toEqual({ prompt: 2, completion: 8, cache: 1, reasoning: 3 });
+    expect(lookup["anthropic:gpt-4.1"]).toEqual({ prompt: 1, completion: 4, cache: 0.5, reasoning: 0 });
   });
 });

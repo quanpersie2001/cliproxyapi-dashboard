@@ -32,6 +32,7 @@ export interface NormalizedQueuedUsageEvent {
   authType: string | null;
   authIndex: string;
   apiGroupKey: string | null;
+  apiKey?: string | null;
   model: string;
   source: string;
   timestamp: Date;

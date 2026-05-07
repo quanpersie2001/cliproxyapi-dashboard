@@ -18,6 +18,7 @@ export interface UsageOwnershipDirectories {
 
 export interface UsageOwnershipInput {
   apiGroupKey: string | null;
+  apiKey?: string | null;
   authIndex: string;
   source: string | null;
 }
@@ -42,6 +43,18 @@ export function resolveUsageOwnership(
   let resolvedApiKeyId: string | null = null;
   let resolutionPath: UsageOwnershipResult["resolutionPath"] = "none";
 
+  const providedApiKey = normalizeText(input.apiKey);
+  if (providedApiKey.startsWith("sk-")) {
+    const ownerFromApiKey = directories.fullKeyToOwner.get(providedApiKey);
+    if (ownerFromApiKey) {
+      return {
+        userId: ownerFromApiKey.userId,
+        apiKeyId: ownerFromApiKey.apiKeyId,
+        resolutionPath: "api-grouping",
+      };
+    }
+  }
+
   const groupKey = normalizeText(input.apiGroupKey);
   if (groupKey.startsWith("sk-")) {
     const groupedOwner = directories.fullKeyToOwner.get(groupKey);
@@ -54,7 +67,7 @@ export function resolveUsageOwnership(
     }
   }
 
-  const authIndex = normalizeText(input.authIndex);
+  const authIndex = normalizeText(input.authIndex).toLowerCase();
   const authFileHint = directories.authIndexToFile.get(authIndex);
   if (authFileHint) {
     const byFileName = findMappedUser(authFileHint.fileName, directories.sourceToUser);
@@ -79,7 +92,7 @@ export function resolveUsageOwnership(
   }
 
   if (!resolvedUserId) {
-    const byAuthPrefix = directories.authIndexPrefixToOwner.get(authIndex);
+    const byAuthPrefix = findOwnerByAuthIndex(authIndex, directories.authIndexPrefixToOwner);
     if (byAuthPrefix) {
       resolvedUserId = byAuthPrefix.userId;
       resolvedApiKeyId = byAuthPrefix.apiKeyId;
@@ -107,6 +120,35 @@ function findMappedUser(
     return null;
   }
   return sourceToUser.get(key) ?? null;
+}
+
+function findOwnerByAuthIndex(
+  authIndex: string,
+  authIndexPrefixToOwner: Map<string, OwnershipLink>
+): OwnershipLink | null {
+  const exact = authIndexPrefixToOwner.get(authIndex);
+  if (exact) {
+    return exact;
+  }
+
+  for (const [maskedIdentifier, owner] of authIndexPrefixToOwner.entries()) {
+    const delimiter = maskedIdentifier.indexOf("...");
+    if (delimiter <= 0) {
+      continue;
+    }
+
+    const prefix = maskedIdentifier.slice(0, delimiter);
+    const suffix = maskedIdentifier.slice(delimiter + 3);
+    if (!prefix || !suffix) {
+      continue;
+    }
+
+    if (authIndex.startsWith(prefix) && authIndex.endsWith(suffix)) {
+      return owner;
+    }
+  }
+
+  return null;
 }
 
 function normalizeText(value: string | null | undefined): string {
