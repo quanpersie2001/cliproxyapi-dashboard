@@ -1,7 +1,7 @@
 {
   "name": "cliproxyapi-dashboard-workspace",
   "private": true,
-  "version": "0.2.9",
+  "version": "0.2.10",
   "packageManager": "npm@11.6.2",
   "workspaces": [
     "apps/*",
