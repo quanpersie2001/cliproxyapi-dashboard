@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.10](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.9...dashboard-v0.2.10) (2026-05-07)
+
+
+### Bug Fixes
+
+* preload overview pricing for usage analytics ([b10a6b0](https://github.com/quanpersie2001/cliproxyapi-dashboard/commit/b10a6b0a16546f056bdd81e8fa8ffe4faed1843a))
+
 ## [0.2.9](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.8...dashboard-v0.2.9) (2026-05-07)
 
 
