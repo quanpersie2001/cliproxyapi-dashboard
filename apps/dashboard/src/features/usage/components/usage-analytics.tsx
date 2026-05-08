@@ -41,6 +41,7 @@ import {
   modelPricingLookupKey,
   modelPricingToLookup,
   normalizeModelPricing,
+  resolveModelPriceForUsageKey,
 } from "@/features/usage/model-pricing";
 import { formatMetricCompact } from "@/lib/metric-format";
 import { cn } from "@/lib/utils";
@@ -180,7 +181,7 @@ function calculateCostForModel(
   basis: UsageCostBasis,
   prices: Record<string, ModelPrice>
 ): number {
-  const price = prices[pricingKey];
+  const price = resolveModelPriceForUsageKey(pricingKey, prices);
   if (!price) return 0;
   const promptTokens = Math.max(basis.promptTokens, 0);
   const cachedTokens = Math.max(basis.cachedTokens, 0);

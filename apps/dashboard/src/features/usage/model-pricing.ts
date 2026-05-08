@@ -197,6 +197,34 @@ export function modelPricingToLookup(records: ModelPricingRecord[]): Record<stri
   return lookup;
 }
 
+export function resolveModelPriceForUsageKey(
+  pricingKey: string,
+  prices: Record<string, ModelPrice>
+): ModelPrice | null {
+  const direct = prices[pricingKey];
+  if (direct) return direct;
+
+  const separatorIndex = pricingKey.indexOf(":");
+  if (separatorIndex < 0) return null;
+
+  const provider = pricingKey.slice(0, separatorIndex).trim();
+  const model = pricingKey.slice(separatorIndex + 1).trim().toLowerCase();
+  if (!model) return null;
+
+  if (provider) {
+    return null;
+  }
+
+  const matches = Object.entries(prices).filter(([key]) => {
+    const splitIndex = key.indexOf(":");
+    if (splitIndex < 0) return false;
+    return key.slice(splitIndex + 1).trim().toLowerCase() === model;
+  });
+
+  if (matches.length !== 1) return null;
+  return matches[0][1];
+}
+
 export function normalizeModelPricingDraft(record?: ModelPricingRecord | null): ModelPricingDraft {
   return {
     provider: record?.provider ?? "",

@@ -21,7 +21,11 @@ import {
   ModelPricingCreateSchema,
   serializeModelPricing,
 } from "@/lib/model-pricing";
-import { modelPricingLookupKey, modelPricingToLookup } from "@/features/usage/model-pricing";
+import {
+  modelPricingLookupKey,
+  modelPricingToLookup,
+  resolveModelPriceForUsageKey,
+} from "@/features/usage/model-pricing";
 
 describe("model pricing helpers", () => {
   it("applies expected create defaults", () => {
@@ -94,5 +98,22 @@ describe("model pricing helpers", () => {
 
   it("normalizes provider/model keys for mixed-case usage identities", () => {
     expect(modelPricingLookupKey(" OpenAI ", " GPT-4.1 ")).toBe("openai:gpt-4.1");
+  });
+
+  it("falls back to model-only pricing when usage key has no provider", () => {
+    const prices = {
+      "openai:gpt-5.4": { prompt: 2, completion: 6, cache: 1, reasoning: 0.5 },
+      "anthropic:claude-sonnet-4": { prompt: 3, completion: 9, cache: 1.5, reasoning: 0.75 },
+    };
+
+    expect(resolveModelPriceForUsageKey(":gpt-5.4", prices)).toEqual(prices["openai:gpt-5.4"]);
+  });
+
+  it("does not match pricing from another provider when provider is present", () => {
+    const prices = {
+      "openai:gpt-5.4": { prompt: 2, completion: 6, cache: 1, reasoning: 0.5 },
+    };
+
+    expect(resolveModelPriceForUsageKey("anthropic:gpt-5.4", prices)).toBeNull();
   });
 });
