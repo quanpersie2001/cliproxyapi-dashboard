@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.12](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.11...dashboard-v0.2.12) (2026-05-08)
+
+
+### Bug Fixes
+
+* fall back to model-only usage pricing ([e0faa91](https://github.com/quanpersie2001/cliproxyapi-dashboard/commit/e0faa91d66bad5ea12167025f7c951b6996c043b))
+
 ## [0.2.11](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.10...dashboard-v0.2.11) (2026-05-07)
 
 
