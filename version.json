@@ -1,6 +1,6 @@
 {
-  "version": "0.2.12",
-  "tag": "dashboard-v0.2.12",
-  "releaseUrl": "https://github.com/quanpersie2001/cliproxyapi-dashboard/releases/tag/dashboard-v0.2.12",
-  "releaseNotes": "## [0.2.12](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.11...dashboard-v0.2.12) (2026-05-08)\n\n\n### Bug Fixes\n\n* fall back to model-only usage pricing ([e0faa91](https://github.com/quanpersie2001/cliproxyapi-dashboard/commit/e0faa91d66bad5ea12167025f7c951b6996c043b))"
+  "version": "0.2.13",
+  "tag": "dashboard-v0.2.13",
+  "releaseUrl": "https://github.com/quanpersie2001/cliproxyapi-dashboard/releases/tag/dashboard-v0.2.13",
+  "releaseNotes": "## [0.2.13](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.12...dashboard-v0.2.13) (2026-06-13)\n\n\n### Features\n\n* add xAI/Grok OAuth provider support ([4f7e344](https://github.com/quanpersie2001/cliproxyapi-dashboard/commit/4f7e344803ebd5d8e42a4db3a646581540058437))\n\n\n### Bug Fixes\n\n* only ignore .pi/tasks in .gitignore ([319161e](https://github.com/quanpersie2001/cliproxyapi-dashboard/commit/319161ef7a82733cde7e30c201a94498f272b40d))"
 }
