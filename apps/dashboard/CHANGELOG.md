@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.13](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.12...dashboard-v0.2.13) (2026-06-13)
+
+
+### Features
+
+* add xAI/Grok OAuth provider support ([4f7e344](https://github.com/quanpersie2001/cliproxyapi-dashboard/commit/4f7e344803ebd5d8e42a4db3a646581540058437))
+
+
+### Bug Fixes
+
+* only ignore .pi/tasks in .gitignore ([319161e](https://github.com/quanpersie2001/cliproxyapi-dashboard/commit/319161ef7a82733cde7e30c201a94498f272b40d))
+
 ## [0.2.12](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.11...dashboard-v0.2.12) (2026-05-08)
 
 
