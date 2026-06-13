@@ -126,16 +126,5 @@ references/
 # bv (beads viewer) local config and caches
 .bv/
 
-# Workflow artifacts
-.pulse/
-.beads/
-.spikes/
-history/
-.gitnexus
-
 # Pi agent tasks
-.pi/
-
-# GitNexus
-gitnexus/
-.claude/skills/gitnexus
+.pi/tasks
