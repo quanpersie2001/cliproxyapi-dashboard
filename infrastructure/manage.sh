@@ -317,7 +317,15 @@ main() {
             ensure_docker
             ensure_compose_file
             ensure_env_file
-            docker_compose down
+            docker_compose down --remove-orphans
+            # Clean up any containers by name that docker compose may have missed
+            # (e.g. created outside compose or with a different project name)
+            for name in cliproxyapi-postgres cliproxyapi cliproxyapi-docker-proxy cliproxyapi-dashboard; do
+                if docker inspect "$name" >/dev/null 2>&1; then
+                    echo "[INFO] Removing leftover container: $name"
+                    docker rm -f "$name" 2>/dev/null || true
+                fi
+            done
             ;;
         restart)
             ensure_docker
