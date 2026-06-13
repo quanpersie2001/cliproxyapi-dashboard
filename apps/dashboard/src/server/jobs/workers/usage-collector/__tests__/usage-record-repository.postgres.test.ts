@@ -100,14 +100,21 @@ async function ensureUsageRecordDependencies(prisma: PrismaClient): Promise<void
       "userId" TEXT,
       "endpoint" TEXT,
       "model" TEXT NOT NULL,
+      "modelAlias" TEXT,
       "source" TEXT NOT NULL,
       "timestamp" TIMESTAMP(3) NOT NULL,
       "latencyMs" INTEGER NOT NULL DEFAULT 0,
+      "ttftMs" INTEGER,
       "inputTokens" INTEGER NOT NULL DEFAULT 0,
       "outputTokens" INTEGER NOT NULL DEFAULT 0,
       "reasoningTokens" INTEGER NOT NULL DEFAULT 0,
       "cachedTokens" INTEGER NOT NULL DEFAULT 0,
+      "cacheReadTokens" INTEGER NOT NULL DEFAULT 0,
+      "cacheCreationTokens" INTEGER NOT NULL DEFAULT 0,
       "totalTokens" INTEGER NOT NULL DEFAULT 0,
+      "reasoningEffort" TEXT,
+      "serviceTier" TEXT,
+      "executorType" TEXT,
       "failed" BOOLEAN NOT NULL DEFAULT FALSE,
       "collectedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
     );
@@ -124,20 +131,31 @@ async function ensureUsageRecordDependencies(prisma: PrismaClient): Promise<void
     ADD COLUMN IF NOT EXISTS "userId" TEXT,
     ADD COLUMN IF NOT EXISTS "endpoint" TEXT,
     ADD COLUMN IF NOT EXISTS "model" TEXT,
+    ADD COLUMN IF NOT EXISTS "modelAlias" TEXT,
     ADD COLUMN IF NOT EXISTS "source" TEXT,
     ADD COLUMN IF NOT EXISTS "timestamp" TIMESTAMP(3),
     ADD COLUMN IF NOT EXISTS "latencyMs" INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS "ttftMs" INTEGER,
     ADD COLUMN IF NOT EXISTS "inputTokens" INTEGER NOT NULL DEFAULT 0,
     ADD COLUMN IF NOT EXISTS "outputTokens" INTEGER NOT NULL DEFAULT 0,
     ADD COLUMN IF NOT EXISTS "reasoningTokens" INTEGER NOT NULL DEFAULT 0,
     ADD COLUMN IF NOT EXISTS "cachedTokens" INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS "cacheReadTokens" INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS "cacheCreationTokens" INTEGER NOT NULL DEFAULT 0,
     ADD COLUMN IF NOT EXISTS "totalTokens" INTEGER NOT NULL DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS "reasoningEffort" TEXT,
+    ADD COLUMN IF NOT EXISTS "serviceTier" TEXT,
+    ADD COLUMN IF NOT EXISTS "executorType" TEXT,
     ADD COLUMN IF NOT EXISTS "failed" BOOLEAN NOT NULL DEFAULT FALSE,
     ADD COLUMN IF NOT EXISTS "collectedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
   `);
 
   await prisma.$executeRawUnsafe(`
-    CREATE UNIQUE INDEX IF NOT EXISTS "usage_records_eventKey_key" ON "usage_records"("eventKey");
+    DROP INDEX IF EXISTS "usage_records_eventKey_key";
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    CREATE INDEX IF NOT EXISTS "usage_records_eventKey_idx" ON "usage_records"("eventKey");
   `);
 
   await prisma.$executeRawUnsafe(`
@@ -154,15 +172,22 @@ function createEvent(eventKey: string, source: string): NormalizedQueuedUsageEve
     authIndex: `auth-${eventKey}`,
     apiGroupKey: "/v1/chat/completions",
     model: "gpt-4.1",
+    modelAlias: null,
     source,
     timestamp: new Date("2026-05-05T16:00:00.000Z"),
     failed: false,
     latencyMs: 120,
+    ttftMs: null,
+    reasoningEffort: null,
+    serviceTier: null,
+    executorType: null,
     tokens: {
       inputTokens: 10,
       outputTokens: 20,
       reasoningTokens: 0,
       cachedTokens: 0,
+      cacheReadTokens: 0,
+      cacheCreationTokens: 0,
       totalTokens: 30,
     },
   };
@@ -186,7 +211,7 @@ describeIfDatabase("PrismaUsageRecordRepository (Postgres integration)", () => {
     await prisma?.$disconnect();
   });
 
-  it("skips duplicate eventKey inserts across writes without failing the batch", async () => {
+  it("skips exact duplicate writes by composite key without requiring unique eventKey", async () => {
     const source = `vitest_eventkey_${Date.now()}_${Math.random().toString(16).slice(2)}`;
     const duplicateEventKey = `evt_dup_${Date.now()}`;
 
@@ -217,6 +242,49 @@ describeIfDatabase("PrismaUsageRecordRepository (Postgres integration)", () => {
     expect(firstWriteCount).toBe(1);
     expect(secondWriteCount).toBe(0);
     expect(rows).toHaveLength(1);
+
+    await prisma.usageRecord.deleteMany({
+      where: {
+        eventKey: duplicateEventKey,
+      },
+    });
+  });
+
+  it("persists shared request/event keys when model segments differ", async () => {
+    const source = `vitest_shared_request_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+    const duplicateEventKey = `evt_shared_${Date.now()}`;
+
+    const repository = new PrismaUsageRecordRepository({
+      prisma: prisma as never,
+      ownershipCacheTtlMs: 0,
+    });
+
+    await prisma.usageRecord.deleteMany({
+      where: {
+        eventKey: duplicateEventKey,
+      },
+    });
+
+    const count = await repository.persistNormalizedEvents([
+      createEvent(duplicateEventKey, source),
+      {
+        ...createEvent(duplicateEventKey, source),
+        model: "gpt-4.1-mini",
+      },
+    ]);
+
+    const rows = await prisma.usageRecord.findMany({
+      where: {
+        eventKey: duplicateEventKey,
+      },
+      orderBy: {
+        model: "asc",
+      },
+    });
+
+    expect(count).toBe(2);
+    expect(rows).toHaveLength(2);
+    expect(rows.map((row) => row.model)).toEqual(["gpt-4.1", "gpt-4.1-mini"]);
 
     await prisma.usageRecord.deleteMany({
       where: {

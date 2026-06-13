@@ -133,6 +133,14 @@ describe("RespQueueSource", () => {
       8317,
     ]);
   });
+
+  it("defaults runtime LPOP to the CLIProxyAPI usage channel", async () => {
+    const runtime = await loadRuntimeRespFactory();
+
+    expect(runtime.resolveRespQueueForTests(undefined)).toBe("usage");
+    expect(runtime.resolveRespQueueForTests("")).toBe("usage");
+    expect(runtime.resolveRespQueueForTests("custom-usage")).toBe("custom-usage");
+  });
 });
 
 async function startFakeRespServer(
@@ -172,6 +180,7 @@ async function loadRuntimeRespFactory(): Promise<{
     create(options: { address: string; signal?: AbortSignal }): Promise<RespQueueClient>;
   };
   splitRespAddressForTests: (address: string) => [string, number];
+  resolveRespQueueForTests: (queue: string | undefined) => string;
 }> {
   const originalEnv = {
     DATABASE_URL: process.env.DATABASE_URL,

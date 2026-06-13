@@ -28,19 +28,25 @@ export type AggregateUsageRecord = {
 
 export type UsageRecordAvgAggregateOutputType = {
   latencyMs: number | null
+  ttftMs: number | null
   inputTokens: number | null
   outputTokens: number | null
   reasoningTokens: number | null
   cachedTokens: number | null
+  cacheReadTokens: number | null
+  cacheCreationTokens: number | null
   totalTokens: number | null
 }
 
 export type UsageRecordSumAggregateOutputType = {
   latencyMs: number | null
+  ttftMs: number | null
   inputTokens: number | null
   outputTokens: number | null
   reasoningTokens: number | null
   cachedTokens: number | null
+  cacheReadTokens: number | null
+  cacheCreationTokens: number | null
   totalTokens: number | null
 }
 
@@ -55,14 +61,21 @@ export type UsageRecordMinAggregateOutputType = {
   userId: string | null
   endpoint: string | null
   model: string | null
+  modelAlias: string | null
   source: string | null
   timestamp: Date | null
   latencyMs: number | null
+  ttftMs: number | null
   inputTokens: number | null
   outputTokens: number | null
   reasoningTokens: number | null
   cachedTokens: number | null
+  cacheReadTokens: number | null
+  cacheCreationTokens: number | null
   totalTokens: number | null
+  reasoningEffort: string | null
+  serviceTier: string | null
+  executorType: string | null
   failed: boolean | null
   collectedAt: Date | null
 }
@@ -78,14 +91,21 @@ export type UsageRecordMaxAggregateOutputType = {
   userId: string | null
   endpoint: string | null
   model: string | null
+  modelAlias: string | null
   source: string | null
   timestamp: Date | null
   latencyMs: number | null
+  ttftMs: number | null
   inputTokens: number | null
   outputTokens: number | null
   reasoningTokens: number | null
   cachedTokens: number | null
+  cacheReadTokens: number | null
+  cacheCreationTokens: number | null
   totalTokens: number | null
+  reasoningEffort: string | null
+  serviceTier: string | null
+  executorType: string | null
   failed: boolean | null
   collectedAt: Date | null
 }
@@ -101,14 +121,21 @@ export type UsageRecordCountAggregateOutputType = {
   userId: number
   endpoint: number
   model: number
+  modelAlias: number
   source: number
   timestamp: number
   latencyMs: number
+  ttftMs: number
   inputTokens: number
   outputTokens: number
   reasoningTokens: number
   cachedTokens: number
+  cacheReadTokens: number
+  cacheCreationTokens: number
   totalTokens: number
+  reasoningEffort: number
+  serviceTier: number
+  executorType: number
   failed: number
   collectedAt: number
   _all: number
@@ -117,19 +144,25 @@ export type UsageRecordCountAggregateOutputType = {
 
 export type UsageRecordAvgAggregateInputType = {
   latencyMs?: true
+  ttftMs?: true
   inputTokens?: true
   outputTokens?: true
   reasoningTokens?: true
   cachedTokens?: true
+  cacheReadTokens?: true
+  cacheCreationTokens?: true
   totalTokens?: true
 }
 
 export type UsageRecordSumAggregateInputType = {
   latencyMs?: true
+  ttftMs?: true
   inputTokens?: true
   outputTokens?: true
   reasoningTokens?: true
   cachedTokens?: true
+  cacheReadTokens?: true
+  cacheCreationTokens?: true
   totalTokens?: true
 }
 
@@ -144,14 +177,21 @@ export type UsageRecordMinAggregateInputType = {
   userId?: true
   endpoint?: true
   model?: true
+  modelAlias?: true
   source?: true
   timestamp?: true
   latencyMs?: true
+  ttftMs?: true
   inputTokens?: true
   outputTokens?: true
   reasoningTokens?: true
   cachedTokens?: true
+  cacheReadTokens?: true
+  cacheCreationTokens?: true
   totalTokens?: true
+  reasoningEffort?: true
+  serviceTier?: true
+  executorType?: true
   failed?: true
   collectedAt?: true
 }
@@ -167,14 +207,21 @@ export type UsageRecordMaxAggregateInputType = {
   userId?: true
   endpoint?: true
   model?: true
+  modelAlias?: true
   source?: true
   timestamp?: true
   latencyMs?: true
+  ttftMs?: true
   inputTokens?: true
   outputTokens?: true
   reasoningTokens?: true
   cachedTokens?: true
+  cacheReadTokens?: true
+  cacheCreationTokens?: true
   totalTokens?: true
+  reasoningEffort?: true
+  serviceTier?: true
+  executorType?: true
   failed?: true
   collectedAt?: true
 }
@@ -190,14 +237,21 @@ export type UsageRecordCountAggregateInputType = {
   userId?: true
   endpoint?: true
   model?: true
+  modelAlias?: true
   source?: true
   timestamp?: true
   latencyMs?: true
+  ttftMs?: true
   inputTokens?: true
   outputTokens?: true
   reasoningTokens?: true
   cachedTokens?: true
+  cacheReadTokens?: true
+  cacheCreationTokens?: true
   totalTokens?: true
+  reasoningEffort?: true
+  serviceTier?: true
+  executorType?: true
   failed?: true
   collectedAt?: true
   _all?: true
@@ -300,14 +354,21 @@ export type UsageRecordGroupByOutputType = {
   userId: string | null
   endpoint: string | null
   model: string
+  modelAlias: string | null
   source: string
   timestamp: Date
   latencyMs: number
+  ttftMs: number | null
   inputTokens: number
   outputTokens: number
   reasoningTokens: number
   cachedTokens: number
+  cacheReadTokens: number
+  cacheCreationTokens: number
   totalTokens: number
+  reasoningEffort: string | null
+  serviceTier: string | null
+  executorType: string | null
   failed: boolean
   collectedAt: Date
   _count: UsageRecordCountAggregateOutputType | null
@@ -346,14 +407,21 @@ export type UsageRecordWhereInput = {
   userId?: Prisma.StringNullableFilter<"UsageRecord"> | string | null
   endpoint?: Prisma.StringNullableFilter<"UsageRecord"> | string | null
   model?: Prisma.StringFilter<"UsageRecord"> | string
+  modelAlias?: Prisma.StringNullableFilter<"UsageRecord"> | string | null
   source?: Prisma.StringFilter<"UsageRecord"> | string
   timestamp?: Prisma.DateTimeFilter<"UsageRecord"> | Date | string
   latencyMs?: Prisma.IntFilter<"UsageRecord"> | number
+  ttftMs?: Prisma.IntNullableFilter<"UsageRecord"> | number | null
   inputTokens?: Prisma.IntFilter<"UsageRecord"> | number
   outputTokens?: Prisma.IntFilter<"UsageRecord"> | number
   reasoningTokens?: Prisma.IntFilter<"UsageRecord"> | number
   cachedTokens?: Prisma.IntFilter<"UsageRecord"> | number
+  cacheReadTokens?: Prisma.IntFilter<"UsageRecord"> | number
+  cacheCreationTokens?: Prisma.IntFilter<"UsageRecord"> | number
   totalTokens?: Prisma.IntFilter<"UsageRecord"> | number
+  reasoningEffort?: Prisma.StringNullableFilter<"UsageRecord"> | string | null
+  serviceTier?: Prisma.StringNullableFilter<"UsageRecord"> | string | null
+  executorType?: Prisma.StringNullableFilter<"UsageRecord"> | string | null
   failed?: Prisma.BoolFilter<"UsageRecord"> | boolean
   collectedAt?: Prisma.DateTimeFilter<"UsageRecord"> | Date | string
   user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
@@ -371,14 +439,21 @@ export type UsageRecordOrderByWithRelationInput = {
   userId?: Prisma.SortOrderInput | Prisma.SortOrder
   endpoint?: Prisma.SortOrderInput | Prisma.SortOrder
   model?: Prisma.SortOrder
+  modelAlias?: Prisma.SortOrderInput | Prisma.SortOrder
   source?: Prisma.SortOrder
   timestamp?: Prisma.SortOrder
   latencyMs?: Prisma.SortOrder
+  ttftMs?: Prisma.SortOrderInput | Prisma.SortOrder
   inputTokens?: Prisma.SortOrder
   outputTokens?: Prisma.SortOrder
   reasoningTokens?: Prisma.SortOrder
   cachedTokens?: Prisma.SortOrder
+  cacheReadTokens?: Prisma.SortOrder
+  cacheCreationTokens?: Prisma.SortOrder
   totalTokens?: Prisma.SortOrder
+  reasoningEffort?: Prisma.SortOrderInput | Prisma.SortOrder
+  serviceTier?: Prisma.SortOrderInput | Prisma.SortOrder
+  executorType?: Prisma.SortOrderInput | Prisma.SortOrder
   failed?: Prisma.SortOrder
   collectedAt?: Prisma.SortOrder
   user?: Prisma.UserOrderByWithRelationInput
@@ -387,11 +462,11 @@ export type UsageRecordOrderByWithRelationInput = {
 
 export type UsageRecordWhereUniqueInput = Prisma.AtLeast<{
   id?: string
-  eventKey?: string
   usage_dedup_key?: Prisma.UsageRecordUsage_dedup_keyCompoundUniqueInput
   AND?: Prisma.UsageRecordWhereInput | Prisma.UsageRecordWhereInput[]
   OR?: Prisma.UsageRecordWhereInput[]
   NOT?: Prisma.UsageRecordWhereInput | Prisma.UsageRecordWhereInput[]
+  eventKey?: Prisma.StringNullableFilter<"UsageRecord"> | string | null
   requestId?: Prisma.StringNullableFilter<"UsageRecord"> | string | null
   provider?: Prisma.StringNullableFilter<"UsageRecord"> | string | null
   authType?: Prisma.StringNullableFilter<"UsageRecord"> | string | null
@@ -400,19 +475,26 @@ export type UsageRecordWhereUniqueInput = Prisma.AtLeast<{
   userId?: Prisma.StringNullableFilter<"UsageRecord"> | string | null
   endpoint?: Prisma.StringNullableFilter<"UsageRecord"> | string | null
   model?: Prisma.StringFilter<"UsageRecord"> | string
+  modelAlias?: Prisma.StringNullableFilter<"UsageRecord"> | string | null
   source?: Prisma.StringFilter<"UsageRecord"> | string
   timestamp?: Prisma.DateTimeFilter<"UsageRecord"> | Date | string
   latencyMs?: Prisma.IntFilter<"UsageRecord"> | number
+  ttftMs?: Prisma.IntNullableFilter<"UsageRecord"> | number | null
   inputTokens?: Prisma.IntFilter<"UsageRecord"> | number
   outputTokens?: Prisma.IntFilter<"UsageRecord"> | number
   reasoningTokens?: Prisma.IntFilter<"UsageRecord"> | number
   cachedTokens?: Prisma.IntFilter<"UsageRecord"> | number
+  cacheReadTokens?: Prisma.IntFilter<"UsageRecord"> | number
+  cacheCreationTokens?: Prisma.IntFilter<"UsageRecord"> | number
   totalTokens?: Prisma.IntFilter<"UsageRecord"> | number
+  reasoningEffort?: Prisma.StringNullableFilter<"UsageRecord"> | string | null
+  serviceTier?: Prisma.StringNullableFilter<"UsageRecord"> | string | null
+  executorType?: Prisma.StringNullableFilter<"UsageRecord"> | string | null
   failed?: Prisma.BoolFilter<"UsageRecord"> | boolean
   collectedAt?: Prisma.DateTimeFilter<"UsageRecord"> | Date | string
   user?: Prisma.XOR<Prisma.UserNullableScalarRelationFilter, Prisma.UserWhereInput> | null
   apiKey?: Prisma.XOR<Prisma.UserApiKeyNullableScalarRelationFilter, Prisma.UserApiKeyWhereInput> | null
-}, "id" | "eventKey" | "usage_dedup_key">
+}, "id" | "usage_dedup_key">
 
 export type UsageRecordOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
@@ -425,14 +507,21 @@ export type UsageRecordOrderByWithAggregationInput = {
   userId?: Prisma.SortOrderInput | Prisma.SortOrder
   endpoint?: Prisma.SortOrderInput | Prisma.SortOrder
   model?: Prisma.SortOrder
+  modelAlias?: Prisma.SortOrderInput | Prisma.SortOrder
   source?: Prisma.SortOrder
   timestamp?: Prisma.SortOrder
   latencyMs?: Prisma.SortOrder
+  ttftMs?: Prisma.SortOrderInput | Prisma.SortOrder
   inputTokens?: Prisma.SortOrder
   outputTokens?: Prisma.SortOrder
   reasoningTokens?: Prisma.SortOrder
   cachedTokens?: Prisma.SortOrder
+  cacheReadTokens?: Prisma.SortOrder
+  cacheCreationTokens?: Prisma.SortOrder
   totalTokens?: Prisma.SortOrder
+  reasoningEffort?: Prisma.SortOrderInput | Prisma.SortOrder
+  serviceTier?: Prisma.SortOrderInput | Prisma.SortOrder
+  executorType?: Prisma.SortOrderInput | Prisma.SortOrder
   failed?: Prisma.SortOrder
   collectedAt?: Prisma.SortOrder
   _count?: Prisma.UsageRecordCountOrderByAggregateInput
@@ -456,14 +545,21 @@ export type UsageRecordScalarWhereWithAggregatesInput = {
   userId?: Prisma.StringNullableWithAggregatesFilter<"UsageRecord"> | string | null
   endpoint?: Prisma.StringNullableWithAggregatesFilter<"UsageRecord"> | string | null
   model?: Prisma.StringWithAggregatesFilter<"UsageRecord"> | string
+  modelAlias?: Prisma.StringNullableWithAggregatesFilter<"UsageRecord"> | string | null
   source?: Prisma.StringWithAggregatesFilter<"UsageRecord"> | string
   timestamp?: Prisma.DateTimeWithAggregatesFilter<"UsageRecord"> | Date | string
   latencyMs?: Prisma.IntWithAggregatesFilter<"UsageRecord"> | number
+  ttftMs?: Prisma.IntNullableWithAggregatesFilter<"UsageRecord"> | number | null
   inputTokens?: Prisma.IntWithAggregatesFilter<"UsageRecord"> | number
   outputTokens?: Prisma.IntWithAggregatesFilter<"UsageRecord"> | number
   reasoningTokens?: Prisma.IntWithAggregatesFilter<"UsageRecord"> | number
   cachedTokens?: Prisma.IntWithAggregatesFilter<"UsageRecord"> | number
+  cacheReadTokens?: Prisma.IntWithAggregatesFilter<"UsageRecord"> | number
+  cacheCreationTokens?: Prisma.IntWithAggregatesFilter<"UsageRecord"> | number
   totalTokens?: Prisma.IntWithAggregatesFilter<"UsageRecord"> | number
+  reasoningEffort?: Prisma.StringNullableWithAggregatesFilter<"UsageRecord"> | string | null
+  serviceTier?: Prisma.StringNullableWithAggregatesFilter<"UsageRecord"> | string | null
+  executorType?: Prisma.StringNullableWithAggregatesFilter<"UsageRecord"> | string | null
   failed?: Prisma.BoolWithAggregatesFilter<"UsageRecord"> | boolean
   collectedAt?: Prisma.DateTimeWithAggregatesFilter<"UsageRecord"> | Date | string
 }
@@ -477,14 +573,21 @@ export type UsageRecordCreateInput = {
   authIndex: string
   endpoint?: string | null
   model: string
+  modelAlias?: string | null
   source: string
   timestamp: Date | string
   latencyMs?: number
+  ttftMs?: number | null
   inputTokens?: number
   outputTokens?: number
   reasoningTokens?: number
   cachedTokens?: number
+  cacheReadTokens?: number
+  cacheCreationTokens?: number
   totalTokens?: number
+  reasoningEffort?: string | null
+  serviceTier?: string | null
+  executorType?: string | null
   failed?: boolean
   collectedAt?: Date | string
   user?: Prisma.UserCreateNestedOneWithoutUsageRecordsInput
@@ -502,14 +605,21 @@ export type UsageRecordUncheckedCreateInput = {
   userId?: string | null
   endpoint?: string | null
   model: string
+  modelAlias?: string | null
   source: string
   timestamp: Date | string
   latencyMs?: number
+  ttftMs?: number | null
   inputTokens?: number
   outputTokens?: number
   reasoningTokens?: number
   cachedTokens?: number
+  cacheReadTokens?: number
+  cacheCreationTokens?: number
   totalTokens?: number
+  reasoningEffort?: string | null
+  serviceTier?: string | null
+  executorType?: string | null
   failed?: boolean
   collectedAt?: Date | string
 }
@@ -523,14 +633,21 @@ export type UsageRecordUpdateInput = {
   authIndex?: Prisma.StringFieldUpdateOperationsInput | string
   endpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.StringFieldUpdateOperationsInput | string
+  modelAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.StringFieldUpdateOperationsInput | string
   timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   latencyMs?: Prisma.IntFieldUpdateOperationsInput | number
+  ttftMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   inputTokens?: Prisma.IntFieldUpdateOperationsInput | number
   outputTokens?: Prisma.IntFieldUpdateOperationsInput | number
   reasoningTokens?: Prisma.IntFieldUpdateOperationsInput | number
   cachedTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  cacheReadTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  cacheCreationTokens?: Prisma.IntFieldUpdateOperationsInput | number
   totalTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  reasoningEffort?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  serviceTier?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  executorType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   failed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   collectedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneWithoutUsageRecordsNestedInput
@@ -548,14 +665,21 @@ export type UsageRecordUncheckedUpdateInput = {
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   endpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.StringFieldUpdateOperationsInput | string
+  modelAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.StringFieldUpdateOperationsInput | string
   timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   latencyMs?: Prisma.IntFieldUpdateOperationsInput | number
+  ttftMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   inputTokens?: Prisma.IntFieldUpdateOperationsInput | number
   outputTokens?: Prisma.IntFieldUpdateOperationsInput | number
   reasoningTokens?: Prisma.IntFieldUpdateOperationsInput | number
   cachedTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  cacheReadTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  cacheCreationTokens?: Prisma.IntFieldUpdateOperationsInput | number
   totalTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  reasoningEffort?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  serviceTier?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  executorType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   failed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   collectedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -571,14 +695,21 @@ export type UsageRecordCreateManyInput = {
   userId?: string | null
   endpoint?: string | null
   model: string
+  modelAlias?: string | null
   source: string
   timestamp: Date | string
   latencyMs?: number
+  ttftMs?: number | null
   inputTokens?: number
   outputTokens?: number
   reasoningTokens?: number
   cachedTokens?: number
+  cacheReadTokens?: number
+  cacheCreationTokens?: number
   totalTokens?: number
+  reasoningEffort?: string | null
+  serviceTier?: string | null
+  executorType?: string | null
   failed?: boolean
   collectedAt?: Date | string
 }
@@ -592,14 +723,21 @@ export type UsageRecordUpdateManyMutationInput = {
   authIndex?: Prisma.StringFieldUpdateOperationsInput | string
   endpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.StringFieldUpdateOperationsInput | string
+  modelAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.StringFieldUpdateOperationsInput | string
   timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   latencyMs?: Prisma.IntFieldUpdateOperationsInput | number
+  ttftMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   inputTokens?: Prisma.IntFieldUpdateOperationsInput | number
   outputTokens?: Prisma.IntFieldUpdateOperationsInput | number
   reasoningTokens?: Prisma.IntFieldUpdateOperationsInput | number
   cachedTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  cacheReadTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  cacheCreationTokens?: Prisma.IntFieldUpdateOperationsInput | number
   totalTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  reasoningEffort?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  serviceTier?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  executorType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   failed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   collectedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -615,14 +753,21 @@ export type UsageRecordUncheckedUpdateManyInput = {
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   endpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.StringFieldUpdateOperationsInput | string
+  modelAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.StringFieldUpdateOperationsInput | string
   timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   latencyMs?: Prisma.IntFieldUpdateOperationsInput | number
+  ttftMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   inputTokens?: Prisma.IntFieldUpdateOperationsInput | number
   outputTokens?: Prisma.IntFieldUpdateOperationsInput | number
   reasoningTokens?: Prisma.IntFieldUpdateOperationsInput | number
   cachedTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  cacheReadTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  cacheCreationTokens?: Prisma.IntFieldUpdateOperationsInput | number
   totalTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  reasoningEffort?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  serviceTier?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  executorType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   failed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   collectedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -656,24 +801,34 @@ export type UsageRecordCountOrderByAggregateInput = {
   userId?: Prisma.SortOrder
   endpoint?: Prisma.SortOrder
   model?: Prisma.SortOrder
+  modelAlias?: Prisma.SortOrder
   source?: Prisma.SortOrder
   timestamp?: Prisma.SortOrder
   latencyMs?: Prisma.SortOrder
+  ttftMs?: Prisma.SortOrder
   inputTokens?: Prisma.SortOrder
   outputTokens?: Prisma.SortOrder
   reasoningTokens?: Prisma.SortOrder
   cachedTokens?: Prisma.SortOrder
+  cacheReadTokens?: Prisma.SortOrder
+  cacheCreationTokens?: Prisma.SortOrder
   totalTokens?: Prisma.SortOrder
+  reasoningEffort?: Prisma.SortOrder
+  serviceTier?: Prisma.SortOrder
+  executorType?: Prisma.SortOrder
   failed?: Prisma.SortOrder
   collectedAt?: Prisma.SortOrder
 }
 
 export type UsageRecordAvgOrderByAggregateInput = {
   latencyMs?: Prisma.SortOrder
+  ttftMs?: Prisma.SortOrder
   inputTokens?: Prisma.SortOrder
   outputTokens?: Prisma.SortOrder
   reasoningTokens?: Prisma.SortOrder
   cachedTokens?: Prisma.SortOrder
+  cacheReadTokens?: Prisma.SortOrder
+  cacheCreationTokens?: Prisma.SortOrder
   totalTokens?: Prisma.SortOrder
 }
 
@@ -688,14 +843,21 @@ export type UsageRecordMaxOrderByAggregateInput = {
   userId?: Prisma.SortOrder
   endpoint?: Prisma.SortOrder
   model?: Prisma.SortOrder
+  modelAlias?: Prisma.SortOrder
   source?: Prisma.SortOrder
   timestamp?: Prisma.SortOrder
   latencyMs?: Prisma.SortOrder
+  ttftMs?: Prisma.SortOrder
   inputTokens?: Prisma.SortOrder
   outputTokens?: Prisma.SortOrder
   reasoningTokens?: Prisma.SortOrder
   cachedTokens?: Prisma.SortOrder
+  cacheReadTokens?: Prisma.SortOrder
+  cacheCreationTokens?: Prisma.SortOrder
   totalTokens?: Prisma.SortOrder
+  reasoningEffort?: Prisma.SortOrder
+  serviceTier?: Prisma.SortOrder
+  executorType?: Prisma.SortOrder
   failed?: Prisma.SortOrder
   collectedAt?: Prisma.SortOrder
 }
@@ -711,24 +873,34 @@ export type UsageRecordMinOrderByAggregateInput = {
   userId?: Prisma.SortOrder
   endpoint?: Prisma.SortOrder
   model?: Prisma.SortOrder
+  modelAlias?: Prisma.SortOrder
   source?: Prisma.SortOrder
   timestamp?: Prisma.SortOrder
   latencyMs?: Prisma.SortOrder
+  ttftMs?: Prisma.SortOrder
   inputTokens?: Prisma.SortOrder
   outputTokens?: Prisma.SortOrder
   reasoningTokens?: Prisma.SortOrder
   cachedTokens?: Prisma.SortOrder
+  cacheReadTokens?: Prisma.SortOrder
+  cacheCreationTokens?: Prisma.SortOrder
   totalTokens?: Prisma.SortOrder
+  reasoningEffort?: Prisma.SortOrder
+  serviceTier?: Prisma.SortOrder
+  executorType?: Prisma.SortOrder
   failed?: Prisma.SortOrder
   collectedAt?: Prisma.SortOrder
 }
 
 export type UsageRecordSumOrderByAggregateInput = {
   latencyMs?: Prisma.SortOrder
+  ttftMs?: Prisma.SortOrder
   inputTokens?: Prisma.SortOrder
   outputTokens?: Prisma.SortOrder
   reasoningTokens?: Prisma.SortOrder
   cachedTokens?: Prisma.SortOrder
+  cacheReadTokens?: Prisma.SortOrder
+  cacheCreationTokens?: Prisma.SortOrder
   totalTokens?: Prisma.SortOrder
 }
 
@@ -816,6 +988,14 @@ export type UsageRecordUncheckedUpdateManyWithoutApiKeyNestedInput = {
   deleteMany?: Prisma.UsageRecordScalarWhereInput | Prisma.UsageRecordScalarWhereInput[]
 }
 
+export type NullableIntFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
+}
+
 export type UsageRecordCreateWithoutUserInput = {
   id?: string
   eventKey?: string | null
@@ -825,14 +1005,21 @@ export type UsageRecordCreateWithoutUserInput = {
   authIndex: string
   endpoint?: string | null
   model: string
+  modelAlias?: string | null
   source: string
   timestamp: Date | string
   latencyMs?: number
+  ttftMs?: number | null
   inputTokens?: number
   outputTokens?: number
   reasoningTokens?: number
   cachedTokens?: number
+  cacheReadTokens?: number
+  cacheCreationTokens?: number
   totalTokens?: number
+  reasoningEffort?: string | null
+  serviceTier?: string | null
+  executorType?: string | null
   failed?: boolean
   collectedAt?: Date | string
   apiKey?: Prisma.UserApiKeyCreateNestedOneWithoutUsageRecordsInput
@@ -848,14 +1035,21 @@ export type UsageRecordUncheckedCreateWithoutUserInput = {
   apiKeyId?: string | null
   endpoint?: string | null
   model: string
+  modelAlias?: string | null
   source: string
   timestamp: Date | string
   latencyMs?: number
+  ttftMs?: number | null
   inputTokens?: number
   outputTokens?: number
   reasoningTokens?: number
   cachedTokens?: number
+  cacheReadTokens?: number
+  cacheCreationTokens?: number
   totalTokens?: number
+  reasoningEffort?: string | null
+  serviceTier?: string | null
+  executorType?: string | null
   failed?: boolean
   collectedAt?: Date | string
 }
@@ -900,14 +1094,21 @@ export type UsageRecordScalarWhereInput = {
   userId?: Prisma.StringNullableFilter<"UsageRecord"> | string | null
   endpoint?: Prisma.StringNullableFilter<"UsageRecord"> | string | null
   model?: Prisma.StringFilter<"UsageRecord"> | string
+  modelAlias?: Prisma.StringNullableFilter<"UsageRecord"> | string | null
   source?: Prisma.StringFilter<"UsageRecord"> | string
   timestamp?: Prisma.DateTimeFilter<"UsageRecord"> | Date | string
   latencyMs?: Prisma.IntFilter<"UsageRecord"> | number
+  ttftMs?: Prisma.IntNullableFilter<"UsageRecord"> | number | null
   inputTokens?: Prisma.IntFilter<"UsageRecord"> | number
   outputTokens?: Prisma.IntFilter<"UsageRecord"> | number
   reasoningTokens?: Prisma.IntFilter<"UsageRecord"> | number
   cachedTokens?: Prisma.IntFilter<"UsageRecord"> | number
+  cacheReadTokens?: Prisma.IntFilter<"UsageRecord"> | number
+  cacheCreationTokens?: Prisma.IntFilter<"UsageRecord"> | number
   totalTokens?: Prisma.IntFilter<"UsageRecord"> | number
+  reasoningEffort?: Prisma.StringNullableFilter<"UsageRecord"> | string | null
+  serviceTier?: Prisma.StringNullableFilter<"UsageRecord"> | string | null
+  executorType?: Prisma.StringNullableFilter<"UsageRecord"> | string | null
   failed?: Prisma.BoolFilter<"UsageRecord"> | boolean
   collectedAt?: Prisma.DateTimeFilter<"UsageRecord"> | Date | string
 }
@@ -921,14 +1122,21 @@ export type UsageRecordCreateWithoutApiKeyInput = {
   authIndex: string
   endpoint?: string | null
   model: string
+  modelAlias?: string | null
   source: string
   timestamp: Date | string
   latencyMs?: number
+  ttftMs?: number | null
   inputTokens?: number
   outputTokens?: number
   reasoningTokens?: number
   cachedTokens?: number
+  cacheReadTokens?: number
+  cacheCreationTokens?: number
   totalTokens?: number
+  reasoningEffort?: string | null
+  serviceTier?: string | null
+  executorType?: string | null
   failed?: boolean
   collectedAt?: Date | string
   user?: Prisma.UserCreateNestedOneWithoutUsageRecordsInput
@@ -944,14 +1152,21 @@ export type UsageRecordUncheckedCreateWithoutApiKeyInput = {
   userId?: string | null
   endpoint?: string | null
   model: string
+  modelAlias?: string | null
   source: string
   timestamp: Date | string
   latencyMs?: number
+  ttftMs?: number | null
   inputTokens?: number
   outputTokens?: number
   reasoningTokens?: number
   cachedTokens?: number
+  cacheReadTokens?: number
+  cacheCreationTokens?: number
   totalTokens?: number
+  reasoningEffort?: string | null
+  serviceTier?: string | null
+  executorType?: string | null
   failed?: boolean
   collectedAt?: Date | string
 }
@@ -992,14 +1207,21 @@ export type UsageRecordCreateManyUserInput = {
   apiKeyId?: string | null
   endpoint?: string | null
   model: string
+  modelAlias?: string | null
   source: string
   timestamp: Date | string
   latencyMs?: number
+  ttftMs?: number | null
   inputTokens?: number
   outputTokens?: number
   reasoningTokens?: number
   cachedTokens?: number
+  cacheReadTokens?: number
+  cacheCreationTokens?: number
   totalTokens?: number
+  reasoningEffort?: string | null
+  serviceTier?: string | null
+  executorType?: string | null
   failed?: boolean
   collectedAt?: Date | string
 }
@@ -1013,14 +1235,21 @@ export type UsageRecordUpdateWithoutUserInput = {
   authIndex?: Prisma.StringFieldUpdateOperationsInput | string
   endpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.StringFieldUpdateOperationsInput | string
+  modelAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.StringFieldUpdateOperationsInput | string
   timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   latencyMs?: Prisma.IntFieldUpdateOperationsInput | number
+  ttftMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   inputTokens?: Prisma.IntFieldUpdateOperationsInput | number
   outputTokens?: Prisma.IntFieldUpdateOperationsInput | number
   reasoningTokens?: Prisma.IntFieldUpdateOperationsInput | number
   cachedTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  cacheReadTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  cacheCreationTokens?: Prisma.IntFieldUpdateOperationsInput | number
   totalTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  reasoningEffort?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  serviceTier?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  executorType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   failed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   collectedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   apiKey?: Prisma.UserApiKeyUpdateOneWithoutUsageRecordsNestedInput
@@ -1036,14 +1265,21 @@ export type UsageRecordUncheckedUpdateWithoutUserInput = {
   apiKeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   endpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.StringFieldUpdateOperationsInput | string
+  modelAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.StringFieldUpdateOperationsInput | string
   timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   latencyMs?: Prisma.IntFieldUpdateOperationsInput | number
+  ttftMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   inputTokens?: Prisma.IntFieldUpdateOperationsInput | number
   outputTokens?: Prisma.IntFieldUpdateOperationsInput | number
   reasoningTokens?: Prisma.IntFieldUpdateOperationsInput | number
   cachedTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  cacheReadTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  cacheCreationTokens?: Prisma.IntFieldUpdateOperationsInput | number
   totalTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  reasoningEffort?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  serviceTier?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  executorType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   failed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   collectedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1058,14 +1294,21 @@ export type UsageRecordUncheckedUpdateManyWithoutUserInput = {
   apiKeyId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   endpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.StringFieldUpdateOperationsInput | string
+  modelAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.StringFieldUpdateOperationsInput | string
   timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   latencyMs?: Prisma.IntFieldUpdateOperationsInput | number
+  ttftMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   inputTokens?: Prisma.IntFieldUpdateOperationsInput | number
   outputTokens?: Prisma.IntFieldUpdateOperationsInput | number
   reasoningTokens?: Prisma.IntFieldUpdateOperationsInput | number
   cachedTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  cacheReadTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  cacheCreationTokens?: Prisma.IntFieldUpdateOperationsInput | number
   totalTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  reasoningEffort?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  serviceTier?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  executorType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   failed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   collectedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1080,14 +1323,21 @@ export type UsageRecordCreateManyApiKeyInput = {
   userId?: string | null
   endpoint?: string | null
   model: string
+  modelAlias?: string | null
   source: string
   timestamp: Date | string
   latencyMs?: number
+  ttftMs?: number | null
   inputTokens?: number
   outputTokens?: number
   reasoningTokens?: number
   cachedTokens?: number
+  cacheReadTokens?: number
+  cacheCreationTokens?: number
   totalTokens?: number
+  reasoningEffort?: string | null
+  serviceTier?: string | null
+  executorType?: string | null
   failed?: boolean
   collectedAt?: Date | string
 }
@@ -1101,14 +1351,21 @@ export type UsageRecordUpdateWithoutApiKeyInput = {
   authIndex?: Prisma.StringFieldUpdateOperationsInput | string
   endpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.StringFieldUpdateOperationsInput | string
+  modelAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.StringFieldUpdateOperationsInput | string
   timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   latencyMs?: Prisma.IntFieldUpdateOperationsInput | number
+  ttftMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   inputTokens?: Prisma.IntFieldUpdateOperationsInput | number
   outputTokens?: Prisma.IntFieldUpdateOperationsInput | number
   reasoningTokens?: Prisma.IntFieldUpdateOperationsInput | number
   cachedTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  cacheReadTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  cacheCreationTokens?: Prisma.IntFieldUpdateOperationsInput | number
   totalTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  reasoningEffort?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  serviceTier?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  executorType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   failed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   collectedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   user?: Prisma.UserUpdateOneWithoutUsageRecordsNestedInput
@@ -1124,14 +1381,21 @@ export type UsageRecordUncheckedUpdateWithoutApiKeyInput = {
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   endpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.StringFieldUpdateOperationsInput | string
+  modelAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.StringFieldUpdateOperationsInput | string
   timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   latencyMs?: Prisma.IntFieldUpdateOperationsInput | number
+  ttftMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   inputTokens?: Prisma.IntFieldUpdateOperationsInput | number
   outputTokens?: Prisma.IntFieldUpdateOperationsInput | number
   reasoningTokens?: Prisma.IntFieldUpdateOperationsInput | number
   cachedTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  cacheReadTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  cacheCreationTokens?: Prisma.IntFieldUpdateOperationsInput | number
   totalTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  reasoningEffort?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  serviceTier?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  executorType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   failed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   collectedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1146,14 +1410,21 @@ export type UsageRecordUncheckedUpdateManyWithoutApiKeyInput = {
   userId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   endpoint?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   model?: Prisma.StringFieldUpdateOperationsInput | string
+  modelAlias?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   source?: Prisma.StringFieldUpdateOperationsInput | string
   timestamp?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   latencyMs?: Prisma.IntFieldUpdateOperationsInput | number
+  ttftMs?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   inputTokens?: Prisma.IntFieldUpdateOperationsInput | number
   outputTokens?: Prisma.IntFieldUpdateOperationsInput | number
   reasoningTokens?: Prisma.IntFieldUpdateOperationsInput | number
   cachedTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  cacheReadTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  cacheCreationTokens?: Prisma.IntFieldUpdateOperationsInput | number
   totalTokens?: Prisma.IntFieldUpdateOperationsInput | number
+  reasoningEffort?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  serviceTier?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  executorType?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   failed?: Prisma.BoolFieldUpdateOperationsInput | boolean
   collectedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
@@ -1171,14 +1442,21 @@ export type UsageRecordSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   userId?: boolean
   endpoint?: boolean
   model?: boolean
+  modelAlias?: boolean
   source?: boolean
   timestamp?: boolean
   latencyMs?: boolean
+  ttftMs?: boolean
   inputTokens?: boolean
   outputTokens?: boolean
   reasoningTokens?: boolean
   cachedTokens?: boolean
+  cacheReadTokens?: boolean
+  cacheCreationTokens?: boolean
   totalTokens?: boolean
+  reasoningEffort?: boolean
+  serviceTier?: boolean
+  executorType?: boolean
   failed?: boolean
   collectedAt?: boolean
   user?: boolean | Prisma.UsageRecord$userArgs<ExtArgs>
@@ -1196,14 +1474,21 @@ export type UsageRecordSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   userId?: boolean
   endpoint?: boolean
   model?: boolean
+  modelAlias?: boolean
   source?: boolean
   timestamp?: boolean
   latencyMs?: boolean
+  ttftMs?: boolean
   inputTokens?: boolean
   outputTokens?: boolean
   reasoningTokens?: boolean
   cachedTokens?: boolean
+  cacheReadTokens?: boolean
+  cacheCreationTokens?: boolean
   totalTokens?: boolean
+  reasoningEffort?: boolean
+  serviceTier?: boolean
+  executorType?: boolean
   failed?: boolean
   collectedAt?: boolean
   user?: boolean | Prisma.UsageRecord$userArgs<ExtArgs>
@@ -1221,14 +1506,21 @@ export type UsageRecordSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   userId?: boolean
   endpoint?: boolean
   model?: boolean
+  modelAlias?: boolean
   source?: boolean
   timestamp?: boolean
   latencyMs?: boolean
+  ttftMs?: boolean
   inputTokens?: boolean
   outputTokens?: boolean
   reasoningTokens?: boolean
   cachedTokens?: boolean
+  cacheReadTokens?: boolean
+  cacheCreationTokens?: boolean
   totalTokens?: boolean
+  reasoningEffort?: boolean
+  serviceTier?: boolean
+  executorType?: boolean
   failed?: boolean
   collectedAt?: boolean
   user?: boolean | Prisma.UsageRecord$userArgs<ExtArgs>
@@ -1246,19 +1538,26 @@ export type UsageRecordSelectScalar = {
   userId?: boolean
   endpoint?: boolean
   model?: boolean
+  modelAlias?: boolean
   source?: boolean
   timestamp?: boolean
   latencyMs?: boolean
+  ttftMs?: boolean
   inputTokens?: boolean
   outputTokens?: boolean
   reasoningTokens?: boolean
   cachedTokens?: boolean
+  cacheReadTokens?: boolean
+  cacheCreationTokens?: boolean
   totalTokens?: boolean
+  reasoningEffort?: boolean
+  serviceTier?: boolean
+  executorType?: boolean
   failed?: boolean
   collectedAt?: boolean
 }
 
-export type UsageRecordOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "eventKey" | "requestId" | "provider" | "authType" | "authIndex" | "apiKeyId" | "userId" | "endpoint" | "model" | "source" | "timestamp" | "latencyMs" | "inputTokens" | "outputTokens" | "reasoningTokens" | "cachedTokens" | "totalTokens" | "failed" | "collectedAt", ExtArgs["result"]["usageRecord"]>
+export type UsageRecordOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "eventKey" | "requestId" | "provider" | "authType" | "authIndex" | "apiKeyId" | "userId" | "endpoint" | "model" | "modelAlias" | "source" | "timestamp" | "latencyMs" | "ttftMs" | "inputTokens" | "outputTokens" | "reasoningTokens" | "cachedTokens" | "cacheReadTokens" | "cacheCreationTokens" | "totalTokens" | "reasoningEffort" | "serviceTier" | "executorType" | "failed" | "collectedAt", ExtArgs["result"]["usageRecord"]>
 export type UsageRecordInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   user?: boolean | Prisma.UsageRecord$userArgs<ExtArgs>
   apiKey?: boolean | Prisma.UsageRecord$apiKeyArgs<ExtArgs>
@@ -1289,14 +1588,21 @@ export type $UsageRecordPayload<ExtArgs extends runtime.Types.Extensions.Interna
     userId: string | null
     endpoint: string | null
     model: string
+    modelAlias: string | null
     source: string
     timestamp: Date
     latencyMs: number
+    ttftMs: number | null
     inputTokens: number
     outputTokens: number
     reasoningTokens: number
     cachedTokens: number
+    cacheReadTokens: number
+    cacheCreationTokens: number
     totalTokens: number
+    reasoningEffort: string | null
+    serviceTier: string | null
+    executorType: string | null
     failed: boolean
     collectedAt: Date
   }, ExtArgs["result"]["usageRecord"]>
@@ -1734,14 +2040,21 @@ export interface UsageRecordFieldRefs {
   readonly userId: Prisma.FieldRef<"UsageRecord", 'String'>
   readonly endpoint: Prisma.FieldRef<"UsageRecord", 'String'>
   readonly model: Prisma.FieldRef<"UsageRecord", 'String'>
+  readonly modelAlias: Prisma.FieldRef<"UsageRecord", 'String'>
   readonly source: Prisma.FieldRef<"UsageRecord", 'String'>
   readonly timestamp: Prisma.FieldRef<"UsageRecord", 'DateTime'>
   readonly latencyMs: Prisma.FieldRef<"UsageRecord", 'Int'>
+  readonly ttftMs: Prisma.FieldRef<"UsageRecord", 'Int'>
   readonly inputTokens: Prisma.FieldRef<"UsageRecord", 'Int'>
   readonly outputTokens: Prisma.FieldRef<"UsageRecord", 'Int'>
   readonly reasoningTokens: Prisma.FieldRef<"UsageRecord", 'Int'>
   readonly cachedTokens: Prisma.FieldRef<"UsageRecord", 'Int'>
+  readonly cacheReadTokens: Prisma.FieldRef<"UsageRecord", 'Int'>
+  readonly cacheCreationTokens: Prisma.FieldRef<"UsageRecord", 'Int'>
   readonly totalTokens: Prisma.FieldRef<"UsageRecord", 'Int'>
+  readonly reasoningEffort: Prisma.FieldRef<"UsageRecord", 'String'>
+  readonly serviceTier: Prisma.FieldRef<"UsageRecord", 'String'>
+  readonly executorType: Prisma.FieldRef<"UsageRecord", 'String'>
   readonly failed: Prisma.FieldRef<"UsageRecord", 'Boolean'>
   readonly collectedAt: Prisma.FieldRef<"UsageRecord", 'DateTime'>
 }

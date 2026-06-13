@@ -212,31 +212,39 @@ model AuditLog {
 }
 
 model UsageRecord {
-  id              String   @id @default(cuid())
-  eventKey        String?  @unique
-  requestId       String?
-  provider        String?
-  authType        String?
-  authIndex       String
-  apiKeyId        String?
-  userId          String?
-  endpoint        String?
-  model           String
-  source          String
-  timestamp       DateTime
-  latencyMs       Int      @default(0)
-  inputTokens     Int      @default(0)
-  outputTokens    Int      @default(0)
-  reasoningTokens Int      @default(0)
-  cachedTokens    Int      @default(0)
-  totalTokens     Int      @default(0)
-  failed          Boolean  @default(false)
-  collectedAt     DateTime @default(now())
+  id                  String   @id @default(cuid())
+  eventKey            String?
+  requestId           String?
+  provider            String?
+  authType            String?
+  authIndex           String
+  apiKeyId            String?
+  userId              String?
+  endpoint            String?
+  model               String
+  modelAlias          String?
+  source              String
+  timestamp           DateTime
+  latencyMs           Int      @default(0)
+  ttftMs              Int?
+  inputTokens         Int      @default(0)
+  outputTokens        Int      @default(0)
+  reasoningTokens     Int      @default(0)
+  cachedTokens        Int      @default(0)
+  cacheReadTokens     Int      @default(0)
+  cacheCreationTokens Int      @default(0)
+  totalTokens         Int      @default(0)
+  reasoningEffort     String?
+  serviceTier         String?
+  executorType        String?
+  failed              Boolean  @default(false)
+  collectedAt         DateTime @default(now())
 
   user   User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
   apiKey UserApiKey? @relation(fields: [apiKeyId], references: [id], onDelete: SetNull)
 
   @@unique([authIndex, model, timestamp, source, totalTokens], name: "usage_dedup_key")
+  @@index([eventKey])
   @@index([userId])
   @@index([authIndex])
   @@index([timestamp])

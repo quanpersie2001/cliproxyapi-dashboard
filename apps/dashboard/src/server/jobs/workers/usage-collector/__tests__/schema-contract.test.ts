@@ -20,10 +20,17 @@ describe("usage queue ingestion schema contract", () => {
     expect(Prisma.UsageRecordScalarFieldEnum).toHaveProperty("requestId");
     expect(Prisma.UsageRecordScalarFieldEnum).toHaveProperty("provider");
     expect(Prisma.UsageRecordScalarFieldEnum).toHaveProperty("authType");
+    expect(Prisma.UsageRecordScalarFieldEnum).toHaveProperty("modelAlias");
+    expect(Prisma.UsageRecordScalarFieldEnum).toHaveProperty("ttftMs");
+    expect(Prisma.UsageRecordScalarFieldEnum).toHaveProperty("reasoningEffort");
+    expect(Prisma.UsageRecordScalarFieldEnum).toHaveProperty("serviceTier");
+    expect(Prisma.UsageRecordScalarFieldEnum).toHaveProperty("executorType");
 
     expect(Prisma.UsageRecordScalarFieldEnum).toHaveProperty("authIndex");
     expect(Prisma.UsageRecordScalarFieldEnum).toHaveProperty("model");
     expect(Prisma.UsageRecordScalarFieldEnum).toHaveProperty("source");
+    expect(Prisma.UsageRecordScalarFieldEnum).toHaveProperty("cacheReadTokens");
+    expect(Prisma.UsageRecordScalarFieldEnum).toHaveProperty("cacheCreationTokens");
     expect(Prisma.UsageRecordScalarFieldEnum).toHaveProperty("totalTokens");
   });
 });

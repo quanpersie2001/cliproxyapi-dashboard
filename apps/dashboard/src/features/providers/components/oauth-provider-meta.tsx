@@ -98,6 +98,20 @@ export const OAUTH_PROVIDERS = [
       text: "var(--oauth-provider-qwen-text)",
     },
   },
+  {
+    id: "xai",
+    name: "xAI Grok",
+    description: "xAI Grok (via OAuth)",
+    authEndpoint: "/api/management/xai-auth-url?is_webui=true",
+    requiresCallback: true,
+    asset: { light: "/provider-icons/grok.svg", dark: "/provider-icons/grok-dark.svg" },
+    fallback: "XA",
+    theme: {
+      bg: "var(--oauth-provider-xai-bg)",
+      border: "var(--oauth-provider-xai-border)",
+      text: "var(--oauth-provider-xai-text)",
+    },
+  },
 ] as const;
 
 export type OAuthProviderEntry = (typeof OAUTH_PROVIDERS)[number];
@@ -120,8 +134,10 @@ const OAUTH_PROVIDER_ALIASES: Record<string, OAuthProviderId> = {
   codex: "codex",
   gemini: "gemini-cli",
   "gemini-cli": "gemini-cli",
+  grok: "xai",
   iflow: "iflow",
   qwen: "qwen",
+  xai: "xai",
 };
 
 function toFallbackLabel(value: string): string {

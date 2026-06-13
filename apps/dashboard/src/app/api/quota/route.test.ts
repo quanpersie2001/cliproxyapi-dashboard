@@ -1,6 +1,13 @@
 import { NextRequest } from "next/server";
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
+const prismaMock = vi.hoisted(() => ({
+  $queryRaw: vi.fn(),
+  modelPricing: {
+    findMany: vi.fn(),
+  },
+}));
+
 // Mock external dependencies before importing route
 vi.mock("@/server/auth/lib/session", () => ({
   verifySession: vi.fn(() => ({ userId: "test-user" })),
@@ -16,7 +23,7 @@ vi.mock("@/lib/logger", () => ({
 }));
 
 vi.mock("@/server/db/client", () => ({
-  prisma: {},
+  prisma: prismaMock,
 }));
 
 // Set required env vars
@@ -36,6 +43,8 @@ function createQuotaRequest(): NextRequest {
 describe("GET /api/quota — Gemini CLI support (issue #125)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    prismaMock.modelPricing.findMany.mockResolvedValue([]);
+    prismaMock.$queryRaw.mockResolvedValue([]);
   });
 
   it("should return supported: true for gemini-cli accounts", async () => {
@@ -196,6 +205,8 @@ describe("GET /api/quota — Gemini CLI support (issue #125)", () => {
 describe("GET /api/quota — imported provider normalization (issue #provider-fix)", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    prismaMock.modelPricing.findMany.mockResolvedValue([]);
+    prismaMock.$queryRaw.mockResolvedValue([]);
   });
 
   it("CLAUDE (uppercase) provider should return supported: true (RED: route uses strict equality, no toLowerCase)", async () => {
@@ -362,6 +373,8 @@ describe("GET /api/quota — imported provider normalization (issue #provider-fi
 describe("GET /api/quota — plan detection", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    prismaMock.modelPricing.findMany.mockResolvedValue([]);
+    prismaMock.$queryRaw.mockResolvedValue([]);
   });
 
   it("returns Claude plan from profile payload", async () => {
@@ -470,5 +483,138 @@ describe("GET /api/quota — plan detection", () => {
     const requestBody = typeof requestInit?.body === "string" ? JSON.parse(requestInit.body) : null;
 
     expect(requestBody?.header?.["Chatgpt-Account-Id"]).toBe("acct_test_123");
+  });
+});
+
+describe("GET /api/quota — local quota window usage backfill", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    prismaMock.modelPricing.findMany.mockResolvedValue([]);
+    prismaMock.$queryRaw.mockResolvedValue([]);
+  });
+
+  it("adds local token and cost usage to Codex 5h windows when provider omits usage pair", async () => {
+    const resetAt = new Date("2026-06-01T10:00:00.000Z");
+    prismaMock.modelPricing.findMany.mockResolvedValue([
+      {
+        provider: "codex",
+        model: "gpt-5.1-codex",
+        promptPriceUsd: "2",
+        completionPriceUsd: "8",
+        cachedPriceUsd: "0.5",
+        reasoningPriceUsd: "1",
+      },
+    ]);
+    prismaMock.$queryRaw.mockResolvedValue([
+      {
+        provider: "codex",
+        model: "gpt-5.1-codex",
+        totalTokens: BigInt(1_600_000),
+        inputTokens: BigInt(1_000_000),
+        cachedTokens: BigInt(250_000),
+        outputTokens: BigInt(500_000),
+        reasoningTokens: BigInt(100_000),
+      },
+    ]);
+
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          files: [
+            {
+              auth_index: 4,
+              provider: "codex",
+              email: "user@openai.com",
+              disabled: false,
+              status: "active",
+            },
+          ],
+        }),
+        body: { cancel: vi.fn() },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          status_code: 200,
+          body: {
+            rate_limit: {
+              primary_window: {
+                used_percent: 25,
+                limit_window_seconds: 18_000,
+                reset_at: resetAt.getTime() / 1000,
+              },
+            },
+          },
+        }),
+        body: { cancel: vi.fn() },
+      });
+
+    const { GET } = await import("./route");
+
+    const response = await GET(createQuotaRequest());
+    const data = await response.json();
+    const group = data.accounts[0].groups[0];
+
+    expect(group.windowSeconds).toBe(18_000);
+    expect(group.windowUsageTokens).toBe(1_600_000);
+    expect(group.windowUsageCost).toBeCloseTo(5.725, 8);
+    expect(group.models[0].windowUsageTokens).toBe(1_600_000);
+    expect(prismaMock.$queryRaw).toHaveBeenCalledTimes(1);
+  });
+
+  it("backfills Claude generic 5h/7d windows and leaves model-specific 7d rows untouched", async () => {
+    prismaMock.modelPricing.findMany.mockResolvedValue([]);
+    prismaMock.$queryRaw
+      .mockResolvedValueOnce([{ provider: "anthropic", model: "claude-sonnet-4-6", totalTokens: BigInt(10), inputTokens: BigInt(10), cachedTokens: BigInt(0), outputTokens: BigInt(0), reasoningTokens: BigInt(0) }])
+      .mockResolvedValueOnce([{ provider: "anthropic", model: "claude-sonnet-4-6", totalTokens: BigInt(20), inputTokens: BigInt(20), cachedTokens: BigInt(0), outputTokens: BigInt(0), reasoningTokens: BigInt(0) }]);
+
+    fetchMock
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          files: [
+            {
+              auth_index: 5,
+              provider: "claude",
+              email: "user@anthropic.com",
+              disabled: false,
+              status: "active",
+            },
+          ],
+        }),
+        body: { cancel: vi.fn() },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          status_code: 200,
+          body: {
+            five_hour: { utilization: 10, resets_at: "2026-06-01T10:00:00.000Z" },
+            seven_day: { utilization: 20, resets_at: "2026-06-08T00:00:00.000Z" },
+            seven_day_sonnet: { utilization: 30, resets_at: "2026-06-08T00:00:00.000Z" },
+          },
+        }),
+        body: { cancel: vi.fn() },
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          status_code: 200,
+          body: { account: { has_claude_pro: true } },
+        }),
+        body: { cancel: vi.fn() },
+      });
+
+    const { GET } = await import("./route");
+
+    const response = await GET(createQuotaRequest());
+    const data = await response.json();
+    const groups = data.accounts[0].groups;
+
+    expect(groups.find((group: { id: string }) => group.id === "five-hour")?.windowUsageTokens).toBe(10);
+    expect(groups.find((group: { id: string }) => group.id === "seven-day")?.windowUsageTokens).toBe(20);
+    expect(groups.find((group: { id: string }) => group.id === "seven-day-sonnet")?.windowUsageTokens).toBeUndefined();
+    expect(prismaMock.$queryRaw).toHaveBeenCalledTimes(2);
   });
 });

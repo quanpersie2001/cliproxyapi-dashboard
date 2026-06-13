@@ -118,6 +118,9 @@
   --oauth-provider-qwen-bg: rgba(99, 54, 231, 0.12);
   --oauth-provider-qwen-border: rgba(85, 48, 199, 0.18);
   --oauth-provider-qwen-text: #5530c7;
+  --oauth-provider-xai-bg: rgba(17, 24, 39, 0.08);
+  --oauth-provider-xai-border: rgba(17, 24, 39, 0.16);
+  --oauth-provider-xai-text: #111827;
   --accent: #000000;
   --accent-strong: #1a1a1a;
   --shadow-inset: rgba(0, 0, 0, 0.075) 0px 0px 0px 0.5px inset;
@@ -228,6 +231,9 @@
   --oauth-provider-qwen-bg: rgba(167, 139, 250, 0.14);
   --oauth-provider-qwen-border: rgba(167, 139, 250, 0.26);
   --oauth-provider-qwen-text: #ddd6fe;
+  --oauth-provider-xai-bg: rgba(249, 250, 251, 0.12);
+  --oauth-provider-xai-border: rgba(249, 250, 251, 0.22);
+  --oauth-provider-xai-text: #f9fafb;
   --accent: #e5e5e5;
   --accent-strong: #f5f5f5;
   --shadow-inset: rgba(255, 255, 255, 0.04) 0px 0px 0px 0.5px inset;

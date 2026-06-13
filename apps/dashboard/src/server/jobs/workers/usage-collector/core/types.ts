@@ -22,6 +22,8 @@ export interface NormalizedTokenUsage {
   outputTokens: number;
   reasoningTokens: number;
   cachedTokens: number;
+  cacheReadTokens: number;
+  cacheCreationTokens: number;
   totalTokens: number;
 }
 
@@ -34,10 +36,15 @@ export interface NormalizedQueuedUsageEvent {
   apiGroupKey: string | null;
   apiKey?: string | null;
   model: string;
+  modelAlias: string | null;
   source: string;
   timestamp: Date;
   failed: boolean;
   latencyMs: number;
+  ttftMs: number | null;
+  reasoningEffort: string | null;
+  serviceTier: string | null;
+  executorType: string | null;
   tokens: NormalizedTokenUsage;
 }
 

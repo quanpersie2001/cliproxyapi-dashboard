@@ -120,9 +120,69 @@ function isTabVisible(): boolean {
   return document.visibilityState === "visible";
 }
 
-const validateCallbackUrl = (value: string) => {
+const XAI_CALLBACK_URL = "http://127.0.0.1:56121/callback";
+
+const buildXaiCallbackUrl = (input: string, state?: string): string | null => {
+  const trimmed = input.trim();
+  if (!trimmed) return null;
+
+  // If it's already a full URL, use it directly
+  try {
+    new URL(trimmed);
+    return trimmed;
+  } catch {
+    // Not a full URL, continue
+  }
+
+  // Try to extract code from query-like input (code=xxx&state=yyy)
+  const queryStart = trimmed.indexOf("?");
+  const hashStart = trimmed.indexOf("#");
+  const rawParams =
+    queryStart >= 0
+      ? trimmed.slice(queryStart + 1)
+      : hashStart >= 0
+        ? trimmed.slice(hashStart + 1)
+        : trimmed;
+
+  if (/(^|[&#?])(code|state|error)=/i.test(rawParams)) {
+    const params = new URLSearchParams(rawParams.replace(/^[?#]/, ""));
+    const code = params.get("code")?.trim();
+    const error = params.get("error")?.trim();
+    const errorDescription = params.get("error_description")?.trim();
+    const callbackState = params.get("state")?.trim() || state?.trim();
+    if (!callbackState) return null;
+
+    const callbackUrl = new URL(XAI_CALLBACK_URL);
+    callbackUrl.searchParams.set("state", callbackState);
+    if (code) callbackUrl.searchParams.set("code", code);
+    if (error) callbackUrl.searchParams.set("error", error);
+    if (errorDescription) callbackUrl.searchParams.set("error_description", errorDescription);
+    return callbackUrl.toString();
+  }
+
+  // Treat as plain code displayed on xAI page
+  const codeMatch = trimmed.match(/\bcode\s*[:=]\s*([^\s&]+)/i);
+  const code = (codeMatch?.[1] ?? trimmed).trim();
+  const callbackState = state?.trim();
+  if (!code || !callbackState) return null;
+
+  const callbackUrl = new URL(XAI_CALLBACK_URL);
+  callbackUrl.searchParams.set("code", code);
+  callbackUrl.searchParams.set("state", callbackState);
+  return callbackUrl.toString();
+};
+
+const validateCallbackUrl = (value: string, providerId?: string | null) => {
   if (!value.trim()) {
-    return { status: CALLBACK_VALIDATION.EMPTY, message: "Paste the full URL." };
+    return { status: CALLBACK_VALIDATION.EMPTY, message: "Paste the full URL or code." };
+  }
+
+  // xAI accepts plain code, full URL, or query params
+  if (providerId === "xai") {
+    return {
+      status: CALLBACK_VALIDATION.VALID,
+      message: "Ready to submit. Paste the full callback URL or just the code from the xAI page.",
+    };
   }
 
   let parsedUrl: URL;
@@ -824,7 +884,7 @@ export function OAuthSection({
 
   const handleCallbackChange = (value: string) => {
     setCallbackUrl(value);
-    const validation = validateCallbackUrl(value);
+    const validation = validateCallbackUrl(value, selectedOAuthProviderIdRef.current);
     setCallbackValidation(validation.status);
     setCallbackMessage(validation.message);
   };
@@ -839,11 +899,23 @@ export function OAuthSection({
       return;
     }
 
-    const validation = validateCallbackUrl(callbackUrl);
-    if (validation.status !== CALLBACK_VALIDATION.VALID) {
-      setCallbackValidation(validation.status);
-      setCallbackMessage(validation.message);
-      return;
+    // For xAI, resolve the callback URL from code or full URL
+    let resolvedCallbackUrl: string | null;
+    if (currentProvider === "xai") {
+      resolvedCallbackUrl = buildXaiCallbackUrl(callbackUrl, currentState);
+      if (!resolvedCallbackUrl) {
+        setCallbackValidation(CALLBACK_VALIDATION.INVALID);
+        setCallbackMessage("Could not extract code. Paste the full callback URL or the code shown on the xAI page.");
+        return;
+      }
+    } else {
+      const validation = validateCallbackUrl(callbackUrl, currentProvider);
+      if (validation.status !== CALLBACK_VALIDATION.VALID) {
+        setCallbackValidation(validation.status);
+        setCallbackMessage(validation.message);
+        return;
+      }
+      resolvedCallbackUrl = callbackUrl.trim();
     }
 
     setOauthModalStatus(MODAL_STATUS.SUBMITTING);
@@ -855,7 +927,7 @@ export function OAuthSection({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           provider: currentProvider,
-          callbackUrl: callbackUrl.trim(),
+          callbackUrl: resolvedCallbackUrl,
         }),
       });
 
@@ -1352,14 +1424,20 @@ export function OAuthSection({
 
               <div>
                 <div className="mb-2.5 text-xs font-semibold uppercase tracking-[0.08em] text-[var(--text-muted)]">
-                  Paste callback URL
+                  {selectedOAuthProviderId === "xai"
+                    ? "Paste callback URL or code"
+                    : "Paste callback URL"}
                 </div>
                 <Input
                   type="text"
                   name="callbackUrl"
                   value={callbackUrl}
                   onChange={handleCallbackChange}
-                  placeholder="https://localhost/callback?code=...&state=..."
+                  placeholder={
+                    selectedOAuthProviderId === "xai"
+                      ? "Paste full URL or just the code from xAI page"
+                      : "https://localhost/callback?code=...&state=..."
+                  }
                   disabled={
                     oauthModalStatus === MODAL_STATUS.SUBMITTING ||
                     oauthModalStatus === MODAL_STATUS.POLLING

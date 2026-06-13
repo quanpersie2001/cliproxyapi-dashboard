@@ -32,15 +32,22 @@ function createEvent(overrides: Partial<NormalizedQueuedUsageEvent> = {}): Norma
     apiGroupKey: "/v1/chat/completions",
     apiKey: null,
     model: "gpt-4.1",
+    modelAlias: "gpt-4.1-alias",
     source: "source-a",
     timestamp: new Date("2026-05-05T00:00:00.000Z"),
     failed: false,
     latencyMs: 120,
+    ttftMs: 52,
+    reasoningEffort: "medium",
+    serviceTier: "priority",
+    executorType: "responses",
     tokens: {
       inputTokens: 10,
       outputTokens: 20,
       reasoningTokens: 3,
       cachedTokens: 0,
+      cacheReadTokens: 1,
+      cacheCreationTokens: 2,
       totalTokens: 33,
     },
     ...overrides,
@@ -93,6 +100,13 @@ describe("PrismaUsageRecordRepository", () => {
           eventKey: "evt-1",
           authIndex: "auth-1",
           endpoint: "/v1/chat/completions",
+          modelAlias: "gpt-4.1-alias",
+          ttftMs: 52,
+          reasoningEffort: "medium",
+          serviceTier: "priority",
+          executorType: "responses",
+          cacheReadTokens: 1,
+          cacheCreationTokens: 2,
           totalTokens: 33,
         }),
       ],
@@ -101,9 +115,9 @@ describe("PrismaUsageRecordRepository", () => {
     expect(invalidateUsageCaches).toHaveBeenCalledTimes(1);
   });
 
-  it("deduplicates duplicate event keys before persistence", async () => {
+  it("keeps duplicate event keys in the batch so composite dedupe can preserve distinct segments", async () => {
     const usageRecord = {
-      createMany: vi.fn().mockResolvedValue({ count: 1 }),
+      createMany: vi.fn().mockResolvedValue({ count: 3 }),
     };
     const prisma = {
       usageRecord,
@@ -112,16 +126,27 @@ describe("PrismaUsageRecordRepository", () => {
     const repository = new PrismaUsageRecordRepository({ prisma });
 
     const persisted = await repository.persistNormalizedEvents([
-      createEvent({ eventKey: "dup-key" }),
-      createEvent({ eventKey: "dup-key", source: "source-b" }),
+      createEvent({ eventKey: "dup-key", requestId: "req-shared" }),
+      createEvent({
+        eventKey: "dup-key",
+        requestId: "req-shared",
+        model: "gpt-4.1-mini",
+      }),
       createEvent({ eventKey: "unique-key", requestId: "req-2" }),
     ]);
 
-    expect(persisted).toBe(1);
+    expect(persisted).toBe(3);
     const firstCall = usageRecord.createMany.mock.calls[0][0];
-    expect(firstCall.data).toHaveLength(2);
+    expect(firstCall.data).toHaveLength(3);
     expect(firstCall.data[0].eventKey).toBe("dup-key");
-    expect(firstCall.data[1].eventKey).toBe("unique-key");
+    expect(firstCall.data[1]).toEqual(
+      expect.objectContaining({
+        eventKey: "dup-key",
+        requestId: "req-shared",
+        model: "gpt-4.1-mini",
+      })
+    );
+    expect(firstCall.data[2].eventKey).toBe("unique-key");
   });
 
   it("persists resolved ownership fields when the event source maps to a known user", async () => {

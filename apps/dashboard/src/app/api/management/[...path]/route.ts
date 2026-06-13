@@ -29,6 +29,7 @@ const NON_ADMIN_OAUTH_PATHS = new Set<string>([
   "antigravity-auth-url",
   "iflow-auth-url",
   "qwen-auth-url",
+  "xai-auth-url",
   "get-auth-status",
 ]);
 

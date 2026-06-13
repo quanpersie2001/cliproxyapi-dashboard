@@ -16,12 +16,10 @@ function normalizeTotalTokens(event: EventKeyInput): number {
     return explicitTotal;
   }
 
-  const derivedIoReasoningTotal =
-    normalizeCount(event.tokens.inputTokens) +
-    normalizeCount(event.tokens.outputTokens) +
-    normalizeCount(event.tokens.reasoningTokens);
-  if (derivedIoReasoningTotal > 0) {
-    return derivedIoReasoningTotal;
+  const derivedInputOutputTotal =
+    normalizeCount(event.tokens.inputTokens) + normalizeCount(event.tokens.outputTokens);
+  if (derivedInputOutputTotal > 0) {
+    return derivedInputOutputTotal;
   }
 
   return normalizeCount(event.tokens.cachedTokens);
@@ -39,6 +37,7 @@ function toCanonicalTuple(event: EventKeyInput): string[] {
   const totalTokens = normalizeTotalTokens(event);
 
   return [
+    normalizeText(event.requestId),
     normalizeText(event.apiGroupKey),
     normalizeText(event.model),
     normalizedTimestamp,
@@ -53,11 +52,6 @@ function toCanonicalTuple(event: EventKeyInput): string[] {
 }
 
 export function buildUsageEventKey(event: EventKeyInput): string {
-  const requestId = normalizeText(event.requestId);
-  if (requestId.length > 0) {
-    return requestId;
-  }
-
   const canonicalPayload = toCanonicalTuple(event).join("|");
   return createHash("sha256").update(canonicalPayload).digest("hex");
 }

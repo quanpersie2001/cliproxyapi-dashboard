@@ -30,7 +30,7 @@ type RespSimpleError = {
 type RespValue = string | number | null | RespValue[] | RespSimpleError;
 
 const DEFAULT_RESP_PORT = 8317;
-const DEFAULT_RESP_QUEUE = "queue";
+const DEFAULT_RESP_QUEUE = "usage";
 const SOCKET_TIMEOUT_MS = 10_000;
 
 export async function runCollectorRuntime(
@@ -40,7 +40,7 @@ export async function runCollectorRuntime(
   const signal = options.signal ?? { aborted: false };
 
   const respAddress = resolveRespAddress(process.env.USAGE_RESP_ADDR, env.CLIPROXYAPI_MANAGEMENT_URL);
-  const respQueue = normalizeText(process.env.USAGE_RESP_QUEUE) || DEFAULT_RESP_QUEUE;
+  const respQueue = resolveRespQueue(process.env.USAGE_RESP_QUEUE);
   const respPassword = normalizeOptionalText(process.env.USAGE_RESP_PASSWORD) ?? env.MANAGEMENT_API_KEY;
   const workerId = normalizeText(process.env.USAGE_COLLECTOR_WORKER_ID) || `worker-${process.pid}`;
 
@@ -546,10 +546,18 @@ function normalizeOptionalText(value: string | undefined): string | null {
   return normalized ? normalized : null;
 }
 
+function resolveRespQueue(explicitQueue: string | undefined): string {
+  return normalizeText(explicitQueue) || DEFAULT_RESP_QUEUE;
+}
+
 function toRuntimeError(error: unknown): Error {
   return error instanceof Error ? error : new Error(String(error));
 }
 
 export function splitRespAddressForTests(address: string): [string, number] {
   return splitAddress(address);
+}
+
+export function resolveRespQueueForTests(explicitQueue: string | undefined): string {
+  return resolveRespQueue(explicitQueue);
 }

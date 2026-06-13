@@ -39,11 +39,10 @@ export class PrismaUsageRecordRepository implements UsageRecordRepository {
       return 0;
     }
 
-    const deduplicatedEvents = dedupeByEventKey(events);
     const ownershipDirectories = await this.getOwnershipDirectories();
 
     const result = await this.prismaClient.usageRecord.createMany({
-      data: deduplicatedEvents.map((event) => {
+      data: events.map((event) => {
         const ownership = resolveUsageOwnership(
           {
             apiGroupKey: event.apiGroupKey,
@@ -64,14 +63,21 @@ export class PrismaUsageRecordRepository implements UsageRecordRepository {
           authIndex: event.authIndex,
           endpoint: event.apiGroupKey,
           model: event.model,
+          modelAlias: event.modelAlias,
           source: event.source,
           timestamp: event.timestamp,
           latencyMs: event.latencyMs,
+          ttftMs: event.ttftMs,
           inputTokens: event.tokens.inputTokens,
           outputTokens: event.tokens.outputTokens,
           reasoningTokens: event.tokens.reasoningTokens,
           cachedTokens: event.tokens.cachedTokens,
+          cacheReadTokens: event.tokens.cacheReadTokens,
+          cacheCreationTokens: event.tokens.cacheCreationTokens,
           totalTokens: event.tokens.totalTokens,
+          reasoningEffort: event.reasoningEffort,
+          serviceTier: event.serviceTier,
+          executorType: event.executorType,
           failed: event.failed,
         };
       }),
@@ -248,21 +254,6 @@ export class PrismaUsageRecordRepository implements UsageRecordRepository {
       return new Map();
     }
   }
-}
-
-function dedupeByEventKey(events: NormalizedQueuedUsageEvent[]): NormalizedQueuedUsageEvent[] {
-  const seen = new Set<string>();
-  const deduplicated: NormalizedQueuedUsageEvent[] = [];
-
-  for (const event of events) {
-    if (seen.has(event.eventKey)) {
-      continue;
-    }
-    seen.add(event.eventKey);
-    deduplicated.push(event);
-  }
-
-  return deduplicated;
 }
 
 function normalizeLookupKey(value: unknown): string {

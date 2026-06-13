@@ -12,15 +12,22 @@ function createEvent(overrides: Partial<EventKeyInput> = {}): EventKeyInput {
     authIndex: "auth-123",
     apiGroupKey: "/v1/chat/completions",
     model: "gpt-4.1",
+    modelAlias: null,
     source: "codex",
     timestamp: new Date("2026-05-05T00:00:00.000Z"),
     failed: false,
     latencyMs: 120,
+    ttftMs: null,
+    reasoningEffort: null,
+    serviceTier: null,
+    executorType: null,
     tokens: {
       inputTokens: 10,
       outputTokens: 20,
       reasoningTokens: 5,
       cachedTokens: 2,
+      cacheReadTokens: 0,
+      cacheCreationTokens: 0,
       totalTokens: 35,
     },
     ...overrides,
@@ -28,9 +35,12 @@ function createEvent(overrides: Partial<EventKeyInput> = {}): EventKeyInput {
 }
 
 describe("buildUsageEventKey", () => {
-  it("uses non-empty requestId first", () => {
+  it("includes non-empty requestId in the canonical hash without making it the whole key", () => {
     const event = createEvent({ requestId: "  req_abc_123  " });
-    expect(buildUsageEventKey(event)).toBe("req_abc_123");
+    const sameWithoutRequestId = createEvent({ requestId: null });
+
+    expect(buildUsageEventKey(event)).toMatch(/^[a-f0-9]{64}$/);
+    expect(buildUsageEventKey(event)).not.toBe(buildUsageEventKey(sameWithoutRequestId));
   });
 
   it("falls back to deterministic hash when requestId is blank", () => {
@@ -41,7 +51,7 @@ describe("buildUsageEventKey", () => {
     expect(key).toBe(buildUsageEventKey(event));
   });
 
-  it("normalizes totalTokens to input+output+reasoning when total is zero", () => {
+  it("normalizes totalTokens to input+output when total is zero", () => {
     const eventWithZeroTotal = createEvent({
       requestId: null,
       tokens: {
@@ -49,6 +59,8 @@ describe("buildUsageEventKey", () => {
         outputTokens: 11,
         reasoningTokens: 3,
         cachedTokens: 99,
+        cacheReadTokens: 0,
+        cacheCreationTokens: 0,
         totalTokens: 0,
       },
     });
@@ -59,7 +71,9 @@ describe("buildUsageEventKey", () => {
         outputTokens: 11,
         reasoningTokens: 3,
         cachedTokens: 0,
-        totalTokens: 21,
+        cacheReadTokens: 0,
+        cacheCreationTokens: 0,
+        totalTokens: 18,
       },
     });
 
@@ -76,6 +90,8 @@ describe("buildUsageEventKey", () => {
         outputTokens: 0,
         reasoningTokens: 0,
         cachedTokens: 9,
+        cacheReadTokens: 0,
+        cacheCreationTokens: 0,
         totalTokens: 0,
       },
     });
@@ -86,6 +102,8 @@ describe("buildUsageEventKey", () => {
         outputTokens: 0,
         reasoningTokens: 0,
         cachedTokens: 0,
+        cacheReadTokens: 0,
+        cacheCreationTokens: 0,
         totalTokens: 9,
       },
     });
@@ -106,5 +124,15 @@ describe("buildUsageEventKey", () => {
     });
 
     expect(buildUsageEventKey(base)).toBe(buildUsageEventKey(sameMomentDifferentOffset));
+  });
+
+  it("keeps duplicate requestId segments distinct when model changes", () => {
+    const base = createEvent({ requestId: "req-shared" });
+    const nextSegment = createEvent({
+      requestId: "req-shared",
+      model: "gpt-4.1-mini",
+    });
+
+    expect(buildUsageEventKey(base)).not.toBe(buildUsageEventKey(nextSegment));
   });
 });

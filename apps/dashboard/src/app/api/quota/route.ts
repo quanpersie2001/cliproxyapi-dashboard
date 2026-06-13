@@ -4,6 +4,12 @@ import { verifySession } from "@/server/auth/lib/session";
 import { logger } from "@/lib/logger";
 import { quotaCache, CACHE_TTL } from "@/lib/cache";
 import { Errors } from "@/lib/errors";
+import {
+  backfillQuotaWindowUsageStats,
+  QUOTA_WINDOW_FIVE_HOURS_SECONDS,
+  QUOTA_WINDOW_SEVEN_DAYS_SECONDS,
+  type QuotaWindowUsageGroup,
+} from "@/lib/quota/window-usage-backfill";
 
 const CLIPROXYAPI_MANAGEMENT_URL =
   process.env.CLIPROXYAPI_MANAGEMENT_URL ||
@@ -45,7 +51,7 @@ interface AntigravityResponse {
   models: Record<string, AntigravityModel>;
 }
 
-interface QuotaGroup {
+interface QuotaGroup extends QuotaWindowUsageGroup {
   id: string;
   label: string;
   remainingFraction: number;
@@ -55,7 +61,12 @@ interface QuotaGroup {
     displayName: string;
     remainingFraction: number;
     resetTime: string | null;
+    windowUsageTokens?: number;
+    windowUsageCost?: number;
   }>;
+  windowSeconds?: number;
+  windowUsageTokens?: number;
+  windowUsageCost?: number;
 }
 
 interface QuotaAccount {
@@ -500,6 +511,7 @@ function parseCodexQuota(data: CodexWhamUsageResponse): QuotaGroup[] {
       label,
       remainingFraction,
       resetTime,
+      windowSeconds: window.limit_window_seconds,
       models: [
         {
           id: `${key}-window`,
@@ -801,6 +813,11 @@ async function fetchClaudeQuota(
             label,
             remainingFraction,
             resetTime: window.resets_at ?? null,
+            windowSeconds: id === "five-hour"
+              ? QUOTA_WINDOW_FIVE_HOURS_SECONDS
+              : id === "seven-day"
+                ? QUOTA_WINDOW_SEVEN_DAYS_SECONDS
+                : undefined,
             models: [
               {
                 id,
@@ -921,6 +938,11 @@ async function fetchClaudeQuota(
           label,
           remainingFraction,
           resetTime,
+          windowSeconds: id === "five-hour"
+            ? QUOTA_WINDOW_FIVE_HOURS_SECONDS
+            : id === "seven-day"
+              ? QUOTA_WINDOW_SEVEN_DAYS_SECONDS
+              : undefined,
           models: [{ id, displayName: label, remainingFraction, resetTime }],
         });
       };
@@ -1007,6 +1029,22 @@ async function fetchClaudeQuota(
       plan: null,
     };
   }
+}
+
+async function backfillQuotaGroups(authIndex: string, groups: QuotaGroup[]): Promise<QuotaGroup[]> {
+  return backfillQuotaWindowUsageStats(authIndex, groups, {
+    onError: (error, context) => {
+      logger.warn(
+        {
+          authIndex: context.authIndex,
+          start: context.start.toISOString(),
+          end: context.end.toISOString(),
+          error,
+        },
+        "Failed to backfill quota window usage stats"
+      );
+    },
+  }) as Promise<QuotaGroup[]>;
 }
 
 export async function GET(request: NextRequest) {
@@ -1117,13 +1155,15 @@ export async function GET(request: NextRequest) {
           };
         }
 
+        const groups = await backfillQuotaGroups(authIndex, result.groups);
+
         return {
           auth_index: authIndex,
           provider: providerForResponse,
           email: displayEmail,
           supported: true,
           plan: result.plan ?? null,
-          groups: result.groups,
+          groups,
         };
       }
 
@@ -1163,13 +1203,15 @@ export async function GET(request: NextRequest) {
           };
         }
 
+        const groups = await backfillQuotaGroups(authIndex, result.groups);
+
         return {
           auth_index: authIndex,
           provider: providerForResponse,
           email: displayEmail,
           supported: true,
           plan: result.plan ?? null,
-          groups: result.groups,
+          groups,
         };
       }
 
