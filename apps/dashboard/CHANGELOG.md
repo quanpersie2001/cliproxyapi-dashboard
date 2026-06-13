@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.14](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.13...dashboard-v0.2.14) (2026-06-13)
+
+
+### Bug Fixes
+
+* add xAI provider support to oauth-callback route ([1b2bd89](https://github.com/quanpersie2001/cliproxyapi-dashboard/commit/1b2bd892d43d1d79901620d05067bc4ee8b948a7))
+
 ## [0.2.13](https://github.com/quanpersie2001/cliproxyapi-dashboard/compare/dashboard-v0.2.12...dashboard-v0.2.13) (2026-06-13)
 
 
