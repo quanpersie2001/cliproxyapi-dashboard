@@ -14,6 +14,7 @@ const PROVIDERS = {
   ANTIGRAVITY: "antigravity",
   IFLOW: "iflow",
   QWEN: "qwen",
+  XAI: "xai",
 } as const;
 
 type Provider = (typeof PROVIDERS)[keyof typeof PROVIDERS];
@@ -24,6 +25,7 @@ const PROVIDERS_WITH_CALLBACK = new Set<Provider>([
   PROVIDERS.CODEX,
   PROVIDERS.ANTIGRAVITY,
   PROVIDERS.IFLOW,
+  PROVIDERS.XAI,
 ]);
 
 const PROVIDER_MATCH_ALIASES: Record<Provider, readonly string[]> = {
@@ -33,6 +35,7 @@ const PROVIDER_MATCH_ALIASES: Record<Provider, readonly string[]> = {
   [PROVIDERS.ANTIGRAVITY]: ["antigravity"],
   [PROVIDERS.IFLOW]: ["iflow"],
   [PROVIDERS.QWEN]: ["qwen"],
+  [PROVIDERS.XAI]: ["xai", "grok"],
 };
 
 const CLIPROXYAPI_BASE = process.env.CLIPROXYAPI_MANAGEMENT_URL?.replace("/v0/management", "") || "http://cliproxyapi:8317";
@@ -45,6 +48,7 @@ const CALLBACK_PATHS: Partial<Record<Provider, string>> = {
   [PROVIDERS.CODEX]: `${CLIPROXYAPI_BASE}/codex/callback`,
   [PROVIDERS.ANTIGRAVITY]: `${CLIPROXYAPI_BASE}/antigravity/callback`,
   [PROVIDERS.IFLOW]: `${CLIPROXYAPI_BASE}/iflow/callback`,
+  [PROVIDERS.XAI]: `${CLIPROXYAPI_BASE}/xai/callback`,
 };
 
 interface OAuthCallbackRequestBody {
